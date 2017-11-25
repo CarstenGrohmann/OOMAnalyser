@@ -7,6 +7,8 @@ This web page splits the content of a Linux Out Of Memory message into
 smaller pieces, aggregates these and presents them in a more human friendly 
 format.
 
+You can use the current version on [www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/).
+
 
 ## Design Goals
  * A local copy of the web page should run offline - without an Internet 
