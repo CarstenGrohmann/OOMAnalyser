@@ -1,0 +1,10 @@
+# Files to be ignored by Git
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+
+# Environments
+env/
+
+# IntelliJ project files
+.idea

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="__javascript__/OOMAnalyser.js" defer="defer"></script>
+    <meta charset="UTF-8">
+    <title>OOM Analyser</title>
+
+    <style type='text/css'>
+        h1 {
+            font-size: 2em;
+            margin: 0.67em 0;
+        }
+
+        #error_box {
+            display: none;
+        }
+
+        .kbytes {
+            text-align: right;
+        }
+        .kbytes::after {
+            content: " kBytes";
+        }
+
+        .pages {
+            text-align: right;
+        }
+        .pages::after {
+            content: " pages";
+        }
+
+        table {
+            border-collapse: collapse;
+            padding: 10px;
+            table-layout: fixed;
+            text-align: left;
+            width: 100%;
+        }
+
+        svg {
+            display: block;
+            max-height: 200px;
+        }
+
+        th {
+            font-weight: bold;
+            font-size: large;
+            padding: 5px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            word-wrap: break-word;
+        }
+
+        .terminal {
+            font-family: monospace;
+            overflow: auto;
+        }
+
+        /* Zebra-Layout */
+        tr:nth-child(odd) td:nth-child(2), tr:nth-child(odd) td:nth-child(3) {
+            background-color: #f2f2f2;
+        }
+
+        .license {
+            font-size: small;
+            display: none;
+        }
+
+    </style>
+    <script>
+function goBack() {
+    window.history.back();
+}
+    </script>
+</head>
+<body>
+
+
+<h1>Analyse and visualise Linux OOM output</h1>
+
+<p>
+    This web page splits the content of a Linux Out Of Memory message into
+    smaller pieces, aggregates these and presents them in a more human friendly
+    format.
+</p>
+
+<p>
+    <textarea id="textarea_oom" cols="100" rows="20" autocomplete="off" title="OOM input field">Add your OOMhere</textarea>
+    <br/>
+    <button onclick="OOMAnalyser.oomAnalyser.analyse()" title="Analyse the OOM from the input area">
+        Analyse
+    </button>
+    <button onclick="OOMAnalyser.oomAnalyser.reset()" title="Clean the input area">Reset</button>
+    <button onclick="OOMAnalyser.oomAnalyser.copy_example()" title="Copy an example OOM into the input area"
+    >Insert example
+    </button>
+</p>
+
+<div id="analysis">
+    <h2>Analysis results</h2>
+    <table>
+        <!--
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">Entry</th>
+            <th scope="col">Description</th>
+        </tr>
+        </thead>
+        -->
+        <tbody>
+
+        <!-- Trigger process -->
+
+        <tr>
+            <th scope="row" colspan="3">Tigger process</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
+            <td>This process requests memory and is triggering thereby the OOM situation</td>
+        </tr>
+
+        <!-- Killed Process -->
+
+        <tr>
+            <th scope="row" colspan="3">Killed process</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
+            <td>Process killed by Linux kernel to satisfy the memory request</td>
+        </tr>
+        <tr>
+            <td>OOM Score<br>(score)</td>
+            <td id="killed_proc_score"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Virtual Memory <br> (total-vm) </td>
+            <td id="killed_proc_vm_kb" class="kbytes"></td>
+            <td>Virtual memory used by this process</td>
+        </tr>
+        <tr>
+            <td>Resident anonymous memory <br> (anon-rss) </td>
+            <td id="killed_proc_anon_rss_kb" class="kbytes"></td>
+            <td>Part of the virtual process memory mapped into RAM</td>
+        </tr>
+        <tr>
+            <td>Resident file mapping memory <br> (file-rss) </td>
+            <td id="killed_proc_file_rss_kb" class="kbytes"></td>
+            <td>Files which have been mapped into RAM (with
+                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>)
+            </td>
+        </tr>
+        <tr>
+            <td>Resident shared memory <br> (shmem-rss) </td>
+            <td id="killed_proc_shmem_rss_kb" class="kbytes"></td>
+            <td>This may include System V shared memory and shared anonymous memory</td>
+        </tr>
+
+        <!-- Memory Chunks -->
+
+        <tr>
+            <th scope="row" colspan="3">Memory Usage</th>
+        </tr>
+        <tr>
+            <td style="font-weight: bold">RAM Summary</td>
+            <td colspan="2"><div id="svg_ram"></div></td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold">Swap Summary</td>
+            <td colspan="2"><div id="svg_swap"></div></td>
+        </tr>
+
+        <tr>
+            <td style="font-weight: bold">RAM usage</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Active anonymous memory</td>
+            <td id="active_anon_pages" class="pages"></td>
+            <td>Recently used anonymous memory.<br>
+                These memory pages will usually not swapped out.
+            </td>
+        </tr>
+        <tr>
+            <td>Inactive anonymous memory</td>
+            <td id="inactive_anon_pages" class="pages"></td>
+            <td>Least recently used anonymous memory.<br>
+                These memory pages can be swapped out.
+            </td>
+        </tr>
+        <tr>
+            <td>Isolated anonymous memory</td>
+            <td id="isolated_anon_pages" class="pages"></td>
+            <td>Memory isolation is used to separate memory between different virtual machines.</td>
+        </tr>
+        <tr>
+            <td>Active Pagecache</td>
+            <td id="active_file_pages" class="pages"></td>
+            <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
+        </tr>
+        <tr>
+            <td>Inactive Pagecache</td>
+            <td id="inactive_file_pages" class="pages"></td>
+            <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
+        </tr>
+        <tr>
+            <td>Isolated Pagecache</td>
+            <td id="isolated_file_pages" class="pages"></td>
+            <td>Memory isolation is used to separate memory between different virtual machines.</td>
+        </tr>
+        <tr>
+            <td>Unevictable pages</td>
+            <td id="unevictable_pages" class="pages"></td>
+            <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
+                <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
+                <a href="http://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
+                Unevictable pages are managed by kernels LRU framework.
+            </td>
+        </tr>
+        <tr>
+            <td>Dirty</td>
+            <td id="dirty_pages" class="pages"></td>
+            <td>Memory which is waiting to get written back to the
+                disk.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Writeback</td>
+            <td id="writeback_pages" class="pages"></td>
+            <td>
+                Memory which is actively being written back to the disk.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Unstable</td>
+            <td id="unstable_pages" class="pages"></td>
+            <td>Not yet committed to stable storage.</td>
+        </tr>
+        <tr>
+            <td>Slab Reclaimable</td>
+            <td id="slab_reclaimable_pages" class="pages"></td>
+            <td>
+                Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <br>
+                Additional details are listed in
+                <a href="http://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
+            </td>
+        </tr>
+        <tr>
+            <td>Slab Unreclaimable</td>
+            <td id="slab_unreclaimable_pages" class="pages"></td>
+            <td>
+                Part of Slab, that cannot be reclaimed on memory pressure.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Mapped</td>
+            <td id="mapped_pages" class="pages"></td>
+            <td>
+                Files which have been mapped into memory (with
+                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>shmem</td>
+            <td id="shmem_pages" class="pages"></td>
+            <td>
+                Amount of memory consumed in
+                <a href="http://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
+                filesystems.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Pagetables</td>
+            <td id="pagetables_pages" class="pages"></td>
+            <td>
+                Amount of memory dedicated to the lowest level of pagetables.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Bounce</td>
+            <td id="bounce_pages" class="pages"></td>
+            <td>
+                Memory used for block device "bounce buffers".
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>free</td>
+            <td id="free_pages" class="pages"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>free_pcp</td>
+            <td id="free_pcp_pages" class="pages"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>free_cma</td>
+            <td id="free_cma_pages" class="pages"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Total Pagecache</td>
+            <td id="pagecache_total_pages" class="pages"></td>
+            <td></td>
+        </tr>
+
+        <!-- Swap Usage -->
+
+        <tr>
+            <td style="font-weight: bold">Swap usage</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Swap Total</td>
+            <td id="swap_total_kb" class="kbytes"></td>
+            <td>Total amount of swap space available.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Free</td>
+            <td id="swap_free_kb" class="kbytes"></td>
+            <td>Amount of swap space that is currently unused.
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Cached</td>
+            <td id="swap_cache_kb" class="kbytes"></td>
+            <td>Memory that once was swapped out, is swapped back in
+                but still also is in the swap file.  (If memory pres‐
+                sure is high, these pages don't need to be swapped out
+                again because they are already in the swap file.  This
+                saves I/O).
+                <sup><a href="#footnote-proc5">[1]</a></sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Used</td>
+            <td id="swap_used_kb" class="kbytes"></td>
+            <td>Amount of used swap space w/o cached swap <br>
+                (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
+            </td>
+        </tr>
+
+        <!-- Operating System -->
+
+        <tr>
+            <th scope="row" colspan="3">Operating System</th>
+        </tr>
+        <tr>
+            <td>Kernel</td>
+            <td id="kernel_version"></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Distribution</td>
+            <td id="dist"></td>
+            <td>Guessed from the kernel version</td>
+        </tr>
+        <tr>
+            <td>Platform</td>
+            <td id="platform"></td>
+            <td>Guessed from the kernel version</td>
+        </tr>
+        <tr>
+            <td>Page size</td>
+            <td id="page_size" class="kbytes"></td>
+            <td>Guessed</td>
+        </tr>
+
+
+        <!-- Memory Chunks -->
+
+        <tr>
+            <th scope="row" colspan="3">Memory Chunks</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2" class="terminal">
+                <pre id="mem_node_info"></pre>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row" colspan="3">Process Table</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2" class="terminal">
+                <pre id="process_table"></pre>
+            </td>
+        </tr>
+
+        <!-- Hardware Details -->
+
+        <tr>
+            <th scope="row" colspan="3">Hardware Details</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2" class="terminal">
+                <pre id="hardware_info"></pre>
+            </td>
+        </tr>
+
+        <!-- Kernel Call Tree -->
+
+        <tr>
+            <th scope="row" colspan="3">Kernel Call Trace</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2" class="terminal">
+                <pre id="call_trace"></pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<div id="error_box">
+    <h2>Error messages</h2>
+    <div class="terminal" id="__terminal__"></div>
+</div>
+
+
+<h2>Footnotes</h2>
+<ol>
+    <li id="footnote-proc5"><cite><a href="http://man7.org/linux/man-pages/man5/proc.5.html" target="_blank">
+        proc(5) - process information pseudo-filesystem</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
+    </li>
+</ol>
+
+<hr/>
+
+<div class="footer">
+    OOMAnalyser |
+    Copyright (C) 2017 Carsten Grohmann |
+    <a href="javascript:void(0);" onclick="OOMAnalyser.toggle('license')" title="Show / hide license text">License: MIT</a> |
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser" title="Source code on GitHub">Source Code on GitHub</a>
+</div>
+
+<div class="license" id="license">
+    <p>
+        Copyright (c) 2017 Carsten Grohmann mail &lt;add at here&gt; carsten-grohmann.de
+    </p>
+    <p>
+        Permission is hereby granted, free of charge, to any person obtaining a copy of
+        this software and associated documentation files (the "Software"), to deal in
+        the Software without restriction, including without limitation the rights to
+        use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+        of the Software, and to permit persons to whom the Software is furnished to do
+        so, subject to the following conditions:
+    </p>
+    <p>
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+    </p>
+    <p>
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+    </p>
+</div>
+
+</body>
+</html>
