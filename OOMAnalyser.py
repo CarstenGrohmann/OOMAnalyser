@@ -10,6 +10,8 @@ import re
 DEBUG=False
 """Show additional information during the development cycle"""
 
+VERSION="0.1"
+"""Version number"""
 
 def hide_element(element_id):
     """Hide the given HTML element"""
@@ -395,6 +397,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def __init__(self):
         self._set_defaults()
+
+        element = document.getElementById('version')
+        element.textContent = "v{}".format(VERSION)
 
     def _set_single_item(self, item):
         """
