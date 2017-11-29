@@ -10,7 +10,7 @@ import re
 DEBUG=False
 """Show additional information during the development cycle"""
 
-VERSION="0.1"
+VERSION="0.1.0"
 """Version number"""
 
 def hide_element(element_id):
@@ -438,9 +438,10 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         hide_element('error_box')
 
         # remove svg charts
-        element = document.getElementById('svg_swap')
-        while element.firstChild:
-            element.removeChild(element.firstChild)
+        for element_id in ('svg_swap', 'svg_ram'):
+            element = document.getElementById(element_id)
+            while element.firstChild:
+                element.removeChild(element.firstChild)
 
     def _create_svg_element(self, height, width):
         """
