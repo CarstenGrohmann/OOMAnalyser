@@ -10,7 +10,7 @@
 SHELL             = /bin/sh
 
 BASE_DIR          = .
-PYTHON_BIN        = python3
+PYTHON3_BIN       = python3
 VIRTUAL_ENV       = env
 
 export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV})
@@ -63,3 +63,7 @@ venv-clean:
 build: venv
 	. $(VIRTUAL_ENV)/bin/activate
 	transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+
+#+ Serve the current directory on http://127.0.0.1:8080
+websrv:
+	$(PYTHON3_BIN) -m http.server 8080 --bind 127.0.0.1
