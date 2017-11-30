@@ -8,3 +8,6 @@ env/
 
 # IntelliJ project files
 .idea
+
+# Generated (compiled) JavaScript code
+__javascript__/
