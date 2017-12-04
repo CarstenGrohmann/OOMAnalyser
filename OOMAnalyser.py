@@ -426,6 +426,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             document.getElementById('textarea_oom').textContent = "<paste your OOM here>"
 
         hide_element("analysis")
+        show_element("input")
+
         self.lines = []
         self.details = {}
         for item in self.mem_modinfo_entries:
@@ -647,6 +649,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if DEBUG:
             print(self.details)
 
+        hide_element("input")
         show_element("analysis")
 
         for item in self.details.keys():
@@ -684,6 +687,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         elem_svg_ram = document.getElementById('svg_ram')
         elem_svg_ram.appendChild(svg_ram)
 
+        element = document.getElementById('oom')
+        element.textContent = self.oom.text
 
     def analyse(self):
         # reset the output elements to default

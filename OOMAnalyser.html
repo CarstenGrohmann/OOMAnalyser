@@ -81,25 +81,31 @@ function goBack() {
 <h1>Analyse and visualise Linux OOM output</h1>
 
 <p>
-    This web page splits the content of a Linux Out Of Memory message into
-    smaller pieces, aggregates these and presents them in a more human friendly
-    format.
+    This web page analyses Linux Out Of Memory (OOM) messages and shows these
+    information in a human friendly presentation.
+</p>
+<p>
+    Your input will be analysed locally - in your browser - by an integrated
+    JavaScript script without transferring your data to foreign servers.
 </p>
 
-<p>
+<div id="input">
+    <h2>Step 1 - Enter your OOM message</h2>
     <textarea id="textarea_oom" cols="100" rows="20" autocomplete="off" title="OOM input field">Add your OOMhere</textarea>
     <br/>
-    <button onclick="OOMAnalyser.oomAnalyser.analyse()" title="Analyse the OOM from the input area">
-        Analyse
-    </button>
+    <button onclick="OOMAnalyser.oomAnalyser.analyse()" title="Analyse the OOM from the input area">Analyse</button>
     <button onclick="OOMAnalyser.oomAnalyser.reset()" title="Clean the input area">Reset</button>
-    <button onclick="OOMAnalyser.oomAnalyser.copy_example()" title="Copy an example OOM into the input area"
-    >Insert example
-    </button>
-</p>
+    <button onclick="OOMAnalyser.oomAnalyser.copy_example()" title="Copy an example OOM into the input area">Insert example</button>
+</div>
 
 <div id="analysis">
-    <h2>Analysis results</h2>
+
+<h2>Step 2 - Results</h2>
+    <p>
+        Go back to
+        <a href="javascript:void(0);" onclick="OOMAnalyser.oomAnalyser.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        to run a new analysis.
+    </p>
     <table>
         <!--
         <thead>
@@ -215,7 +221,7 @@ function goBack() {
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
-            <td>Unevictable pages</td>
+            <td>Unevictable Pages</td>
             <td id="unevictable_pages" class="pages"></td>
             <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                 <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
@@ -224,10 +230,9 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Dirty</td>
+            <td>Dirty Pages</td>
             <td id="dirty_pages" class="pages"></td>
-            <td>Memory which is waiting to get written back to the
-                disk.
+            <td>Memory which is waiting to get written back to the disk.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
             </td>
         </tr>
@@ -431,8 +436,26 @@ function goBack() {
                 <pre id="call_trace"></pre>
             </td>
         </tr>
+
+        <!-- Initial OOM -->
+
+        <tr>
+            <th scope="row" colspan="3">Entire OOM Message</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td colspan="2" class="terminal">
+                <pre id="oom"></pre>
+            </td>
+        </tr>
         </tbody>
     </table>
+
+    <p>
+        Go back to
+        <a href="javascript:void(0);" onclick="OOMAnalyser.oomAnalyser.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        to run a new analysis.
+    </p>
 
     <h2>Footnotes</h2>
     <ol>
