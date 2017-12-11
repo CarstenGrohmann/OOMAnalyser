@@ -423,7 +423,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         Reset the whole HTML document
         """
         if clean_oom:
-            document.getElementById('textarea_oom').textContent = "<paste your OOM here>"
+            document.getElementById('textarea_oom').value = "<paste your OOM here>"
 
         hide_element("analysis")
         show_element("input")
@@ -694,7 +694,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # reset the output elements to default
         self._set_defaults(False)
         element = document.getElementById('textarea_oom')
-        oom_text = element.textContent
+        oom_text = element.value
         self.oom = OOM(oom_text)
 
         if not self.oom.complete:
@@ -709,7 +709,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self._set_defaults()
 
     def copy_example(self):
-        document.getElementById('textarea_oom').textContent = self.example
+        document.getElementById('textarea_oom').value = self.example
 
 
 oomAnalyser = OOMAnalyser()
