@@ -35,8 +35,22 @@ def toggle(element_id):
 
 def error(msg):
     """Unhide the error box and add the error message"""
-    show_element("error_box")
-    print("ERROR: ", msg)
+    notify_box = document.getElementById('notify_box')
+    notify_box.style.display = 'block'
+    notification = document.createElement('div')
+    notification.classList.add('notify-error')
+    notification.innerHTML = 'ERROR: {}<br>'.format(msg)
+    notify_box.appendChild(notification)
+
+
+def warning(msg):
+    """Unhide the error box and add the warning message"""
+    notify_box = document.getElementById('notify_box')
+    notify_box.style.display = 'block'
+    notification = document.createElement('div')
+    notification.classList.add('notify-warning')
+    notification.innerHTML = 'WARNING: {}<br>'.format(msg)
+    notify_box.appendChild(notification)
 
 
 class OOM(object):
@@ -49,7 +63,9 @@ class OOM(object):
 
     i = 0
     lines = []
-    complete = False
+
+    state = "unknown"
+    """State of the OOM after initial parsing"""
 
     def __init__(self, text):
         # use Unix LF only
@@ -57,13 +73,14 @@ class OOM(object):
 
         # Split into lines
         oom_lines = []
-        inside_oom = False
+        begin_found = False
+        end_found = False
 
         for line in text.split('\n'):
 
             if "invoked oom-killer:" in line:
-                inside_oom = True
-            elif not inside_oom:
+                begin_found = True
+            elif not begin_found:
                 continue
 
             # Remove leading timestamps
@@ -77,11 +94,18 @@ class OOM(object):
 
             # next line will not be part of the oom anymore
             if "Killed process" in line:
-                inside_oom = False
+                end_found = True
                 break
 
         self.i = 0
-        self.complete = not inside_oom
+
+        if begin_found and end_found:
+            self.state = "oom_complete"
+        elif begin_found and not end_found:
+            self.state = "oom_started"
+        else:
+            self.state = "oom_invalid"
+
         self.lines = oom_lines
         self.text = '\n'.join(oom_lines)
 
@@ -416,7 +440,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             content = content.strip()
         element.textContent = content
         if DEBUG:
-            show_element('error_box')
+            show_element('notify_box')
 
     def _set_defaults(self, clean_oom=True):
         """\
@@ -426,6 +450,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             document.getElementById('textarea_oom').value = "<paste your OOM here>"
 
         hide_element("analysis")
+        hide_element("notify_box")
         show_element("input")
 
         self.lines = []
@@ -434,10 +459,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             element = document.getElementById(item)
             element.textContent = ""
 
-        # empty terminal
-        element = document.getElementById('__terminal__')
-        element.textContent = ""
-        hide_element('error_box')
+        # clear notification box
+        element = document.getElementById('notify_box')
+        while element.firstChild:
+            element.removeChild(element.firstChild)
+        hide_element('notify_box')
 
         # remove svg charts
         for element_id in ('svg_swap', 'svg_ram'):
@@ -697,8 +723,16 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         oom_text = element.value
         self.oom = OOM(oom_text)
 
-        if not self.oom.complete:
-            error('The inserted test is not a valid OOM!')
+        if self.oom.state == "oom_complete":
+            pass
+        elif self.oom.state == "oom_started":
+            warning('The inserted OOM is incomplete - only the beginning has found.')
+            warning('The result may be incomplete!')
+        elif self.oom.state == "oom_invalid":
+            error('The inserted text is not a valid OOM!')
+            return
+        else:
+            error('Invalid state "{}" after the OOM has formally checked!'.format(self.oom.state))
             return
 
         self._extract_from_oom_text()

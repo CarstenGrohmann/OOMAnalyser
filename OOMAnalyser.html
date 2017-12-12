@@ -11,8 +11,9 @@
             margin: 0.67em 0;
         }
 
-        #error_box {
+        #notify_box {
             display: none;
+            width: 100%;
         }
 
         .kbytes {
@@ -58,6 +59,15 @@
             overflow: auto;
         }
 
+        .notify-warning {
+	    color: #9F6000;
+	    background-color: #FEEFB3;
+	}
+	.notify-error {
+	    color: #D8000C;
+	    background-color: #FFD2D2;
+	}
+
         /* Zebra-Layout */
         tr:nth-child(odd) td:nth-child(2), tr:nth-child(odd) td:nth-child(3) {
             background-color: #f2f2f2;
@@ -97,6 +107,10 @@ function goBack() {
     <button onclick="OOMAnalyser.oomAnalyser.reset()" title="Clean the input area">Reset</button>
     <button onclick="OOMAnalyser.oomAnalyser.copy_example()" title="Copy an example OOM into the input area">Insert example</button>
 </div>
+
+<p>
+    <div class="terminal" id="notify_box"></div>
+</p>
 
 <div id="analysis">
 
@@ -463,11 +477,6 @@ function goBack() {
 	proc(5) - process information pseudo-filesystem</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
         </li>
     </ol>
-</div>
-
-<div id="error_box">
-    <h2>Error messages</h2>
-    <div class="terminal" id="__terminal__"></div>
 </div>
 
 <hr/>
