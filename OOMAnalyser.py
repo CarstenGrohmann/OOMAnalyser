@@ -7,11 +7,12 @@
 
 import re
 
-DEBUG=False
+DEBUG = False
 """Show additional information during the development cycle"""
 
-VERSION="0.1.0"
+VERSION = "0.1.0"
 """Version number"""
+
 
 def hide_element(element_id):
     """Hide the given HTML element"""
@@ -312,14 +313,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
     REC_MEMINFO_1 = re.compile(
         # head line
         r'^Mem-Info:.*'
-        
+
         # first line break
         r'(?:\n)'
-        
+
         # first line (starting with a space)
         r'^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) '
         r'isolated_anon:(?P<isolated_anon_pages>\d+)'
-        
+
         # next line break
         r'(?:\n)'
 
@@ -341,21 +342,13 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     REC_MEMINFO_2 = re.compile(
         r'^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)'
-
-        # next line break
         r'(?:\n)'
-
         r'^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+) '
         r'bounce:(?P<bounce_pages>\d+)'
-
-        # next line break
         r'(?:\n)'
-
-        r'^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)'
-
-        , re.MULTILINE
+        r'^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)',
+        re.MULTILINE
     )
-
 
     REC_MEM_NODEINFO = re.compile(r'(^Node \d+ (DMA|Normal|hugepages).*(:?\n))+', re.MULTILINE)
 
@@ -397,8 +390,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         r'score (?P<killed_proc_score>\d+) or sacrifice child'
         r'(?:\n)'
         r'Killed process \d+ \(.*\) total-vm:(?P<killed_proc_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
-        r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB'
-        ,
+        r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB',
         re.MULTILINE)
 
     lines = []
@@ -436,7 +428,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             print("ERROR: HTML element not found: ", item)
             return
         content = self.details.get(item, '')
-        if type(content) is str:
+        if isinstance(content, str):
             content = content.strip()
         element.textContent = content
         if DEBUG:
@@ -610,7 +602,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # TODO Add to HTML
         #match = self.REC_PAGEINFO.search(self.oom.text)
-        #if match:
+        # if match:
         #    self.details.update(match.groupdict())
 
         match = self.REC_PROCESSES.search(self.oom.text)
@@ -635,7 +627,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             if item.endswith('_kb') or item.endswith('_pages'):
                 try:
                     self.details[item] = int(self.details[item])
-                except:
+                except BaseException:
                     error('Converting item {}: {} to integer failed'. format(item, self.details[item]))
 
         kernel_version = self.details.get('kernel_version', '')
@@ -666,7 +658,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
         self.details['swap_used_kb'] = self.details['swap_total_kb'] - self.details['swap_free_kb'] - \
-                                       self.details['swap_cache_kb']
+            self.details['swap_cache_kb']
 
     def _show_details(self):
         """
@@ -682,33 +674,33 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self._set_single_item(item)
 
         svg_swap = self._generate_svg_bar_chart(
-            ('Swap Used',  self.details['swap_used_kb']),
-            ('Swap Free',   self.details['swap_free_kb']),
+            ('Swap Used', self.details['swap_used_kb']),
+            ('Swap Free', self.details['swap_free_kb']),
             ('Swap Cached', self.details['swap_cache_kb']),
         )
         elem_svg_swap = document.getElementById('svg_swap')
         elem_svg_swap.appendChild(svg_swap)
 
         svg_ram = self._generate_svg_bar_chart(
-            ('Active mem',   self.details['active_anon_pages']),
+            ('Active mem', self.details['active_anon_pages']),
             ('Inactive mem', self.details['inactive_anon_pages']),
             ('Isolated mem', self.details['isolated_anon_pages']),
-            ('Active PC',    self.details['active_file_pages']),
-            ('Inactive PC',  self.details['inactive_file_pages']),
-            ('Isolated PC',  self.details['isolated_file_pages']),
-            ('Unevictable',  self.details['unevictable_pages']),
-            ('Dirty',        self.details['dirty_pages']),
-            ('Writeback',    self.details['writeback_pages']),
-            ('Unstable',     self.details['unstable_pages']),
-            ('Slab reclaimable',    self.details['slab_reclaimable_pages']),
-            ('Slab unreclaimable',  self.details['slab_unreclaimable_pages']),
-            ('Mapped',    self.details['mapped_pages']),
-            ('Shared',    self.details['shmem_pages']),
+            ('Active PC', self.details['active_file_pages']),
+            ('Inactive PC', self.details['inactive_file_pages']),
+            ('Isolated PC', self.details['isolated_file_pages']),
+            ('Unevictable', self.details['unevictable_pages']),
+            ('Dirty', self.details['dirty_pages']),
+            ('Writeback', self.details['writeback_pages']),
+            ('Unstable', self.details['unstable_pages']),
+            ('Slab reclaimable', self.details['slab_reclaimable_pages']),
+            ('Slab unreclaimable', self.details['slab_unreclaimable_pages']),
+            ('Mapped', self.details['mapped_pages']),
+            ('Shared', self.details['shmem_pages']),
             ('Pagetable', self.details['pagetables_pages']),
-            ('Bounce',    self.details['bounce_pages']),
-            ('Free',      self.details['free_pages']),
-            ('Free PCP',  self.details['free_pcp_pages']),
-            ('Free CMA',  self.details['free_cma_pages']),
+            ('Bounce', self.details['bounce_pages']),
+            ('Free', self.details['free_pages']),
+            ('Free PCP', self.details['free_pcp_pages']),
+            ('Free CMA', self.details['free_cma_pages']),
         )
         elem_svg_ram = document.getElementById('svg_ram')
         elem_svg_ram.appendChild(svg_ram)
