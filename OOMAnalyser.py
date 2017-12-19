@@ -578,7 +578,15 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.details.update(match.groupdict())
 
         self.details['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
-        self.details['call_trace'] = self._extract_block_from_next_pos('Call Trace:')
+
+        # strip "Call Trace" line at beginning and remove leading spaces
+        call_trace = ''
+        block = self._extract_block_from_next_pos('Call Trace:')
+        for line in block.split('\n'):
+            if line.startswith('Call Trace'):
+                continue
+            call_trace += "{}\n".format(line.strip())
+        self.details['call_trace'] = call_trace
 
         match = self.REC_MEMINFO_1.search(self.oom.text)
         if match:
