@@ -120,6 +120,11 @@ function goBack() {
         <a href="javascript:void(0);" onclick="OOMAnalyser.oomAnalyser.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
+    <p>
+        The result of the analysis is displayed in three columns. The first column is used to name the property
+        including the original OOM identifier in brackets. The extracted information is displayed in the second column.
+        The last column contains further details and additional information.
+    </p>
     <table>
         <!--
         <thead>
@@ -201,41 +206,41 @@ function goBack() {
             <td></td>
         </tr>
         <tr>
-            <td>Active anonymous memory</td>
+            <td>Active anonymous memory <br> (active_anon) </td>
             <td id="active_anon_pages" class="pages"></td>
             <td>Recently used anonymous memory.<br>
                 These memory pages will usually not swapped out.
             </td>
         </tr>
         <tr>
-            <td>Inactive anonymous memory</td>
+            <td>Inactive anonymous memory <br> (inactive_anon)</td>
             <td id="inactive_anon_pages" class="pages"></td>
             <td>Least recently used anonymous memory.<br>
                 These memory pages can be swapped out.
             </td>
         </tr>
         <tr>
-            <td>Isolated anonymous memory</td>
+            <td>Isolated anonymous memory <br> (isolated_anon)</td>
             <td id="isolated_anon_pages" class="pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
-            <td>Active Pagecache</td>
+            <td>Active Pagecache <br> (active_file)</td>
             <td id="active_file_pages" class="pages"></td>
             <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
         </tr>
         <tr>
-            <td>Inactive Pagecache</td>
+            <td>Inactive Pagecache <br> (inactive_file)</td>
             <td id="inactive_file_pages" class="pages"></td>
             <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
         </tr>
         <tr>
-            <td>Isolated Pagecache</td>
+            <td>Isolated Pagecache <br> (isolated_file)</td>
             <td id="isolated_file_pages" class="pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
-            <td>Unevictable Pages</td>
+            <td>Unevictable Pages <br> (unevictable)</td>
             <td id="unevictable_pages" class="pages"></td>
             <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                 <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
@@ -244,14 +249,14 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Dirty Pages</td>
+            <td>Dirty Pages <br> (dirty)</td>
             <td id="dirty_pages" class="pages"></td>
             <td>Memory which is waiting to get written back to the disk.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
             </td>
         </tr>
         <tr>
-            <td>Writeback</td>
+            <td>Writeback <br> (writeback)</td>
             <td id="writeback_pages" class="pages"></td>
             <td>
                 Memory which is actively being written back to the disk.
@@ -259,12 +264,12 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Unstable</td>
+            <td>Unstable <br> (unstable)</td>
             <td id="unstable_pages" class="pages"></td>
             <td>Not yet committed to stable storage.</td>
         </tr>
         <tr>
-            <td>Slab Reclaimable</td>
+            <td>Slab Reclaimable <br> (slab_reclaimable)</td>
             <td id="slab_reclaimable_pages" class="pages"></td>
             <td>
                 Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
@@ -275,7 +280,7 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Slab Unreclaimable</td>
+            <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
             <td id="slab_unreclaimable_pages" class="pages"></td>
             <td>
                 Part of Slab, that cannot be reclaimed on memory pressure.
@@ -283,7 +288,7 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Mapped</td>
+            <td>Mapped <br> (mapped)</td>
             <td id="mapped_pages" class="pages"></td>
             <td>
                 Files which have been mapped into memory (with
@@ -292,7 +297,7 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>shmem</td>
+            <td>Shared Memory <br> (shmem)</td>
             <td id="shmem_pages" class="pages"></td>
             <td>
                 Amount of memory consumed in
@@ -302,7 +307,7 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Pagetables</td>
+            <td>Pagetables <br> (pagetables)</td>
             <td id="pagetables_pages" class="pages"></td>
             <td>
                 Amount of memory dedicated to the lowest level of pagetables.
@@ -310,7 +315,7 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>Bounce</td>
+            <td>Bounce <br> (bounce)</td>
             <td id="bounce_pages" class="pages"></td>
             <td>
                 Memory used for block device "bounce buffers".
@@ -318,17 +323,17 @@ function goBack() {
             </td>
         </tr>
         <tr>
-            <td>free</td>
+            <td>free <br> (free)</td>
             <td id="free_pages" class="pages"></td>
             <td></td>
         </tr>
         <tr>
-            <td>free_pcp</td>
+            <td>free_pcp <br> (free_pcp)</td>
             <td id="free_pcp_pages" class="pages"></td>
             <td></td>
         </tr>
         <tr>
-            <td>free_cma</td>
+            <td>free_cma <br> (free_cma)</td>
             <td id="free_cma_pages" class="pages"></td>
             <td></td>
         </tr>
