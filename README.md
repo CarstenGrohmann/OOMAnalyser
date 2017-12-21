@@ -1,4 +1,4 @@
-# Linux OOM Analyser
+# Linux OOMAnalyser
 
 I've started this project to give the Python to JavaScript compiler 
 [Transcrypt](https://www.transcrypt.org/) a try.
@@ -9,7 +9,6 @@ format.
 
 You can use the current version on [www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/).
 
-
 ## Design Goals
  * A local copy of the web page should run offline - without an Internet 
    connection, without loading 3rd party libraries nor transferring data to 
@@ -17,48 +16,64 @@ You can use the current version on [www.carstengrohmann.de/oom/](https://www.car
  * A better understanding of the Linux Memory Management
  * Start learning JavaScript, CSS and HTML
  
- 
-## Requirements
+## Build and Installation
+
+This section describes a manual build and installation of OOMAnalyser.
+
+### Requirements
+
  * [Python](http://www.python.org) 3.6 or later
  * [Transcrypt](https://www.transcrypt.org/) 3.6.53 or later
 
-
-## Installation
-Install Python virtual environment
- 
-Use the provided Makefile:
-    
+### Setup
+Clone the repository:
 ```
-# make venv
+# git clone https://github.com/CarstenGrohmann/OOMAnalyser
 ```
 
-or setup the virtual environment manually:
-
+Setup the Python virtual environment:
 ```
 # virtualenv env
 # . env/bin/activate
 # env/bin/pip install -Ur requirements.txt
-``` 
 
-## Build
-Use the provided Makefile:
-```
+or 
+
 # make venv
 ```
 
-or build it manually:
-
+### Build
 ```
 # . env/bin/activate
 # transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+
+or 
+
+# make build
 ```
 
+## Usage
+* Change into the source directory and start your own small web server.
+
+* Start Python built-in web server:
+
+* ```
+  # python3 -m http.server 8080 --bind 127.0.0.1
+
+  or 
+
+  # make websrv
+  ```
+
+* Open the URL [http://localhost:8080/OOMAnalyser.html](http://localhost:8080/OOMAnalyser.html) in your favorite browser.
+
+* That's it!
+
 ## Further Information
- * [Transcrypt](https://www.transcrypt.org/).
+ * [Transcrypt](https://www.transcrypt.org/)
  * [Linux man pages online](https://man7.org/)
  * [Decoding the Linux kernel's page allocation failure messages](https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures)
  * [Linux Kernel OOM Log Analysis](http://elearningmedium.com/linux-kernel-oom-log-analysis/)
-
 
 ## Known Bugs/Issues
 
@@ -66,8 +81,10 @@ Check the bug tracker on [GitHub](https://github.com/CarstenGrohmann/OOMAnalyser
 New bugs can be reported there also.
 
 ## License
+This project is licensed under the MIT license. 
+
 ```
-Copyright (c) 2017 Carsten Grohmann mail <add at here> carsten-grohmann.de
+Copyright (c) 2017 Carsten Grohmann,  mail <add at here> carsten-grohmann.de
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
