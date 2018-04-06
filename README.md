@@ -84,7 +84,7 @@ New bugs can be reported there also.
 This project is licensed under the MIT license. 
 
 ```
-Copyright (c) 2017 Carsten Grohmann,  mail <add at here> carsten-grohmann.de
+Copyright (c) 2017-2018 Carsten Grohmann,  mail <add at here> carsten-grohmann.de
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
