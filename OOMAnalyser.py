@@ -404,12 +404,29 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     svg_namespace = 'http://www.w3.org/2000/svg'
 
-    svg_colours = ['#f20000', '#591616', '#cc6666', '#594343', '#d96c36',
-                   '#7f5540', '#e6bfac', '#b27700', '#402b00', '#ffd580',
-                   '#8c8c69', '#99e600', '#558000', '#d2e6ac', '#464d39',
-                   '#004d00', '#36d96c', '#6cd9b5', '#005959', '#004d4d',
-                   '#004040', '#739999', '#297ca6', '#80d5ff', '#1a2b33',
-                   ]
+    # from Sasha Trubetskoy - https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+    svg_colours = [
+        '#e6194b',  # Red
+        '#3cb44b',  # Green
+        '#ffe119',  # Yellow
+        '#0082c8',  # Blue
+        '#f58231',  # Orange
+        '#911eb4',  # Purple
+        '#46f0f0',  # Cyan
+        '#f032e6',  # Magenta
+        '#d2f53c',  # Lime
+        '#fabebe',  # Pink
+        '#008080',  # Teal
+        '#e6beff',  # Lavender
+        '#aa6e28',  # Brown
+        '#fffac8',  # Beige
+        '#800000',  # Maroon
+        '#aaffc3',  # Mint
+        '#808000',  # Olive
+        '#ffd8b1',  # Coral
+        '#000080',  # Navy
+        '#808080',  # Grey
+        ]
 
     def __init__(self):
         self._set_defaults()
