@@ -532,7 +532,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             if not rect_len:
                 continue
 
-            colour = self.svg_colours[nr_processed_elements]
+            colour = self.svg_colours[nr_processed_elements % len(self.svg_colours)]
 
             rect = self._create_svg_rect(current_pos, 0, rect_len, bar_height, colour)
             bar_group.appendChild(rect)
