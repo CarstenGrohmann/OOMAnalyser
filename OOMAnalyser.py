@@ -663,11 +663,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # guess distribution from kernel version
         if '.el7' in kernel_version:
-            self.details['dist'] = 'RHEL/CentOS 7'
+            self.details['dist'] = 'RHEL 7/CentOS 7'
         elif '.el6' in kernel_version:
-            self.details['dist'] = 'RHEL/CentOS 6'
+            self.details['dist'] = 'RHEL 6/CentOS 6'
         elif '.el5' in kernel_version:
-            self.details['dist'] = 'RHEL/CentOS 5'
+            self.details['dist'] = 'RHEL 5/CentOS 5'
         elif 'ARCH' in kernel_version:
             self.details['dist'] = 'Arch Linux'
         elif '_generic' in kernel_version:
