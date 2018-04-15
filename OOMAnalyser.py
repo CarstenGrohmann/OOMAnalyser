@@ -609,13 +609,26 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def _extract_from_oom_text(self):
         """Extract details from OOM message text"""
-        match = self.REC_INVOKED_OOMKILLER.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
 
-        match = self.REC_PID_KERNELVERSION.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
+        for rec in [self.REC_INVOKED_OOMKILLER,
+                    self.REC_KILLED,
+                    self.REC_MEMINFO_1,
+                    self.REC_MEMINFO_2,
+                    self.REC_PAGECACHE,
+                    self.REC_PAGEINFO,
+                    self.REC_PID_KERNELVERSION,
+                    self.REC_SWAP,
+                    ]:
+            match = rec.search(self.oom.text)
+            if match:
+                self.details.update(match.groupdict())
+
+        for groupname, rec in [('mem_node_info', self.REC_MEM_NODEINFO),
+                               ('process_table', self.REC_PROCESSES),
+                               ]:
+            match = rec.search(self.oom.text)
+            if match:
+                self.details[groupname] = match.group()
 
         self.details['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
 
@@ -627,38 +640,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
                 continue
             call_trace += "{}\n".format(line.strip())
         self.details['call_trace'] = call_trace
-
-        match = self.REC_MEMINFO_1.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
-
-        match = self.REC_MEMINFO_2.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
-
-        match = self.REC_MEM_NODEINFO.search(self.oom.text)
-        if match:
-            self.details['mem_node_info'] = match.group()
-
-        match = self.REC_PAGECACHE.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
-
-        match = self.REC_SWAP.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
-
-        match = self.REC_PAGEINFO.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
-
-        match = self.REC_PROCESSES.search(self.oom.text)
-        if match:
-            self.details['process_table'] = match.group()
-
-        match = self.REC_KILLED.search(self.oom.text)
-        if match:
-            self.details.update(match.groupdict())
 
     def _calc_from_oom_details(self):
         """
