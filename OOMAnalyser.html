@@ -200,6 +200,55 @@ function goBack() {
             <td colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
+
+        <!-- Page Usage -->
+
+        <tr>
+            <td style="font-weight: bold">Memory Pages</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>RAM pages</td>
+            <td id="ram_pages" class="pages"></td>
+            <td>Total number of RAM pages
+            </td>
+        </tr>
+        <tr>
+            <td>HighMem/MovableOnly</td>
+            <td id="highmem_pages" class="pages"></td>
+            <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
+                <br>
+                HighMem pages are also counted in the total page number.
+            </td>
+        </tr>
+        <tr>
+            <td>Reserved pages</td>
+            <td id="reserved_pages" class="pages"></td>
+            <td>Number of reserved pages
+            </td>
+        </tr>
+        <tr>
+            <td>CMA reserved pages</td>
+            <td id="cma_pages" class="pages">0</td>
+            <td>Pages reserved for Contiguous Memory Allocator (CMA)
+            </td>
+        </tr>
+        <tr>
+            <td>Pagetable Cache</td>
+            <td id="pagetablecache_pages" class="pages">0</td>
+            <td>Number of pages in pagetable cache
+            </td>
+        </tr>
+        <tr>
+            <td>Number of pages with hardware errors</td>
+            <td id="hwpoisoned_pages" class="pages">0</td>
+            <td>Pages with uncorrectable memory errors
+            </td>
+        </tr>
+
+        <!-- Memory Usage Details -->
+
         <tr>
             <td style="font-weight: bold">Memory Usage Details</td>
             <td></td>

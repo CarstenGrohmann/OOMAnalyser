@@ -373,11 +373,25 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         re.MULTILINE)
 
     REC_PAGEINFO = re.compile(
-        r'^(?P<ram_pages>\d)+ pages RAM'
+        r'^(?P<ram_pages>\d+) pages RAM'
+        r'('
         r'(?:\n)'
         r'^(?P<highmem_pages>\d+) pages HighMem/MovableOnly'
+        r')?'
         r'(?:\n)'
-        r'^(?P<reserved_pages>\d+) pages reserved',
+        r'^(?P<reserved_pages>\d+) pages reserved'
+        r'('
+        r'(?:\n)'
+        r'^(?P<cma_pages>\d+) pages cma reserved'
+        r')?'
+        r'('
+        r'(?:\n)'
+        r'^(?P<pagetablecache_pages>\d+) pages in pagetable cache'
+        r')?'
+        r'('
+        r'(?:\n)'
+        r'^(?P<hwpoisoned_pages>\d+) pages hwpoisoned'
+        r')?',
         re.MULTILINE)
 
     REC_PROCESSES = re.compile(
@@ -625,10 +639,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if match:
             self.details.update(match.groupdict())
 
-        # TODO Add to HTML
-        #match = self.REC_PAGEINFO.search(self.oom.text)
-        # if match:
-        #    self.details.update(match.groupdict())
+        match = self.REC_PAGEINFO.search(self.oom.text)
+        if match:
+            self.details.update(match.groupdict())
 
         match = self.REC_PROCESSES.search(self.oom.text)
         if match:
