@@ -462,6 +462,15 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if isinstance(content, str):
             content = content.strip()
         element.textContent = content
+
+        if content == '<not found>':
+            element.classList.remove('kbytes', 'pages')
+            element.classList.add('notfound')
+        elif item.endswith('_kb'):
+            element.classList.add('kbytes')
+        elif item.endswith('_pages'):
+            element.classList.add('pages')
+
         if DEBUG:
             show_element('notify_box')
 
@@ -663,10 +672,13 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # convert all *_pages and *_kb to integer
         for item in self.details.keys():
             if item.endswith('_kb') or item.endswith('_pages'):
+                if self.details[item] is None:
+                    self.details[item] = '<not found>'
+                    continue
                 try:
                     self.details[item] = int(self.details[item])
-                except BaseException:
-                    error('Converting item {}: {} to integer failed'. format(item, self.details[item]))
+                except:
+                    error('Converting item {}: {} to integer failed'.format(item, self.details[item]))
 
         kernel_version = self.details.get('kernel_version', '')
         if 'x86_64' in kernel_version:
