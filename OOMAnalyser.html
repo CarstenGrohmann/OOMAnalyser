@@ -30,6 +30,10 @@
             content: " pages";
         }
 
+        .align_right {
+            text-align: right;
+        }
+
         .hide_tablerow {
             display: none;
         }
@@ -148,7 +152,7 @@ function goBack() {
         </tr>
         <tr>
             <td></td>
-            <td><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
+            <td class="align_right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
             <td>This process requests memory and is triggering thereby the OOM situation</td>
         </tr>
 
@@ -159,12 +163,12 @@ function goBack() {
         </tr>
         <tr>
             <td></td>
-            <td><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
+            <td class="align_right"><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
             <td>Process killed by Linux kernel to satisfy the memory request</td>
         </tr>
         <tr>
             <td>OOM Score<br>(score)</td>
-            <td id="killed_proc_score"></td>
+            <td id="killed_proc_score" class="align_right"></td>
             <td></td>
         </tr>
         <tr>
@@ -443,17 +447,17 @@ function goBack() {
         </tr>
         <tr>
             <td>Kernel</td>
-            <td id="kernel_version"></td>
+            <td id="kernel_version" class="align_right"></td>
             <td></td>
         </tr>
         <tr>
             <td>Distribution</td>
-            <td id="dist"></td>
+            <td id="dist" class="align_right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
             <td>Platform</td>
-            <td id="platform"></td>
+            <td id="platform" class="align_right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
