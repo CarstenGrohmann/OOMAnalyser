@@ -464,8 +464,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         element.textContent = content
 
         if content == '<not found>':
-            element.classList.remove('kbytes', 'pages')
-            element.classList.add('notfound')
+            row = element.parentNode
+            row.classList.add('hide_tablerow')
         elif item.endswith('_kb'):
             element.classList.add('kbytes')
         elif item.endswith('_pages'):
@@ -484,6 +484,10 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         hide_element("analysis")
         hide_element("notify_box")
         show_element("input")
+
+        # show hidden rows
+        for element in document.getElementsByClassName('hide_tablerow'):
+            element.classList.remove('hide_tablerow')
 
         self.lines = []
         self.details = {}
