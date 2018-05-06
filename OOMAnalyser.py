@@ -656,10 +656,10 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # convert all *_pages and *_kb to integer
         for item in self.details.keys():
+            if self.details[item] is None:
+                self.details[item] = '<not found>'
+                continue
             if item.endswith('_kb') or item.endswith('_pages'):
-                if self.details[item] is None:
-                    self.details[item] = '<not found>'
-                    continue
                 try:
                     self.details[item] = int(self.details[item])
                 except:
