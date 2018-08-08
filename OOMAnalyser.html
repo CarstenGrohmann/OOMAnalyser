@@ -155,6 +155,31 @@ function goBack() {
             <td class="align_right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
             <td>This process requests memory and is triggering thereby the OOM situation</td>
         </tr>
+        <tr>
+            <td>Memory allocation flags<br>(gfp_mask)</td>
+            <td id="trigger_proc_gfp_mask" class="align_right"></td>
+            <td>These flags are used to control the kernel internal memory allocation<br>
+                GFP stands for <code>__get_free_pages()</code> </td>
+        </tr>
+        <tr>
+            <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
+            <td id="trigger_proc_nodemask" class="align_right"></td>
+            <td>Bit mask indicating the cores on which the process can run</td>
+        </tr>
+        <tr>
+            <td>Requested memory pages<br>(order)</td>
+            <td class="pages">
+                <span id="trigger_proc_requested_memory"></span> (2^<sup><span id="trigger_proc_order"></span></sup>)
+            </td>
+            <td>The kernel specifies the requested number of pages as exponent of power of two.
+        </tr>
+        <tr>
+            <td>Adjust oom-killer score<br>(oom_score_adj)</td>
+            <td id="trigger_proc_oomscore" class="align_right"></td>
+            <td>
+                This value is added to the badness score before it's used to determine the process to be killed.
+            </td>
+        </tr>
 
         <!-- Killed Process -->
 

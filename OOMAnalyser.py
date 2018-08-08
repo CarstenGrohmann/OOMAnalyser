@@ -300,7 +300,13 @@ Out of memory: Kill process 6576 (java) score 651 or sacrifice child
 Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
  '''
 
-    REC_INVOKED_OOMKILLER = re.compile(r'^(?P<trigger_proc_name>[\w ]+) invoked oom-killer:', re.MULTILINE)
+    REC_INVOKED_OOMKILLER = re.compile(
+        r'^(?P<trigger_proc_name>[\w ]+) invoked oom-killer: '
+        r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
+        r'(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?'
+        r'order=(?P<trigger_proc_order>\d+), '
+        r'oom_score_adj=(?P<trigger_proc_oomscore>\d+)',
+        re.MULTILINE)
 
     REC_PID_KERNELVERSION = re.compile(
         r'^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) '
@@ -441,6 +447,61 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         '#000080',  # Navy
         '#808080',  # Grey
         ]
+
+    GFP_FLAGS = dict((
+        ('GFP_ATOMIC',           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'}),
+        ('GFP_KERNEL',           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'}),
+        ('GFP_KERNEL_ACCOUNT',   {'value': 'GFP_KERNEL | __GFP_ACCOUNT'}),
+        ('GFP_NOWAIT',           {'value': '__GFP_KSWAPD_RECLAIM'}),
+        ('GFP_NOIO',             {'value': '__GFP_RECLAIM'}),
+        ('GFP_NOFS',             {'value': '__GFP_RECLAIM | __GFP_IO'}),
+        ('GFP_USER',             {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL'}),
+        ('GFP_DMA',              {'value': '__GFP_DMA'}),
+        ('GFP_DMA32',            {'value': '__GFP_DMA32'}),
+        ('GFP_HIGHUSER',         {'value': 'GFP_USER | __GFP_HIGHMEM'}),
+        ('GFP_HIGHUSER_MOVABLE', {'value': 'GFP_HIGHUSER | __GFP_MOVABLE'}),
+        ('GFP_TRANSHUGE_LIGHT',  {'value': 'GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM'}),
+        ('GFP_TRANSHUGE',        {'value': 'GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM'}),
+        ('__GFP_DMA',            {'value': 0x01}),
+        ('__GFP_HIGHMEM',        {'value': 0x02}),
+        ('__GFP_DMA32',          {'value': 0x04}),
+        ('__GFP_MOVABLE',        {'value': 0x08}),
+        ('__GFP_RECLAIMABLE',    {'value': 0x10}),
+        ('__GFP_HIGH',           {'value': 0x20}),
+        ('__GFP_IO',             {'value': 0x40}),
+        ('__GFP_FS',             {'value': 0x80}),
+        ('__GFP_COLD',           {'value': 0x100}),
+        ('__GFP_NOWARN',         {'value': 0x200}),
+        ('__GFP_RETRY_MAYFAIL',  {'value': 0x400}),
+        ('__GFP_NOFAIL',         {'value': 0x800}),
+        ('__GFP_NORETRY',        {'value': 0x1000}),
+        ('__GFP_MEMALLOC',       {'value': 0x2000}),
+        ('__GFP_COMP',           {'value': 0x4000}),
+        ('__GFP_ZERO',           {'value': 0x8000}),
+        ('__GFP_NOMEMALLOC',     {'value': 0x10000}),
+        ('__GFP_HARDWALL',       {'value': 0x20000}),
+        ('__GFP_THISNODE',       {'value': 0x40000}),
+        ('__GFP_ATOMIC',         {'value': 0x80000}),
+        ('__GFP_ACCOUNT',        {'value': 0x100000}),
+        ('__GFP_DIRECT_RECLAIM', {'value': 0x400000}),
+        ('__GFP_WRITE',          {'value': 0x800000}),
+        ('__GFP_KSWAPD_RECLAIM', {'value': 0x1000000}),
+        ('__GFP_NOLOCKDEP',      {'value': 0x2000000}),
+        ('__GFP_RECLAIM',        {'value': '__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM'}),
+    ))
+    """
+    Definition of GFP flags
+    
+    The decimal value of a flag will be calculated by evaluating the entries from left to right. Grouping by 
+    parentheses is not supported.
+    
+    Source: include/linux/gpf.h
+    
+    @note : This list os probably a mixture of different kernel versions - be carefully
+    
+    @todo: Implement kernel specific versions because this flags are not constant 
+          (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
+    """
 
     def __init__(self):
         self._set_defaults()
@@ -645,6 +706,75 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             call_trace += "{}\n".format(line.strip())
         self.details['call_trace'] = call_trace
 
+    def _hex2flags(self, hexvalue, flag_definition):
+        """\
+        Convert the hexadecimal value into flags specified by definition
+
+        @return: list of flags and the decimal sum of all unknown flags
+        """
+        remaining = int(hexvalue, 16)
+        converted_flags = []
+
+        for flag in flag_definition.keys():
+            value = self._flag2decimal(flag, flag_definition)
+            if remaining & value:
+                # delete flag by "and" with a reverted mask
+                remaining &= ~value
+                converted_flags.append(flag)
+
+        return converted_flags, remaining
+
+    def _flag2decimal(self, flag, flag_definition):
+        """\
+        Convert a single flag into a decimal value
+        """
+        if flag not in flag_definition:
+            error('No definition for flag {} found'.format(flag))
+            return 0
+
+        value = flag_definition[flag]['value']
+        if isinstance(value, int):
+            return value
+
+        tokenlist = iter(re.split('([\|&])', value))
+        operator = None
+        negate_rvalue = False
+        lvalue = 0
+        while True:
+            try:
+                token = next(tokenlist)
+            except StopIteration:
+                break
+            token = token.strip()
+            if token in ['|', '&']:
+                operator = token
+                continue
+
+            if token.startswith('~'):
+                token = token[1:]
+                negate_rvalue = True
+
+            if token.isdigit():
+                rvalue = int(token)
+            elif token.startswith('0x') and token[2:].isdigit():
+                rvalue = int(token, 16)
+            else:
+                # it's not a decimal nor a hexadecimal value - reiterate assuming it's a flag string
+                rvalue = self._flag2decimal(token, flag_definition)
+
+            if negate_rvalue:
+                rvalue = ~rvalue
+
+            if operator == '|':
+                lvalue |= rvalue
+            elif operator == '&':
+                lvalue &= rvalue
+
+            operator = None
+            negate_rvalue = False
+
+        return lvalue
+
     def _calc_from_oom_details(self):
         """
         Calculate values from already extracted details
@@ -694,6 +824,23 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
         self.details['swap_used_kb'] = self.details['swap_total_kb'] - self.details['swap_free_kb'] - \
             self.details['swap_cache_kb']
+
+        self.details['trigger_proc_requested_memory'] = 2**self.details['trigger_proc_order']
+
+        # process gfp_mask
+        if self.details['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
+            flags = self.details['trigger_proc_gfp_flags']
+            del self.details['trigger_proc_gfp_flags']
+        else:
+            flags, unknown = self._hex2flags(self.details['trigger_proc_gfp_mask'], self.GFP_FLAGS)
+            if unknown:
+                # TODO Missing format specifier {0:x} in Transcrypt?
+                flags.append('0x{}'.format(unknown.toString(16)))
+            flags = ' | '.join(flags)
+
+        self.details['trigger_proc_gfp_mask'] = '{} ({})'.format(self.details['trigger_proc_gfp_mask'], flags)
+        # already fully processed and no own element to display -> delete otherwise an error msg will be shown
+        del self.details['trigger_proc_gfp_flags']
 
     def _show_details(self):
         """
