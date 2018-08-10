@@ -448,47 +448,47 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         '#808080',  # Grey
         ]
 
-    GFP_FLAGS = dict((
-        ('GFP_ATOMIC',           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'}),
-        ('GFP_KERNEL',           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'}),
-        ('GFP_KERNEL_ACCOUNT',   {'value': 'GFP_KERNEL | __GFP_ACCOUNT'}),
-        ('GFP_NOWAIT',           {'value': '__GFP_KSWAPD_RECLAIM'}),
-        ('GFP_NOIO',             {'value': '__GFP_RECLAIM'}),
-        ('GFP_NOFS',             {'value': '__GFP_RECLAIM | __GFP_IO'}),
-        ('GFP_USER',             {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL'}),
-        ('GFP_DMA',              {'value': '__GFP_DMA'}),
-        ('GFP_DMA32',            {'value': '__GFP_DMA32'}),
-        ('GFP_HIGHUSER',         {'value': 'GFP_USER | __GFP_HIGHMEM'}),
-        ('GFP_HIGHUSER_MOVABLE', {'value': 'GFP_HIGHUSER | __GFP_MOVABLE'}),
-        ('GFP_TRANSHUGE_LIGHT',  {'value': 'GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM'}),
-        ('GFP_TRANSHUGE',        {'value': 'GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM'}),
-        ('__GFP_DMA',            {'value': 0x01}),
-        ('__GFP_HIGHMEM',        {'value': 0x02}),
-        ('__GFP_DMA32',          {'value': 0x04}),
-        ('__GFP_MOVABLE',        {'value': 0x08}),
-        ('__GFP_RECLAIMABLE',    {'value': 0x10}),
-        ('__GFP_HIGH',           {'value': 0x20}),
-        ('__GFP_IO',             {'value': 0x40}),
-        ('__GFP_FS',             {'value': 0x80}),
-        ('__GFP_COLD',           {'value': 0x100}),
-        ('__GFP_NOWARN',         {'value': 0x200}),
-        ('__GFP_RETRY_MAYFAIL',  {'value': 0x400}),
-        ('__GFP_NOFAIL',         {'value': 0x800}),
-        ('__GFP_NORETRY',        {'value': 0x1000}),
-        ('__GFP_MEMALLOC',       {'value': 0x2000}),
-        ('__GFP_COMP',           {'value': 0x4000}),
-        ('__GFP_ZERO',           {'value': 0x8000}),
-        ('__GFP_NOMEMALLOC',     {'value': 0x10000}),
-        ('__GFP_HARDWALL',       {'value': 0x20000}),
-        ('__GFP_THISNODE',       {'value': 0x40000}),
-        ('__GFP_ATOMIC',         {'value': 0x80000}),
-        ('__GFP_ACCOUNT',        {'value': 0x100000}),
-        ('__GFP_DIRECT_RECLAIM', {'value': 0x400000}),
-        ('__GFP_WRITE',          {'value': 0x800000}),
-        ('__GFP_KSWAPD_RECLAIM', {'value': 0x1000000}),
-        ('__GFP_NOLOCKDEP',      {'value': 0x2000000}),
-        ('__GFP_RECLAIM',        {'value': '__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM'}),
-    ))
+    GFP_FLAGS = {
+        'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
+        'GFP_KERNEL':           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'},
+        'GFP_KERNEL_ACCOUNT':   {'value': 'GFP_KERNEL | __GFP_ACCOUNT'},
+        'GFP_NOWAIT':           {'value': '__GFP_KSWAPD_RECLAIM'},
+        'GFP_NOIO':             {'value': '__GFP_RECLAIM'},
+        'GFP_NOFS':             {'value': '__GFP_RECLAIM | __GFP_IO'},
+        'GFP_USER':             {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL'},
+        'GFP_DMA':              {'value': '__GFP_DMA'},
+        'GFP_DMA32':            {'value': '__GFP_DMA32'},
+        'GFP_HIGHUSER':         {'value': 'GFP_USER | __GFP_HIGHMEM'},
+        'GFP_HIGHUSER_MOVABLE': {'value': 'GFP_HIGHUSER | __GFP_MOVABLE'},
+        'GFP_TRANSHUGE_LIGHT':  {'value': 'GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM'},
+        'GFP_TRANSHUGE':        {'value': 'GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM'},
+        '__GFP_DMA':            {'value': 0x01},
+        '__GFP_HIGHMEM':        {'value': 0x02},
+        '__GFP_DMA32':          {'value': 0x04},
+        '__GFP_MOVABLE':        {'value': 0x08},
+        '__GFP_RECLAIMABLE':    {'value': 0x10},
+        '__GFP_HIGH':           {'value': 0x20},
+        '__GFP_IO':             {'value': 0x40},
+        '__GFP_FS':             {'value': 0x80},
+        '__GFP_COLD':           {'value': 0x100},
+        '__GFP_NOWARN':         {'value': 0x200},
+        '__GFP_RETRY_MAYFAIL':  {'value': 0x400},
+        '__GFP_NOFAIL':         {'value': 0x800},
+        '__GFP_NORETRY':        {'value': 0x1000},
+        '__GFP_MEMALLOC':       {'value': 0x2000},
+        '__GFP_COMP':           {'value': 0x4000},
+        '__GFP_ZERO':           {'value': 0x8000},
+        '__GFP_NOMEMALLOC':     {'value': 0x10000},
+        '__GFP_HARDWALL':       {'value': 0x20000},
+        '__GFP_THISNODE':       {'value': 0x40000},
+        '__GFP_ATOMIC':         {'value': 0x80000},
+        '__GFP_ACCOUNT':        {'value': 0x100000},
+        '__GFP_DIRECT_RECLAIM': {'value': 0x400000},
+        '__GFP_WRITE':          {'value': 0x800000},
+        '__GFP_KSWAPD_RECLAIM': {'value': 0x1000000},
+        '__GFP_NOLOCKDEP':      {'value': 0x2000000},
+        '__GFP_RECLAIM':        {'value': '__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM'},
+    }
     """
     Definition of GFP flags
     
@@ -715,12 +715,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         remaining = int(hexvalue, 16)
         converted_flags = []
 
-        for flag in flag_definition.keys():
+        # __pragma__ ('jsiter')
+        for flag in flag_definition:
             value = self._flag2decimal(flag, flag_definition)
             if remaining & value:
                 # delete flag by "and" with a reverted mask
                 remaining &= ~value
                 converted_flags.append(flag)
+        # __pragma__ ('nojsiter')
 
         return converted_flags, remaining
 
@@ -781,11 +783,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         @see: self.details
         """
-        # TODO Check if bug in transcrypt
-        # for item in self.details: -> "Uncaught TypeError: Result of the Symbol.iterator"
-
         # convert all *_pages and *_kb to integer
-        for item in self.details.keys():
+        # __pragma__ ('jsiter')
+        for item in self.details:
             if self.details[item] is None:
                 self.details[item] = '<not found>'
                 continue
@@ -794,6 +794,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
                     self.details[item] = int(self.details[item])
                 except:
                     error('Converting item {}: {} to integer failed'.format(item, self.details[item]))
+
+        # __pragma__ ('nojsiter')
 
         kernel_version = self.details.get('kernel_version', '')
         if 'x86_64' in kernel_version:
