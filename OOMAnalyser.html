@@ -173,9 +173,10 @@ function goBack() {
             <td>Bit mask indicating the cores on which the process can run</td>
         </tr>
         <tr>
-            <td>Requested memory pages<br>(order)</td>
-            <td class="pages">
-                <span id="trigger_proc_requested_memory"></span> (2^<sup><span id="trigger_proc_order"></span></sup>)
+            <td>Requested memory<br>(order)</td>
+            <td class="align_right">
+                <span id="trigger_proc_requested_memory"></span> (2^<sup><span id="trigger_proc_order"></span></sup>) pages /
+                <span class="kbytes" id="trigger_proc_requested_memory_kbytes"></span>
             </td>
             <td>The kernel specifies the requested number of pages as exponent of power of two.
         </tr>

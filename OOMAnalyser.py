@@ -828,6 +828,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.details['swap_cache_kb']
 
         self.details['trigger_proc_requested_memory'] = 2**self.details['trigger_proc_order']
+        self.details['trigger_proc_requested_memory_kbytes'] = self.details['page_size']
 
         # process gfp_mask
         if self.details['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
