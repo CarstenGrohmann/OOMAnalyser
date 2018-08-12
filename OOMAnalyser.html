@@ -38,6 +38,12 @@
             display: none;
         }
 
+        .click_msg_in_th {
+            font-size: small;
+            font-weight: unset;
+            padding: unset;
+        }
+
         table {
             border-collapse: collapse;
             padding: 10px;
@@ -541,7 +547,11 @@ function goBack() {
         <!-- Initial OOM -->
 
         <tr>
-            <th scope="row" colspan="3">Entire OOM Message</th>
+            <th scope="row" colspan="3">Entire OOM Message
+                <span class="click_msg_in_th">
+                    <a href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.oomAnalyser.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
+                </span>
+            </th>
         </tr>
         <tr>
             <td></td>

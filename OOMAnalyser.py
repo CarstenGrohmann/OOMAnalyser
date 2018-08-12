@@ -891,6 +891,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         element = document.getElementById('oom')
         element.textContent = self.oom.text
+        self.toggle_oom(show=False)
 
     def analyse(self):
         # reset the output elements to default
@@ -920,6 +921,19 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def copy_example(self):
         document.getElementById('textarea_oom').value = self.example
+
+    def toggle_oom(self, show=False):
+        """Toggle the visibility of the full OOM message"""
+        oom_element = document.getElementById('oom')
+        row_with_oom = oom_element.parentNode.parentNode
+        toggle_msg = document.getElementById('oom_toogle_msg')
+
+        if show or row_with_oom.classList.contains('hide_tablerow'):
+            row_with_oom.classList.remove('hide_tablerow')
+            toggle_msg.text = "(click to hide)"
+        else:
+            row_with_oom.classList.add('hide_tablerow')
+            toggle_msg.text = "(click to show)"
 
 
 oomAnalyser = OOMAnalyser()
