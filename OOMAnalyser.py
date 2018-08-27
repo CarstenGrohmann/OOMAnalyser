@@ -35,7 +35,7 @@ def toggle(element_id):
 
 
 def error(msg):
-    """Unhide the error box and add the error message"""
+    """Show the error box and add the error message"""
     notify_box = document.getElementById('notify_box')
     notify_box.style.display = 'block'
     notification = document.createElement('div')
@@ -45,7 +45,7 @@ def error(msg):
 
 
 def warning(msg):
-    """Unhide the error box and add the warning message"""
+    """Show the error box and add the warning message"""
     notify_box = document.getElementById('notify_box')
     notify_box.style.display = 'block'
     notification = document.createElement('div')
@@ -55,6 +55,8 @@ def warning(msg):
 
 
 class OOM(object):
+    """Hold OOM object and provide access"""
+
     REC_TIMESTAMP = re.compile(
         r'('
         r'\[\s+\d+\.\d+\]'
@@ -63,10 +65,16 @@ class OOM(object):
         r') ', re.ASCII)
 
     i = 0
+    """Zero based index of the current line in self.lines"""
+
     lines = []
+    """OOM text as list of lines"""
 
     state = "unknown"
     """State of the OOM after initial parsing"""
+
+    text = ""
+    """OOM as text"""
 
     def __init__(self, text):
         # use Unix LF only
