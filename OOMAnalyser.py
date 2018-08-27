@@ -64,7 +64,7 @@ class OOM(object):
         r'\[[A-Z]+[\w ]+ +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}\]'
         r') ', re.ASCII)
 
-    i = 0
+    current_line = 0
     """Zero based index of the current line in self.lines"""
 
     lines = []
@@ -106,7 +106,7 @@ class OOM(object):
                 end_found = True
                 break
 
-        self.i = 0
+        self.current_line = 0
 
         if begin_found and end_found:
             self.state = "oom_complete"
@@ -120,20 +120,20 @@ class OOM(object):
 
     def back(self):
         """Return the previous line"""
-        if self.i - 1 < 0:
+        if self.current_line - 1 < 0:
             raise StopIteration()
-        self.i -= 1
-        return self.lines[self.i]
+        self.current_line -= 1
+        return self.lines[self.current_line]
 
     def current(self):
         """Return the current line"""
-        return self.lines[self.i]
+        return self.lines[self.current_line]
 
     def next(self):
         """Return the next line"""
-        if self.i + 1 < len(self.lines):
-            self.i += 1
-            return self.lines[self.i]
+        if self.current_line + 1 < len(self.lines):
+            self.current_line += 1
+            return self.lines[self.current_line]
         raise StopIteration()
 
     def find_text(self, pattern):
@@ -148,7 +148,7 @@ class OOM(object):
         """
         for line in self.lines:
             if pattern in line:
-                self.i = self.lines.index(line)
+                self.current_line = self.lines.index(line)
                 return True
         return False
 
