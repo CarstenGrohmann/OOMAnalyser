@@ -420,7 +420,7 @@ class OOMAnalyser(object):
         if isinstance(value, int):
             return value
 
-        tokenlist = iter(re.split('([\|&])', value))
+        tokenlist = iter(re.split('([|&])', value))
         operator = None
         negate_rvalue = False
         lvalue = 0
