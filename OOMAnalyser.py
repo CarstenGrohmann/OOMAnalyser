@@ -270,7 +270,7 @@ class OOMAnalyser(object):
     lines = []
     """All lines of an OOM without leading timestamps"""
 
-    details = {}
+    results = {}
     """Extracted result"""
 
     # Reference to the OOM object
@@ -332,7 +332,7 @@ class OOMAnalyser(object):
     """
 
     def __init__(self, oom):
-        self.details = {}
+        self.results = {}
         self.oom = oom
 
     def _extract_block_from_next_pos(self, marker):
@@ -368,16 +368,16 @@ class OOMAnalyser(object):
                     ]:
             match = rec.search(self.oom.text)
             if match:
-                self.details.update(match.groupdict())
+                self.results.update(match.groupdict())
 
         for groupname, rec in [('mem_node_info', self.REC_MEM_NODEINFO),
                                ('process_table', self.REC_PROCESSES),
                                ]:
             match = rec.search(self.oom.text)
             if match:
-                self.details[groupname] = match.group()
+                self.results[groupname] = match.group()
 
-        self.details['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
+        self.results['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
 
         # strip "Call Trace" line at beginning and remove leading spaces
         call_trace = ''
@@ -386,7 +386,7 @@ class OOMAnalyser(object):
             if line.startswith('Call Trace'):
                 continue
             call_trace += "{}\n".format(line.strip())
-        self.details['call_trace'] = call_trace
+        self.results['call_trace'] = call_trace
 
     def _hex2flags(self, hexvalue, flag_definition):
         """\
@@ -463,75 +463,75 @@ class OOMAnalyser(object):
         """
         Calculate values from already extracted details
 
-        @see: self.details
+        @see: self.results
         """
         # convert all *_pages and *_kb to integer
         # __pragma__ ('jsiter')
-        for item in self.details:
-            if self.details[item] is None:
-                self.details[item] = '<not found>'
+        for item in self.results:
+            if self.results[item] is None:
+                self.results[item] = '<not found>'
                 continue
             if item.endswith('_kb') or item.endswith('_pages'):
                 try:
-                    self.details[item] = int(self.details[item])
+                    self.results[item] = int(self.results[item])
                 except:
-                    error('Converting item {}: {} to integer failed'.format(item, self.details[item]))
+                    error('Converting item {}: {} to integer failed'.format(item, self.results[item]))
 
         # __pragma__ ('nojsiter')
 
-        kernel_version = self.details.get('kernel_version', '')
+        kernel_version = self.results.get('kernel_version', '')
         if 'x86_64' in kernel_version:
-            self.details['platform'] = 'x86 64bit'
+            self.results['platform'] = 'x86 64bit'
         else:
-            self.details['platform'] = 'unknown'
+            self.results['platform'] = 'unknown'
 
         # guess distribution from kernel version
         if '.el7' in kernel_version:
-            self.details['dist'] = 'RHEL 7/CentOS 7'
+            self.results['dist'] = 'RHEL 7/CentOS 7'
         elif '.el6' in kernel_version:
-            self.details['dist'] = 'RHEL 6/CentOS 6'
+            self.results['dist'] = 'RHEL 6/CentOS 6'
         elif '.el5' in kernel_version:
-            self.details['dist'] = 'RHEL 5/CentOS 5'
+            self.results['dist'] = 'RHEL 5/CentOS 5'
         elif 'ARCH' in kernel_version:
-            self.details['dist'] = 'Arch Linux'
+            self.results['dist'] = 'Arch Linux'
         elif '_generic' in kernel_version:
-            self.details['dist'] = 'Ubuntu'
+            self.results['dist'] = 'Ubuntu'
         else:
-            self.details['dist'] = 'unknown'
+            self.results['dist'] = 'unknown'
 
         # educated guess
-        self.details['page_size'] = 4
+        self.results['page_size'] = 4
 
-        self.details['swap_cache_kb'] = self.details['swap_cache_pages'] * self.details['page_size']
-        del self.details['swap_cache_pages']
+        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size']
+        del self.results['swap_cache_pages']
 
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
-        self.details['swap_used_kb'] = self.details['swap_total_kb'] - self.details['swap_free_kb'] - \
-            self.details['swap_cache_kb']
+        self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
+                                       self.results['swap_cache_kb']
 
-        self.details['trigger_proc_requested_memory'] = 2**self.details['trigger_proc_order']
-        self.details['trigger_proc_requested_memory_kbytes'] = self.details['page_size']
+        self.results['trigger_proc_requested_memory'] = 2 ** self.results['trigger_proc_order']
+        self.results['trigger_proc_requested_memory_kbytes'] = self.results['page_size']
 
         # process gfp_mask
-        if self.details['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
-            flags = self.details['trigger_proc_gfp_flags']
-            del self.details['trigger_proc_gfp_flags']
+        if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
+            flags = self.results['trigger_proc_gfp_flags']
+            del self.results['trigger_proc_gfp_flags']
         else:
-            flags, unknown = self._hex2flags(self.details['trigger_proc_gfp_mask'], self.GFP_FLAGS)
+            flags, unknown = self._hex2flags(self.results['trigger_proc_gfp_mask'], self.GFP_FLAGS)
             if unknown:
                 # TODO Missing format specifier {0:x} in Transcrypt?
                 flags.append('0x{}'.format(unknown.toString(16)))
             flags = ' | '.join(flags)
 
-        self.details['trigger_proc_gfp_mask'] = '{} ({})'.format(self.details['trigger_proc_gfp_mask'], flags)
+        self.results['trigger_proc_gfp_mask'] = '{} ({})'.format(self.results['trigger_proc_gfp_mask'], flags)
         # already fully processed and no own element to display -> delete otherwise an error msg will be shown
-        del self.details['trigger_proc_gfp_flags']
+        del self.results['trigger_proc_gfp_flags']
 
     def analyse(self):
         """Return the analysis of the given OOM object"""
         self._extract_from_oom_text()
         self._calc_from_oom_details()
-        return self.details
+        return self.results
 
 
 class OOMDisplay(object):
@@ -898,7 +898,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # analyse
         analyser = OOMAnalyser(self.oom)
         analyser.analyse()
-        self.oom_details = analyser.details
+        self.oom_details = analyser.results
 
         # display results
         self.show()
