@@ -117,9 +117,9 @@ function goBack() {
     <h2>Step 1 - Enter your OOM message</h2>
     <textarea id="textarea_oom" cols="100" rows="20" autocomplete="off" title="OOM input field">Add your OOMhere</textarea>
     <br/>
-    <button onclick="OOMAnalyser.oomAnalyser.analyse()" title="Analyse the OOM from the input area">Analyse</button>
-    <button onclick="OOMAnalyser.oomAnalyser.reset()" title="Clean the input area">Reset</button>
-    <button onclick="OOMAnalyser.oomAnalyser.copy_example()" title="Copy an example OOM into the input area">Insert example</button>
+    <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it">Analyse</button>
+    <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area">Reset</button>
+    <button onclick="OOMAnalyser.OOMDisplayInstance.copy_example_to_form()" title="Copy an example OOM into the input area">Insert example</button>
 </div>
 
 <p>
@@ -131,7 +131,7 @@ function goBack() {
 <h2>Step 2 - Results</h2>
     <p>
         Go back to
-        <a href="javascript:void(0);" onclick="OOMAnalyser.oomAnalyser.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
     <p>
@@ -550,7 +550,7 @@ function goBack() {
         <tr>
             <th scope="row" colspan="3">Entire OOM Message
                 <span class="click_msg_in_th">
-                    <a href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.oomAnalyser.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
+                    <a href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
                 </span>
             </th>
         </tr>
@@ -565,7 +565,7 @@ function goBack() {
 
     <p>
         Go back to
-        <a href="javascript:void(0);" onclick="OOMAnalyser.oomAnalyser.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
 
