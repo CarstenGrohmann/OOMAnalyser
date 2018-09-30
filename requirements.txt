@@ -1,1 +1,1 @@
-Transcrypt>=3.6.53
+Transcrypt==3.6.101

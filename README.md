@@ -23,7 +23,7 @@ This section describes a manual build and installation of OOMAnalyser.
 ### Requirements
 
  * [Python](http://www.python.org) 3.6 or later
- * [Transcrypt](https://www.transcrypt.org/) 3.6.53 or later
+ * [Transcrypt](https://www.transcrypt.org/) 3.6.101
 
 ### Setup
 Clone the repository:
