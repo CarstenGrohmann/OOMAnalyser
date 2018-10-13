@@ -39,7 +39,7 @@ def error(msg):
     notify_box = document.getElementById('notify_box')
     notify_box.style.display = 'block'
     notification = document.createElement('div')
-    notification.classList.add('notify-error')
+    notification.classList.add('js-notify_box__msg--error')
     notification.innerHTML = 'ERROR: {}<br>'.format(msg)
     notify_box.appendChild(notification)
 
@@ -49,7 +49,7 @@ def warning(msg):
     notify_box = document.getElementById('notify_box')
     notify_box.style.display = 'block'
     notification = document.createElement('div')
-    notification.classList.add('notify-warning')
+    notification.classList.add('js-notify_box__msg--warning')
     notification.innerHTML = 'WARNING: {}<br>'.format(msg)
     notify_box.appendChild(notification)
 
@@ -746,11 +746,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         if content == '<not found>':
             row = element.parentNode
-            row.classList.add('hide_tablerow')
+            row.classList.add('js-table__tr--hide')
         elif item.endswith('_kb'):
-            element.classList.add('kbytes')
+            element.classList.add('text--append-suffix-kbytes')
         elif item.endswith('_pages'):
-            element.classList.add('pages')
+            element.classList.add('text--append-suffix-pages')
 
         if DEBUG:
             show_element('notify_box')
@@ -760,13 +760,13 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if clean_oom:
             document.getElementById('textarea_oom').value = "<paste your OOM here>"
 
-        hide_element("analysis")
-        hide_element("notify_box")
-        show_element("input")
+        hide_element('analysis')
+        hide_element('notify_box')
+        show_element('input')
 
         # show hidden rows
-        for element in document.getElementsByClassName('hide_tablerow'):
-            element.classList.remove('hide_tablerow')
+        for element in document.getElementsByClassName('js-table__tr--hide'):
+            element.classList.remove('js-table__tr--hide')
 
         for item in self.mem_modinfo_entries:
             element = document.getElementById(item)
@@ -877,11 +877,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         row_with_oom = oom_element.parentNode.parentNode
         toggle_msg = document.getElementById('oom_toogle_msg')
 
-        if show or row_with_oom.classList.contains('hide_tablerow'):
-            row_with_oom.classList.remove('hide_tablerow')
+        if show or row_with_oom.classList.contains('js-table__tr--hide'):
+            row_with_oom.classList.remove('js-table__tr--hide')
             toggle_msg.text = "(click to hide)"
         else:
-            row_with_oom.classList.add('hide_tablerow')
+            row_with_oom.classList.add('js-table__tr--hide')
             toggle_msg.text = "(click to show)"
 
     def analyse_and_show(self):
@@ -931,8 +931,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if DEBUG:
             print(self.oom_details)
 
-        hide_element("input")
-        show_element("analysis")
+        hide_element('input')
+        show_element('analysis')
 
         for item in self.oom_details.keys():
             self._set_single_item(item)

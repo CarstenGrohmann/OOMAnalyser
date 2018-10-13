@@ -6,42 +6,33 @@
     <title>OOM Analyser</title>
 
     <style type='text/css'>
+
+        .text--append-suffix-kbytes {
+            text-align: right;
+        }
+        .text--append-suffix-kbytes::after {
+            content: " kBytes";
+        }
+
+        .text--append-suffix-pages {
+            text-align: right;
+        }
+        .text--append-suffix-pages::after {
+            content: " pages";
+        }
+
+        .text--align-right {
+            text-align: right;
+        }
+
         h1 {
             font-size: 2em;
             margin: 0.67em 0;
         }
 
-        #notify_box {
-            display: none;
-            width: 100%;
-        }
-
-        .kbytes {
-            text-align: right;
-        }
-        .kbytes::after {
-            content: " kBytes";
-        }
-
-        .pages {
-            text-align: right;
-        }
-        .pages::after {
-            content: " pages";
-        }
-
-        .align_right {
-            text-align: right;
-        }
-
-        .hide_tablerow {
-            display: none;
-        }
-
-        .click_msg_in_th {
-            font-size: small;
-            font-weight: unset;
-            padding: unset;
+        svg {
+            display: block;
+            max-height: 200px;
         }
 
         table {
@@ -50,11 +41,6 @@
             table-layout: fixed;
             text-align: left;
             width: 100%;
-        }
-
-        svg {
-            display: block;
-            max-height: 200px;
         }
 
         th {
@@ -68,30 +54,44 @@
             word-wrap: break-word;
         }
 
-        .terminal {
-            font-family: monospace;
-            overflow: auto;
+        .js-table__tr--hide {
+            display: none;
         }
 
-        .notify-warning {
-	        color: #9F6000;
-	        background-color: #FEEFB3;
-	    }
-	    .notify-error {
-	        color: #D8000C;
-    	    background-color: #FFD2D2;
-	    }
+        .a--small {
+            font-size: small;
+            font-weight: unset;
+            padding: unset;
+        }
 
         /* Zebra-Layout */
         tr:nth-child(odd) td:nth-child(2), tr:nth-child(odd) td:nth-child(3) {
             background-color: #f2f2f2;
         }
 
-        .license {
+        .js-notify_box__msg--warning {
+	        color: #9F6000;
+	        background-color: #FEEFB3;
+	    }
+	    .js-notify_box__msg--error {
+	        color: #D8000C;
+    	    background-color: #FFD2D2;
+	    }
+
+        .license__text {
             font-size: small;
             display: none;
         }
 
+        .notify_box {
+            display: none;
+            width: 100%;
+        }
+
+        .terminal {
+            font-family: monospace;
+            overflow: auto;
+        }
     </style>
     <script>
 function goBack() {
@@ -123,7 +123,7 @@ function goBack() {
 </div>
 
 <p>
-    <div class="terminal" id="notify_box"></div>
+    <div class="terminal notify_box" id="notify_box"></div>
 </p>
 
 <div id="analysis">
@@ -158,31 +158,31 @@ function goBack() {
         </tr>
         <tr>
             <td></td>
-            <td class="align_right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
+            <td class="text--align-right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
             <td>This process requests memory and is triggering thereby the OOM situation</td>
         </tr>
         <tr>
             <td>Memory allocation flags<br>(gfp_mask)</td>
-            <td id="trigger_proc_gfp_mask" class="align_right"></td>
+            <td id="trigger_proc_gfp_mask" class="text--align-right"></td>
             <td>These flags are used to control the kernel internal memory allocation<br>
                 GFP stands for <code>__get_free_pages()</code> </td>
         </tr>
         <tr>
             <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
-            <td id="trigger_proc_nodemask" class="align_right"></td>
+            <td id="trigger_proc_nodemask" class="text--align-right"></td>
             <td>Bit mask indicating the cores on which the process can run</td>
         </tr>
         <tr>
             <td>Requested memory<br>(order)</td>
-            <td class="align_right">
+            <td class="text--align-right">
                 <span id="trigger_proc_requested_memory"></span> (2^<sup><span id="trigger_proc_order"></span></sup>) pages /
-                <span class="kbytes" id="trigger_proc_requested_memory_kbytes"></span>
+                <span class="text--append-suffix-kbytes" id="trigger_proc_requested_memory_kbytes"></span>
             </td>
             <td>The kernel specifies the requested number of pages as exponent of power of two.
         </tr>
         <tr>
             <td>Adjust oom-killer score<br>(oom_score_adj)</td>
-            <td id="trigger_proc_oomscore" class="align_right"></td>
+            <td id="trigger_proc_oomscore" class="text--align-right"></td>
             <td>
                 This value is added to the badness score before it's used to determine the process to be killed.
             </td>
@@ -195,34 +195,34 @@ function goBack() {
         </tr>
         <tr>
             <td></td>
-            <td class="align_right"><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
+            <td class="text--align-right"><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
             <td>Process killed by Linux kernel to satisfy the memory request</td>
         </tr>
         <tr>
             <td>OOM Score<br>(score)</td>
-            <td id="killed_proc_score" class="align_right"></td>
+            <td id="killed_proc_score" class="text--align-right"></td>
             <td></td>
         </tr>
         <tr>
             <td>Virtual Memory <br> (total-vm) </td>
-            <td id="killed_proc_vm_kb" class="kbytes"></td>
+            <td id="killed_proc_vm_kb" class="text--append-suffix-kbytes"></td>
             <td>Virtual memory used by this process</td>
         </tr>
         <tr>
             <td>Resident anonymous memory <br> (anon-rss) </td>
-            <td id="killed_proc_anon_rss_kb" class="kbytes"></td>
+            <td id="killed_proc_anon_rss_kb" class="text--append-suffix-kbytes"></td>
             <td>Part of the virtual process memory mapped into RAM</td>
         </tr>
         <tr>
             <td>Resident file mapping memory <br> (file-rss) </td>
-            <td id="killed_proc_file_rss_kb" class="kbytes"></td>
+            <td id="killed_proc_file_rss_kb" class="text--append-suffix-kbytes"></td>
             <td>Files which have been mapped into RAM (with
                 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>)
             </td>
         </tr>
         <tr>
             <td>Resident shared memory <br> (shmem-rss) </td>
-            <td id="killed_proc_shmem_rss_kb" class="kbytes"></td>
+            <td id="killed_proc_shmem_rss_kb" class="text--append-suffix-kbytes"></td>
             <td>This may include System V shared memory and shared anonymous memory</td>
         </tr>
 
@@ -250,13 +250,13 @@ function goBack() {
         </tr>
         <tr>
             <td>RAM pages</td>
-            <td id="ram_pages" class="pages"></td>
+            <td id="ram_pages" class="text--append-suffix-pages"></td>
             <td>Total number of RAM pages
             </td>
         </tr>
         <tr>
             <td>HighMem/MovableOnly</td>
-            <td id="highmem_pages" class="pages"></td>
+            <td id="highmem_pages" class="text--append-suffix-pages"></td>
             <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
                 <br>
                 HighMem pages are also counted in the total page number.
@@ -264,25 +264,25 @@ function goBack() {
         </tr>
         <tr>
             <td>Reserved pages</td>
-            <td id="reserved_pages" class="pages"></td>
+            <td id="reserved_pages" class="text--append-suffix-pages"></td>
             <td>Number of reserved pages
             </td>
         </tr>
         <tr>
             <td>CMA reserved pages</td>
-            <td id="cma_pages" class="pages">0</td>
+            <td id="cma_pages" class="text--append-suffix-pages">0</td>
             <td>Pages reserved for Contiguous Memory Allocator (CMA)
             </td>
         </tr>
         <tr>
             <td>Pagetable Cache</td>
-            <td id="pagetablecache_pages" class="pages">0</td>
+            <td id="pagetablecache_pages" class="text--append-suffix-pages">0</td>
             <td>Number of pages in pagetable cache
             </td>
         </tr>
         <tr>
             <td>Number of pages with hardware errors</td>
-            <td id="hwpoisoned_pages" class="pages">0</td>
+            <td id="hwpoisoned_pages" class="text--append-suffix-pages">0</td>
             <td>Pages with uncorrectable memory errors
             </td>
         </tr>
@@ -296,41 +296,41 @@ function goBack() {
         </tr>
         <tr>
             <td>Active anonymous memory <br> (active_anon) </td>
-            <td id="active_anon_pages" class="pages"></td>
+            <td id="active_anon_pages" class="text--append-suffix-pages"></td>
             <td>Recently used anonymous memory.<br>
                 These memory pages will usually not swapped out.
             </td>
         </tr>
         <tr>
             <td>Inactive anonymous memory <br> (inactive_anon)</td>
-            <td id="inactive_anon_pages" class="pages"></td>
+            <td id="inactive_anon_pages" class="text--append-suffix-pages"></td>
             <td>Least recently used anonymous memory.<br>
                 These memory pages can be swapped out.
             </td>
         </tr>
         <tr>
             <td>Isolated anonymous memory <br> (isolated_anon)</td>
-            <td id="isolated_anon_pages" class="pages"></td>
+            <td id="isolated_anon_pages" class="text--append-suffix-pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Active Pagecache <br> (active_file)</td>
-            <td id="active_file_pages" class="pages"></td>
+            <td id="active_file_pages" class="text--append-suffix-pages"></td>
             <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
         </tr>
         <tr>
             <td>Inactive Pagecache <br> (inactive_file)</td>
-            <td id="inactive_file_pages" class="pages"></td>
+            <td id="inactive_file_pages" class="text--append-suffix-pages"></td>
             <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
         </tr>
         <tr>
             <td>Isolated Pagecache <br> (isolated_file)</td>
-            <td id="isolated_file_pages" class="pages"></td>
+            <td id="isolated_file_pages" class="text--append-suffix-pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Unevictable Pages <br> (unevictable)</td>
-            <td id="unevictable_pages" class="pages"></td>
+            <td id="unevictable_pages" class="text--append-suffix-pages"></td>
             <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                 <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
                 <a href="http://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
@@ -339,14 +339,14 @@ function goBack() {
         </tr>
         <tr>
             <td>Dirty Pages <br> (dirty)</td>
-            <td id="dirty_pages" class="pages"></td>
+            <td id="dirty_pages" class="text--append-suffix-pages"></td>
             <td>Memory which is waiting to get written back to the disk.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
             </td>
         </tr>
         <tr>
             <td>Writeback <br> (writeback)</td>
-            <td id="writeback_pages" class="pages"></td>
+            <td id="writeback_pages" class="text--append-suffix-pages"></td>
             <td>
                 Memory which is actively being written back to the disk.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
@@ -354,12 +354,12 @@ function goBack() {
         </tr>
         <tr>
             <td>Unstable <br> (unstable)</td>
-            <td id="unstable_pages" class="pages"></td>
+            <td id="unstable_pages" class="text--append-suffix-pages"></td>
             <td>Not yet committed to stable storage.</td>
         </tr>
         <tr>
             <td>Slab Reclaimable <br> (slab_reclaimable)</td>
-            <td id="slab_reclaimable_pages" class="pages"></td>
+            <td id="slab_reclaimable_pages" class="text--append-suffix-pages"></td>
             <td>
                 Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
@@ -370,7 +370,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
-            <td id="slab_unreclaimable_pages" class="pages"></td>
+            <td id="slab_unreclaimable_pages" class="text--append-suffix-pages"></td>
             <td>
                 Part of Slab, that cannot be reclaimed on memory pressure.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
@@ -378,7 +378,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Mapped <br> (mapped)</td>
-            <td id="mapped_pages" class="pages"></td>
+            <td id="mapped_pages" class="text--append-suffix-pages"></td>
             <td>
                 Files which have been mapped into memory (with
                 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
@@ -387,7 +387,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Shared Memory <br> (shmem)</td>
-            <td id="shmem_pages" class="pages"></td>
+            <td id="shmem_pages" class="text--append-suffix-pages"></td>
             <td>
                 Amount of memory consumed in
                 <a href="http://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
@@ -397,7 +397,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Pagetables <br> (pagetables)</td>
-            <td id="pagetables_pages" class="pages"></td>
+            <td id="pagetables_pages" class="text--append-suffix-pages"></td>
             <td>
                 Amount of memory dedicated to the lowest level of pagetables.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
@@ -405,7 +405,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Bounce <br> (bounce)</td>
-            <td id="bounce_pages" class="pages"></td>
+            <td id="bounce_pages" class="text--append-suffix-pages"></td>
             <td>
                 Memory used for block device "bounce buffers".
                 <sup><a href="#footnote-proc5">[1]</a></sup>
@@ -413,22 +413,22 @@ function goBack() {
         </tr>
         <tr>
             <td>free <br> (free)</td>
-            <td id="free_pages" class="pages"></td>
+            <td id="free_pages" class="text--append-suffix-pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_pcp <br> (free_pcp)</td>
-            <td id="free_pcp_pages" class="pages"></td>
+            <td id="free_pcp_pages" class="text--append-suffix-pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_cma <br> (free_cma)</td>
-            <td id="free_cma_pages" class="pages"></td>
+            <td id="free_cma_pages" class="text--append-suffix-pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>Total Pagecache</td>
-            <td id="pagecache_total_pages" class="pages"></td>
+            <td id="pagecache_total_pages" class="text--append-suffix-pages"></td>
             <td></td>
         </tr>
 
@@ -441,21 +441,21 @@ function goBack() {
         </tr>
         <tr>
             <td>Swap Total</td>
-            <td id="swap_total_kb" class="kbytes"></td>
+            <td id="swap_total_kb" class="text--append-suffix-kbytes"></td>
             <td>Total amount of swap space available.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
             </td>
         </tr>
         <tr>
             <td>Swap Free</td>
-            <td id="swap_free_kb" class="kbytes"></td>
+            <td id="swap_free_kb" class="text--append-suffix-kbytes"></td>
             <td>Amount of swap space that is currently unused.
                 <sup><a href="#footnote-proc5">[1]</a></sup>
             </td>
         </tr>
         <tr>
             <td>Swap Cached</td>
-            <td id="swap_cache_kb" class="kbytes"></td>
+            <td id="swap_cache_kb" class="text--append-suffix-kbytes"></td>
             <td>Memory that once was swapped out, is swapped back in
                 but still also is in the swap file.  (If memory pres‐
                 sure is high, these pages don't need to be swapped out
@@ -466,7 +466,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Swap Used</td>
-            <td id="swap_used_kb" class="kbytes"></td>
+            <td id="swap_used_kb" class="text--append-suffix-kbytes"></td>
             <td>Amount of used swap space w/o cached swap <br>
                 (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
             </td>
@@ -479,22 +479,22 @@ function goBack() {
         </tr>
         <tr>
             <td>Kernel</td>
-            <td id="kernel_version" class="align_right"></td>
+            <td id="kernel_version" class="text--align-right"></td>
             <td></td>
         </tr>
         <tr>
             <td>Distribution</td>
-            <td id="dist" class="align_right"></td>
+            <td id="dist" class="text--align-right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
             <td>Platform</td>
-            <td id="platform" class="align_right"></td>
+            <td id="platform" class="text--align-right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
             <td>Page size</td>
-            <td id="page_size" class="kbytes"></td>
+            <td id="page_size" class="text--append-suffix-kbytes"></td>
             <td>Guessed</td>
         </tr>
 
@@ -549,9 +549,7 @@ function goBack() {
 
         <tr>
             <th scope="row" colspan="3">Entire OOM Message
-                <span class="click_msg_in_th">
-                    <a href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
-                </span>
+                <a class="a--small" href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
             </th>
         </tr>
         <tr>
@@ -601,7 +599,7 @@ function goBack() {
     <a href="https://github.com/CarstenGrohmann/OOMAnalyser" title="Source code on GitHub">Source Code on GitHub</a>
 </div>
 
-<div class="license" id="license">
+<div class="license__text" id="license">
     <p>
         Copyright (c) 2017-2018 Carsten Grohmann mail &lt;add at here&gt; carsten-grohmann.de
     </p>
