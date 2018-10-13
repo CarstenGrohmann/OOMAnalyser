@@ -25,6 +25,11 @@
             text-align: right;
         }
 
+        .text__superscript {
+            vertical-align: super;
+            font-size: 0.83em;
+        }
+
         h1 {
             font-size: 2em;
             margin: 0.67em 0;
@@ -62,6 +67,11 @@
             font-size: small;
             font-weight: unset;
             padding: unset;
+        }
+
+        .a__footnote {
+            vertical-align: super;
+            font-size: 0.83em;
         }
 
         /* Zebra-Layout */
@@ -175,7 +185,7 @@ function goBack() {
         <tr>
             <td>Requested memory<br>(order)</td>
             <td class="text--align-right">
-                <span id="trigger_proc_requested_memory"></span> (2^<sup><span id="trigger_proc_order"></span></sup>) pages /
+                <span id="trigger_proc_requested_memory"></span> (2^<span id="trigger_proc_order" class="text__superscript"></span>) pages /
                 <span class="text--append-suffix-kbytes" id="trigger_proc_requested_memory_kbytes"></span>
             </td>
             <td>The kernel specifies the requested number of pages as exponent of power of two.
@@ -341,7 +351,7 @@ function goBack() {
             <td>Dirty Pages <br> (dirty)</td>
             <td id="dirty_pages" class="text--append-suffix-pages"></td>
             <td>Memory which is waiting to get written back to the disk.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -349,7 +359,7 @@ function goBack() {
             <td id="writeback_pages" class="text--append-suffix-pages"></td>
             <td>
                 Memory which is actively being written back to the disk.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -362,7 +372,7 @@ function goBack() {
             <td id="slab_reclaimable_pages" class="text--append-suffix-pages"></td>
             <td>
                 Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
                 <br>
                 Additional details are listed in
                 <a href="http://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
@@ -373,7 +383,7 @@ function goBack() {
             <td id="slab_unreclaimable_pages" class="text--append-suffix-pages"></td>
             <td>
                 Part of Slab, that cannot be reclaimed on memory pressure.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -382,7 +392,7 @@ function goBack() {
             <td>
                 Files which have been mapped into memory (with
                 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -392,7 +402,7 @@ function goBack() {
                 Amount of memory consumed in
                 <a href="http://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
                 filesystems.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -400,7 +410,7 @@ function goBack() {
             <td id="pagetables_pages" class="text--append-suffix-pages"></td>
             <td>
                 Amount of memory dedicated to the lowest level of pagetables.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -408,7 +418,7 @@ function goBack() {
             <td id="bounce_pages" class="text--append-suffix-pages"></td>
             <td>
                 Memory used for block device "bounce buffers".
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -443,14 +453,14 @@ function goBack() {
             <td>Swap Total</td>
             <td id="swap_total_kb" class="text--append-suffix-kbytes"></td>
             <td>Total amount of swap space available.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
             <td>Swap Free</td>
             <td id="swap_free_kb" class="text--append-suffix-kbytes"></td>
             <td>Amount of swap space that is currently unused.
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
@@ -461,7 +471,7 @@ function goBack() {
                 sure is high, these pages don't need to be swapped out
                 again because they are already in the swap file.  This
                 saves I/O).
-                <sup><a href="#footnote-proc5">[1]</a></sup>
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
