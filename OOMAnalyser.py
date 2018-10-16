@@ -16,28 +16,26 @@ VERSION = "0.2.0"
 
 def hide_element(element_id):
     """Hide the given HTML element"""
-    document.getElementById(element_id).style.display = 'none'
+    element = document.getElementById(element_id)
+    element.classList.add('js-text--display-none')
 
 
 def show_element(element_id):
     """Show the given HTML element"""
-    document.getElementById(element_id).style.display = 'block'
+    element = document.getElementById(element_id)
+    element.classList.remove('js-text--display-none')
 
 
 def toggle(element_id):
     """Toggle the visibility of the given HTML element"""
     element = document.getElementById(element_id)
-    display_prop = element.style.display
-    if display_prop and display_prop == 'block':
-        element.style.display = 'none'
-    else:
-        element.style.display = 'block'
+    element.classList.toggle('js-text--display-none')
 
 
 def error(msg):
     """Show the error box and add the error message"""
+    show_element('notify_box')
     notify_box = document.getElementById('notify_box')
-    notify_box.style.display = 'block'
     notification = document.createElement('div')
     notification.classList.add('js-notify_box__msg--error')
     notification.innerHTML = 'ERROR: {}<br>'.format(msg)
@@ -46,8 +44,8 @@ def error(msg):
 
 def warning(msg):
     """Show the error box and add the warning message"""
+    show_element('notify_box')
     notify_box = document.getElementById('notify_box')
-    notify_box.style.display = 'block'
     notification = document.createElement('div')
     notification.classList.add('js-notify_box__msg--warning')
     notification.innerHTML = 'WARNING: {}<br>'.format(msg)
@@ -746,7 +744,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         if content == '<not found>':
             row = element.parentNode
-            row.classList.add('js-table__tr--hide')
+            row.classList.add('js-text--display-none')
         elif item.endswith('_kb'):
             element.classList.add('text--append-suffix-kbytes')
         elif item.endswith('_pages'):
@@ -765,8 +763,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         show_element('input')
 
         # show hidden rows
-        for element in document.getElementsByClassName('js-table__tr--hide'):
-            element.classList.remove('js-table__tr--hide')
+        for element in document.querySelectorAll('table .js-text--display-none'):
+            element.classList.remove('js-text--display-none')
 
         for item in self.mem_modinfo_entries:
             element = document.getElementById(item)
@@ -877,11 +875,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         row_with_oom = oom_element.parentNode.parentNode
         toggle_msg = document.getElementById('oom_toogle_msg')
 
-        if show or row_with_oom.classList.contains('js-table__tr--hide'):
-            row_with_oom.classList.remove('js-table__tr--hide')
+        if show or row_with_oom.classList.contains('js-text--display-none'):
+            row_with_oom.classList.remove('js-text--display-none')
             toggle_msg.text = "(click to hide)"
         else:
-            row_with_oom.classList.add('js-table__tr--hide')
+            row_with_oom.classList.add('js-text--display-none')
             toggle_msg.text = "(click to show)"
 
     def analyse_and_show(self):

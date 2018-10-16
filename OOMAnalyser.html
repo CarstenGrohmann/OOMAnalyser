@@ -25,6 +25,10 @@
             text-align: right;
         }
 
+        .js-text--display-none {
+            display: none;
+        }
+
         .text__superscript {
             vertical-align: super;
             font-size: 0.83em;
@@ -59,10 +63,6 @@
             word-wrap: break-word;
         }
 
-        .js-table__tr--hide {
-            display: none;
-        }
-
         .a--small {
             font-size: small;
             font-weight: unset;
@@ -90,7 +90,6 @@
 
         .license__text {
             font-size: small;
-            display: none;
         }
 
         .notify_box {
@@ -133,7 +132,7 @@ function goBack() {
 </div>
 
 <p>
-    <div class="terminal notify_box" id="notify_box"></div>
+    <div class="terminal notify_box js-text--display-none" id="notify_box"></div>
 </p>
 
 <div id="analysis">
@@ -609,7 +608,7 @@ function goBack() {
     <a href="https://github.com/CarstenGrohmann/OOMAnalyser" title="Source code on GitHub">Source Code on GitHub</a>
 </div>
 
-<div class="license__text" id="license">
+<div class="license__text js-text--display-none" id="license">
     <p>
         Copyright (c) 2017-2018 Carsten Grohmann mail &lt;add at here&gt; carsten-grohmann.de
     </p>
