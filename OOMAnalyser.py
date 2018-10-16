@@ -745,10 +745,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if content == '<not found>':
             row = element.parentNode
             row.classList.add('js-text--display-none')
-        elif item.endswith('_kb'):
-            element.classList.add('text--append-suffix-kbytes')
-        elif item.endswith('_pages'):
-            element.classList.add('text--append-suffix-pages')
 
         if DEBUG:
             show_element('notify_box')
