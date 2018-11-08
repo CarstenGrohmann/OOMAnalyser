@@ -117,6 +117,9 @@ function goBack() {
     JavaScript script without transferring your data to foreign servers.
 </p>
 
+<p>
+<div class="terminal notify_box js-text--display-none" id="notify_box"></div>
+
 <div id="input">
     <h2>Step 1 - Enter your OOM message</h2>
     <textarea id="textarea_oom" cols="100" rows="20" autocomplete="off" title="OOM input field">Add your OOMhere</textarea>
@@ -125,10 +128,6 @@ function goBack() {
     <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area">Reset</button>
     <button onclick="OOMAnalyser.OOMDisplayInstance.copy_example_to_form()" title="Copy an example OOM into the input area">Insert example</button>
 </div>
-
-<p>
-    <div class="terminal notify_box js-text--display-none" id="notify_box"></div>
-</p>
 
 <div id="analysis">
 
