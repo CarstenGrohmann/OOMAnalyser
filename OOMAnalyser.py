@@ -483,21 +483,7 @@ class OOMAnalyser(object):
         else:
             self.results['platform'] = 'unknown'
 
-        # guess distribution from kernel version
-        if '.el7uek' in kernel_version:
-            self.results['dist'] = 'Oracle Linux 7 (Unbreakable Enterprise Kernel)'
-        elif '.el7' in kernel_version:
-            self.results['dist'] = 'RHEL 7/CentOS 7'
-        elif '.el6' in kernel_version:
-            self.results['dist'] = 'RHEL 6/CentOS 6'
-        elif '.el5' in kernel_version:
-            self.results['dist'] = 'RHEL 5/CentOS 5'
-        elif 'ARCH' in kernel_version:
-            self.results['dist'] = 'Arch Linux'
-        elif '_generic' in kernel_version:
-            self.results['dist'] = 'Ubuntu'
-        else:
-            self.results['dist'] = 'unknown'
+        self.results['dist'] = self.guess_distribution(kernel_version)
 
         # educated guess
         self.results['page_size'] = 4
@@ -526,6 +512,23 @@ class OOMAnalyser(object):
         self.results['trigger_proc_gfp_mask'] = '{} ({})'.format(self.results['trigger_proc_gfp_mask'], flags)
         # already fully processed and no own element to display -> delete otherwise an error msg will be shown
         del self.results['trigger_proc_gfp_flags']
+
+    def guess_distribution(self, kernel_version):
+        """Guess distribution from kernel version"""
+        dist = 'unknown'
+        if '.el7uek' in kernel_version:
+            dist = 'Oracle Linux 7 (Unbreakable Enterprise Kernel)'
+        elif '.el7' in kernel_version:
+            dist = 'RHEL 7/CentOS 7'
+        elif '.el6' in kernel_version:
+            dist = 'RHEL 6/CentOS 6'
+        elif '.el5' in kernel_version:
+            dist = 'RHEL 5/CentOS 5'
+        elif 'ARCH' in kernel_version:
+            dist = 'Arch Linux'
+        elif '_generic' in kernel_version:
+            dist = 'Ubuntu'
+        return dist
 
     def analyse(self):
         """Return the analysis of the given OOM object"""
