@@ -484,7 +484,9 @@ class OOMAnalyser(object):
             self.results['platform'] = 'unknown'
 
         # guess distribution from kernel version
-        if '.el7' in kernel_version:
+        if '.el7uek' in kernel_version:
+            self.results['dist'] = 'Oracle Linux 7 (Unbreakable Enterprise Kernel)'
+        elif '.el7' in kernel_version:
             self.results['dist'] = 'RHEL 7/CentOS 7'
         elif '.el6' in kernel_version:
             self.results['dist'] = 'RHEL 6/CentOS 6'
