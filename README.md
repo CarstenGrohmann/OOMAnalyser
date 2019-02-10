@@ -1,87 +1,104 @@
-# Linux OOMAnalyser
+# OOMAnalyser
 
-I've started this project to give the Python to JavaScript compiler 
-[Transcrypt](https://www.transcrypt.org/) a try.
+## Introduction
 
-This web page splits the content of a Linux Out Of Memory message into 
-smaller pieces, aggregates these and presents them in a more human friendly 
-format.
+OOMAnalyser is a small project to transform the OOM output of a Linux kernel
+into a more human friendly format and show the information on a single web
+page. All data will be processed locally in your browser - the data will not
+transferred to foreign servers. Thereby the OOM webpage can be used without an
+Internet connection also.
 
-You can use the current version on [www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/).
+This project is written in Python and it uses [Transcrypt](https://www.transcrypt.org/) to
+compile the Python sources into JavaScript.
 
-## Design Goals
- * A local copy of the web page should run offline - without an Internet 
-   connection, without loading 3rd party libraries nor transferring data to 
-   foreign servers
- * A better understanding of the Linux Memory Management
- * Start learning JavaScript, CSS and HTML
+The current online version is available on https://www.carstengrohmann.de/oom/.
+
+
+## Installation
+
+Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, a
+HTML file and a JavaScript file. Both can be stored locally to use OOMAnalyser
+without an Internet connection.
+
+### Installation steps
+
+ 1. Create an own directory and add a `__javascript__` subdirectory
+ 2. Open https://www.carstengrohmann.de/oom/ in a browser 
+ 3. Browse down to the paragraph "Local Installation" at the end of the document
+ 4. Download the HTML file to the main directory and the javascript file to the 
+ `__javascript__` subdirectory
+ 5. Open the file `OOMAnalyser.html` in your favourite browser.
+
  
-## Build and Installation
-
-This section describes a manual build and installation of OOMAnalyser.
+## Building OOMAnalyser
 
 ### Requirements
 
  * [Python](http://www.python.org) 3.6 or later
  * [Transcrypt](https://www.transcrypt.org/) 3.6.101
 
-### Setup
-Clone the repository:
-```
-# git clone https://github.com/CarstenGrohmann/OOMAnalyser
-```
 
-Setup the Python virtual environment:
-```
+### Prepare the build environment
+
+ * Clone the repository:
+ ```
+# git clone https://github.com/CarstenGrohmann/OOMAnalyser
+ ```
+
+ * Setup the Python virtual environment:
+ ```
 # virtualenv env
 # . env/bin/activate
 # env/bin/pip install -Ur requirements.txt
 
-or 
+or
 
 # make venv
-```
+ ```
 
-### Build
+### Build OOMAnalyser
 ```
 # . env/bin/activate
 # transcrypt --build --map --nomin -e 6 OOMAnalyser.py
 
-or 
+or
 
 # make build
 ```
 
-## Usage
-* Change into the source directory and start your own small web server.
+### Usage
+ * Change into the source directory and start your own small web server.
 
-* Start Python built-in web server:
+ * Start Python built-in web server:
 
-* ```
-  # python3 -m http.server 8080 --bind 127.0.0.1
+ ```
+ # python3 -m http.server 8080 --bind 127.0.0.1
 
-  or 
+ or
 
-  # make websrv
-  ```
+ # make websrv
+ ```
 
-* Open the URL [http://localhost:8080/OOMAnalyser.html](http://localhost:8080/OOMAnalyser.html) in your favorite browser.
+* Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
 
-* That's it!
 
-## Further Information
+## Resources
+
  * [Transcrypt](https://www.transcrypt.org/)
  * [Linux man pages online](https://man7.org/)
  * [Decoding the Linux kernel's page allocation failure messages](https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures)
  * [Linux Kernel OOM Log Analysis](http://elearningmedium.com/linux-kernel-oom-log-analysis/)
 
+
 ## Known Bugs/Issues
 
-Check the bug tracker on [GitHub](https://github.com/CarstenGrohmann/OOMAnalyser/issues) for current open bugs.
-New bugs can be reported there also.
+Check the project [issue tracker](https://github.com/CarstenGrohmann/OOMAnalyser/issues)
+for current open bugs. New bugs can be reported there also.
+
 
 ## License
-This project is licensed under the MIT license. 
+
+This project is licensed under the MIT license.
 
 ```
 Copyright (c) 2017-2019 Carsten Grohmann,  mail <add at here> carsten-grohmann.de
