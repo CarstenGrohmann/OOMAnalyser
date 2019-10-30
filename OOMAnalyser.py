@@ -56,10 +56,12 @@ class OOM(object):
     """Hold OOM object and provide access"""
 
     REC_TIMESTAMP = re.compile(
-        r'('
-        r'\[\s+\d+\.\d+\]'
+        r'^('
+        # pattern for date format: Jul 28 10:48:41
+        r'[A-Z]+[\w ]+ +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}'
         r'|'
-        r'\[[A-Z]+[\w ]+ +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}\]'
+        # pattern for date format: 2019-10-30T08:13:31.896744+00:00
+        r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3,6}\+\d{2}:\d{2}'
         r') ', re.ASCII)
 
     current_line = 0
