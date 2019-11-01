@@ -55,15 +55,6 @@ def warning(msg):
 class OOM(object):
     """Hold OOM object and provide access"""
 
-    REC_TIMESTAMP = re.compile(
-        r'^('
-        # pattern for date format: Jul 28 10:48:41
-        r'[A-Z]+[\w ]+ +\d{1,2} \d{2}:\d{2}:\d{2} \d{4}'
-        r'|'
-        # pattern for date format: 2019-10-30T08:13:31.896744+00:00
-        r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3,6}\+\d{2}:\d{2}'
-        r') ', re.ASCII)
-
     current_line = 0
     """Zero based index of the current line in self.lines"""
 
@@ -79,44 +70,94 @@ class OOM(object):
     def __init__(self, text):
         # use Unix LF only
         text = text.replace('\r\n', '\r')
+        oom_lines = text.split('\n')
 
-        # Split into lines
-        oom_lines = []
-        begin_found = False
-        end_found = False
+        self.current_line = 0
+        self.lines = oom_lines
+        self.text = text
 
-        for line in text.split('\n'):
+        # don't do  anything if the text does not contains the leading OOM message
+        if 'invoked oom-killer:' not in text:
+            self.state = "oom_invalid"
+            return
 
+        oom_lines = self._remove_non_oom_lines(oom_lines)
+        oom_lines = self._strip_needless_columns(oom_lines)
+
+        self.lines = oom_lines
+        self.text = '\n'.join(oom_lines)
+
+        if 'Killed process' in text:
+            self.state = "oom_complete"
+        else:
+            self.state = "oom_started"
+
+    def _number_of_columns_to_strip(self, first_line):
+        """
+        Determinate number of columns left to the OOM message to strip.
+
+        Sometime timestamps, hostnames and or syslog tags are left to the OOM message. This columns will be count to
+        strip later.
+        """
+        to_strip = 0
+
+        columns = first_line.split(" ")
+        try:
+            # strip all before "<program name> invoked oom-killer: gfp_mask=0x280da, order=0, oom_score_adj=0
+            to_strip = columns.index("invoked")
+            # decrease to include <program name>
+            to_strip -= 1
+        except ValueError:
+            pass
+
+        return to_strip
+        
+    def _remove_non_oom_lines(self, oom_lines):
+        """Remove all lines before and after OOM message block"""
+        cleaned_lines = []
+        in_oom_lines = False
+        
+        for line in oom_lines:
+            # first line of the oom message block
             if "invoked oom-killer:" in line:
-                begin_found = True
-            elif not begin_found:
-                continue
+                in_oom_lines = True
+                
+            if in_oom_lines:
+                cleaned_lines.append(line)
 
-            # Remove leading timestamps
-            line = self.REC_TIMESTAMP.sub('', line)
+            # next line will not be part of the oom anymore
+            if 'Killed process' in line:
+                break
+        
+        return cleaned_lines
 
+    def _strip_needless_columns(self, oom_lines):
+        """
+        Remove needless columns at the start of every line.
+
+        This function removes all leading items w/o any relation to the OOM message like, date and time, hostname,
+        syslog priority/facility.
+        """
+        stripped_lines = []
+        cols_to_strip = self._number_of_columns_to_strip(oom_lines[0])
+
+        for line in oom_lines:
             # remove empty lines
             if not line.strip():
                 continue
 
-            oom_lines.append(line)
+            if cols_to_strip:
+                elements = line.split(" ", cols_to_strip)
+                line = elements.pop(-1)
 
-            # next line will not be part of the oom anymore
-            if "Killed process" in line:
-                end_found = True
-                break
+            # OOMs logged to /var/log/messages / journalctl may contain
+            # "kernel:" at the begin of the content
+            if line.startswith('kernel:'):
+                line = line[7:]
 
-        self.current_line = 0
+            stripped_lines.append(line)
 
-        if begin_found and end_found:
-            self.state = "oom_complete"
-        elif begin_found and not end_found:
-            self.state = "oom_started"
-        else:
-            self.state = "oom_invalid"
-
-        self.lines = oom_lines
-        self.text = '\n'.join(oom_lines)
+        return stripped_lines
 
     def back(self):
         """Return the previous line"""
