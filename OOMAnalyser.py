@@ -869,6 +869,10 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         nr_processed_elements = 0
         for title, length in elements:
+            # length is None/undefined is the regular expression doesn't find any values
+            if not length:
+                continue
+
             rect_len = int(100 * length / sum_all_elements) * length_factor
 
             if not rect_len:
