@@ -162,18 +162,18 @@ function goBack() {
         <tr>
             <td></td>
             <td class="text--align-right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
-            <td>This process requests memory and is triggering thereby the OOM situation</td>
+            <td>This process requests memory and is triggering thereby the OOM situation.</td>
         </tr>
         <tr>
             <td>Memory allocation flags<br>(gfp_mask)</td>
             <td id="trigger_proc_gfp_mask" class="text--align-right"></td>
             <td>These flags are used to control the kernel internal memory allocation<br>
-                GFP stands for <code>__get_free_pages()</code> </td>
+                GFP stands for <code>__get_free_pages()</code>.</td>
         </tr>
         <tr>
             <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
             <td id="trigger_proc_nodemask" class="text--align-right"></td>
-            <td>Bit mask indicating the cores on which the process can run</td>
+            <td>Bit mask indicating the cores on which the process can run.</td>
         </tr>
         <tr>
             <td>Requested memory<br>(order)</td>
@@ -199,7 +199,7 @@ function goBack() {
         <tr>
             <td></td>
             <td class="text--align-right"><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
-            <td>Process killed by Linux kernel to satisfy the memory request</td>
+            <td>Process killed by Linux kernel to satisfy the memory request.</td>
         </tr>
         <tr>
             <td>OOM Score<br>(score)</td>
@@ -209,24 +209,24 @@ function goBack() {
         <tr>
             <td>Virtual Memory <br> (total-vm) </td>
             <td id="killed_proc_vm_kb" class="text--append-suffix-kbytes"></td>
-            <td>Virtual memory used by this process</td>
+            <td>Virtual memory used by this process.</td>
         </tr>
         <tr>
             <td>Resident anonymous memory <br> (anon-rss) </td>
             <td id="killed_proc_anon_rss_kb" class="text--append-suffix-kbytes"></td>
-            <td>Part of the virtual process memory mapped into RAM</td>
+            <td>Part of the virtual process memory mapped into RAM.</td>
         </tr>
         <tr>
             <td>Resident file mapping memory <br> (file-rss) </td>
             <td id="killed_proc_file_rss_kb" class="text--append-suffix-kbytes"></td>
             <td>Files which have been mapped into RAM (with
-                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>)
+                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
             </td>
         </tr>
         <tr>
             <td>Resident shared memory <br> (shmem-rss) </td>
             <td id="killed_proc_shmem_rss_kb" class="text--append-suffix-kbytes"></td>
-            <td>This may include System V shared memory and shared anonymous memory</td>
+            <td>This may include System V shared memory and shared anonymous memory.</td>
         </tr>
 
         <!-- Memory Usage Graphs -->
