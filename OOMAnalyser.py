@@ -83,6 +83,7 @@ class OOM(object):
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
         oom_lines = self._strip_needless_columns(oom_lines)
+        oom_lines = self._rsyslog_unescape_lf(oom_lines)
 
         self.lines = oom_lines
         self.text = '\n'.join(oom_lines)
@@ -130,6 +131,27 @@ class OOM(object):
                 break
         
         return cleaned_lines
+
+    def _rsyslog_unescape_lf(self, oom_lines):
+        """
+        Rsyslog replaces line breaks with their ocal representation #012.
+
+        This feature can be controlled inside the rsyslog configuration with the directives
+        $EscapeControlCharactersOnReceive, $Escape8BitCharactersOnReceive and $ControlCharactersEscapePrefix.
+
+        The replacement is only in second line (active_anon:....) of the Mem-Info block.
+        """
+        lines = []
+
+        for line in oom_lines:
+            if '#012' in line:
+                line = line.replace('#012', '\r')
+                expanded = line.split('\r')
+                lines.extend(expanded)
+            else:
+                lines.append(line)
+
+        return lines
 
     def _strip_needless_columns(self, oom_lines):
         """
