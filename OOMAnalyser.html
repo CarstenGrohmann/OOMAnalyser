@@ -121,7 +121,7 @@ function goBack() {
 
 <div id="input">
     <h2>Step 1 - Enter your OOM message</h2>
-    <textarea id="textarea_oom" cols="100" rows="20" autocomplete="off" title="OOM input field">Add your OOMhere</textarea>
+    <textarea autocomplete="off" cols="100" id="textarea_oom" onfocusin="OOMAnalyser.OOMDisplayInstance.empty_textarea_oom()" rows="20" title="OOM input field">Add your OOMhere</textarea>
     <br/>
     <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it">Analyse</button>
     <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area">Reset</button>
