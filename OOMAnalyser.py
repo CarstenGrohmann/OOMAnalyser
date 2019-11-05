@@ -829,7 +829,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             document.getElementById('textarea_oom').value = "<paste your OOM here>"
 
         hide_element('analysis')
-        hide_element('notify_box')
         show_element('input')
 
         # show hidden rows
