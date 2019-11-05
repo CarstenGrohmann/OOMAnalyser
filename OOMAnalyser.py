@@ -34,21 +34,25 @@ def toggle(element_id):
 
 def error(msg):
     """Show the error box and add the error message"""
-    show_element('notify_box')
-    notify_box = document.getElementById('notify_box')
-    notification = document.createElement('div')
-    notification.classList.add('js-notify_box__msg--error')
-    notification.innerHTML = 'ERROR: {}<br>'.format(msg)
-    notify_box.appendChild(notification)
+    show_notifybox('ERROR', msg)
 
 
 def warning(msg):
     """Show the error box and add the warning message"""
+    show_notifybox('WARNING', msg)
+
+
+def show_notifybox(prefix, msg):
+    """Show the error box and the message"""
+    if prefix == 'WARNING':
+        css_class = 'js-notify_box__msg--warning'
+    else:
+        css_class = 'js-notify_box__msg--error'
     show_element('notify_box')
     notify_box = document.getElementById('notify_box')
     notification = document.createElement('div')
-    notification.classList.add('js-notify_box__msg--warning')
-    notification.innerHTML = 'WARNING: {}<br>'.format(msg)
+    notification.classList.add(css_class)
+    notification.innerHTML = '{}: {}<br>'.format(prefix, msg)
     notify_box.appendChild(notification)
 
 
