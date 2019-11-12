@@ -352,8 +352,8 @@ class OOMAnalyser(object):
     results = {}
     """Extracted result"""
 
-    # Reference to the OOM object
-    oom = None
+    # Reference to the OOMEntity object
+    oom_entity = None
 
     GFP_FLAGS = {
         'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
@@ -412,7 +412,7 @@ class OOMAnalyser(object):
 
     def __init__(self, oom):
         self.results = {}
-        self.oom = oom
+        self.oom_entity = oom
 
     def _extract_block_from_next_pos(self, marker):
         """
@@ -421,14 +421,14 @@ class OOMAnalyser(object):
         :rtype: str
         """
         block = ''
-        if not self.oom.find_text(marker):
+        if not self.oom_entity.find_text(marker):
             return block
 
-        line = self.oom.current()
+        line = self.oom_entity.current()
         block += "{}\n".format(line)
-        for line in self.oom:
+        for line in self.oom_entity:
             if not line.startswith(' '):
-                self.oom.back()
+                self.oom_entity.back()
                 break
             block += "{}\n".format(line)
         return block
@@ -445,14 +445,14 @@ class OOMAnalyser(object):
                     self.REC_PID_KERNELVERSION,
                     self.REC_SWAP,
                     ]:
-            match = rec.search(self.oom.text)
+            match = rec.search(self.oom_entity.text)
             if match:
                 self.results.update(match.groupdict())
 
         for groupname, rec in [('mem_node_info', self.REC_MEM_NODEINFO),
                                ('process_table', self.REC_PROCESSES),
                                ]:
-            match = rec.search(self.oom.text)
+            match = rec.search(self.oom_entity.text)
             if match:
                 self.results[groupname] = match.group()
 
