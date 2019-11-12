@@ -64,8 +64,8 @@ def show_notifybox(prefix, msg):
     notify_box.appendChild(notification)
 
 
-class OOM(object):
-    """Hold OOM object and provide access"""
+class OOMEntity(object):
+    """Hold whole OOM message block and provide access"""
 
     current_line = 0
     """Zero based index of the current line in self.lines"""
@@ -978,7 +978,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def analyse_and_show(self):
         """Analyse the OOM text inserted into the form and show the results"""
-        self.oom = OOM(self.load_from_form())
+        self.oom = OOMEntity(self.load_from_form())
         if not self.is_valid(self.oom):
             self.oom = None
             return
