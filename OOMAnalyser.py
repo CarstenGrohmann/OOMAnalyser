@@ -16,9 +16,10 @@ VERSION = "0.2.0"
 
 class OOMState(object):
     """Simple enum to track the completeness of an OOM block"""
-    invalid = 1
-    started = 2
-    complete = 3
+    empty = 1
+    invalid = 2
+    started = 3
+    complete = 4
 
 
 def hide_element(element_id):
@@ -81,14 +82,18 @@ class OOM(object):
     def __init__(self, text):
         # use Unix LF only
         text = text.replace('\r\n', '\r')
+        text = text.strip()
         oom_lines = text.split('\n')
 
         self.current_line = 0
         self.lines = oom_lines
         self.text = text
 
-        # don't do  anything if the text does not contains the leading OOM message
-        if 'invoked oom-killer:' not in text:
+        # don't do anything if the text is empty or does not contains the leading OOM message
+        if not text:
+            self.state = OOMState.empty
+            return
+        elif 'invoked oom-killer:' not in text:
             self.state = OOMState.invalid
             return
 
@@ -1008,6 +1013,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         elif oom.state == OOMState.invalid:
             error('The inserted text is not a valid OOM block!')
             error('The initial pattern was not found!')
+        elif oom.state == OOMState.empty:
+            error('The inserted text is empty! Please insert an OOM message block.')
         else:
             error('Invalid state "{}" after the OOM has formally checked!'.format(self.oom.state))
         return False
