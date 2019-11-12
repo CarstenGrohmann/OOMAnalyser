@@ -14,6 +14,13 @@ VERSION = "0.2.0"
 """Version number"""
 
 
+class OOMState(object):
+    """Simple enum to track the completeness of an OOM block"""
+    invalid = 1
+    started = 2
+    complete = 3
+
+
 def hide_element(element_id):
     """Hide the given HTML element"""
     element = document.getElementById(element_id)
@@ -82,7 +89,7 @@ class OOM(object):
 
         # don't do  anything if the text does not contains the leading OOM message
         if 'invoked oom-killer:' not in text:
-            self.state = "oom_invalid"
+            self.state = OOMState.invalid
             return
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
@@ -93,9 +100,9 @@ class OOM(object):
         self.text = '\n'.join(oom_lines)
 
         if 'Killed process' in text:
-            self.state = "oom_complete"
+            self.state = OOMState.complete
         else:
-            self.state = "oom_started"
+            self.state = OOMState.started
 
     def _number_of_columns_to_strip(self, first_line):
         """
@@ -993,13 +1000,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         Return True for a complete OOM otherwise False and a warning msg for a incomplete or an error msg
         if the start sequence was not found.
         """
-        if oom.state == "oom_complete":
+        if oom.state == OOMState.complete:
             return True
-        elif oom.state == "oom_started":
-            warning('The inserted OOM is incomplete - only the beginning has found.')
-            warning('The result may be incomplete!')
-        elif oom.state == "oom_invalid":
-            error('The inserted text is not a valid OOM!')
+        elif oom.state == OOMState.started:
+            warning('The inserted OOM is incomplete!')
+            warning('The initial pattern was found but not the final. The result may be incomplete!')
+        elif oom.state == OOMState.invalid:
+            error('The inserted text is not a valid OOM block!')
+            error('The initial pattern was not found!')
         else:
             error('Invalid state "{}" after the OOM has formally checked!'.format(self.oom.state))
         return False
