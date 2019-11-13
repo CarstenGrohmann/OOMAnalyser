@@ -983,7 +983,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.oom = None
             return
 
-        # set defaults
+        # set defaults and clear notifications
         self.oom_details.clear()
         self.set_HTML_defaults(False)
 
