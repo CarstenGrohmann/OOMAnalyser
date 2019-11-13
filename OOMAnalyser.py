@@ -614,7 +614,7 @@ class OOMAnalyser(object):
         return dist
 
     def analyse(self):
-        """Return the analysis of the given OOM object"""
+        """Extract and calculate values from the given OOM object"""
         self._extract_from_oom_text()
         self._calc_from_oom_details()
         return self.results
@@ -995,8 +995,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # analyse
         analyser = OOMAnalyser(self.oom)
-        analyser.analyse()
-        self.oom_details = analyser.results
+        self.oom_details = analyser.analyse()
 
         # display results
         self.show()
