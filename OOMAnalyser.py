@@ -843,8 +843,13 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         if clean_oom:
             document.getElementById('textarea_oom').value = self.paste_note
 
-        hide_element('analysis')
-        show_element('input')
+        # hide all elements marked to be hidden by default
+        for element in document.querySelectorAll('.text--default-hide'):
+            element.classList.add('js-text--display-none')
+
+        # show all elements marked to be shown by default
+        for element in document.querySelectorAll('.text--default-show'):
+            element.classList.remove('js-text--display-none')
 
         # show hidden rows
         for element in document.querySelectorAll('table .js-text--display-none'):
@@ -858,7 +863,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         element = document.getElementById('notify_box')
         while element.firstChild:
             element.removeChild(element.firstChild)
-        hide_element('notify_box')
 
         # remove svg charts
         for element_id in ('svg_swap', 'svg_ram'):

@@ -6,6 +6,7 @@
     <title>OOM Analyser</title>
 
     <style>
+        /* Use BEM naming convention */
 
         .text--append-suffix-kbytes {
             text-align: right;
@@ -25,13 +26,17 @@
             text-align: right;
         }
 
-        .js-text--display-none {
-            display: none;
-        }
-
         .text__superscript {
             vertical-align: super;
             font-size: 0.83em;
+        }
+
+        .text--default-hide {
+            /* empty just used to hide elements in the default view */
+
+        }
+        .text--default-show {
+            /* empty just used to show elements in the default view */
         }
 
         svg {
@@ -75,13 +80,16 @@
         }
 
         .js-notify_box__msg--warning {
-	        color: #9F6000;
-	        background-color: #FEEFB3;
-	    }
-	    .js-notify_box__msg--error {
-	        color: #D8000C;
-    	    background-color: #FFD2D2;
-	    }
+            color: #9F6000;
+            background-color: #FEEFB3;
+        }
+        .js-notify_box__msg--error {
+            color: #D8000C;
+            background-color: #FFD2D2;
+        }
+        .js-text--display-none {
+            display: none;
+        }
 
         .license__text {
             font-size: small;
@@ -117,9 +125,9 @@ function goBack() {
 </p>
 
 <p>
-<div class="terminal notify_box js-text--display-none" id="notify_box"></div>
+<div class="terminal notify_box text--default-hide js-text--display-none" id="notify_box"></div>
 
-<div id="input">
+<div class="text--default-show" id="input">
     <h2>Step 1 - Enter your OOM message</h2>
     <textarea autocomplete="off" cols="100" id="textarea_oom" onfocusin="OOMAnalyser.OOMDisplayInstance.empty_textarea_oom()" rows="20" title="OOM input field">Add your OOMhere</textarea>
     <br/>
@@ -128,7 +136,7 @@ function goBack() {
     <button onclick="OOMAnalyser.OOMDisplayInstance.copy_example_to_form()" title="Copy an example OOM into the input area">Insert example</button>
 </div>
 
-<div id="analysis">
+<div class="text--default-hide js-text--display-none" id="analysis">
 
 <h2>Step 2 - Results</h2>
     <p>
@@ -598,7 +606,7 @@ function goBack() {
        title="Show / hide installation guide">(click to show / hide)</a>
 </h2>
 
-<div class="js-text--display-none" id="installation">
+<div class="text--default-hide js-text--display-none" id="installation">
     Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, a
     HTML file and a JavaScript file. Both can be stored locally to use OOMAnalyser
     without an Internet connection.
