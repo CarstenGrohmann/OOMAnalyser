@@ -436,6 +436,8 @@ class OOMAnalyser(object):
     def _extract_from_oom_text(self):
         """Extract details from OOM message text"""
 
+        self.results = {}
+
         for rec in [self.REC_INVOKED_OOMKILLER,
                     self.REC_KILLED,
                     self.REC_MEMINFO_1,
