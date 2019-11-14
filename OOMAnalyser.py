@@ -14,7 +14,7 @@ VERSION = "0.2.0"
 """Version number"""
 
 
-class OOMState(object):
+class OOMEntityState(object):
     """Simple enum to track the completeness of an OOM block"""
     empty = 1
     invalid = 2
@@ -91,10 +91,10 @@ class OOMEntity(object):
 
         # don't do anything if the text is empty or does not contains the leading OOM message
         if not text:
-            self.state = OOMState.empty
+            self.state = OOMEntityState.empty
             return
         elif 'invoked oom-killer:' not in text:
-            self.state = OOMState.invalid
+            self.state = OOMEntityState.invalid
             return
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
@@ -105,9 +105,9 @@ class OOMEntity(object):
         self.text = '\n'.join(oom_lines)
 
         if 'Killed process' in text:
-            self.state = OOMState.complete
+            self.state = OOMEntityState.complete
         else:
-            self.state = OOMState.started
+            self.state = OOMEntityState.started
 
     def _number_of_columns_to_strip(self, first_line):
         """
@@ -1010,15 +1010,15 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         Return True for a complete OOM otherwise False and a warning msg for a incomplete or an error msg
         if the start sequence was not found.
         """
-        if oom.state == OOMState.complete:
+        if oom.state == OOMEntityState.complete:
             return True
-        elif oom.state == OOMState.started:
+        elif oom.state == OOMEntityState.started:
             warning('The inserted OOM is incomplete!')
             warning('The initial pattern was found but not the final. The result may be incomplete!')
-        elif oom.state == OOMState.invalid:
+        elif oom.state == OOMEntityState.invalid:
             error('The inserted text is not a valid OOM block!')
             error('The initial pattern was not found!')
-        elif oom.state == OOMState.empty:
+        elif oom.state == OOMEntityState.empty:
             error('The inserted text is empty! Please insert an OOM message block.')
         else:
             error('Invalid state "{}" after the OOM has formally checked!'.format(self.oom.state))
