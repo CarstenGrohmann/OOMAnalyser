@@ -39,6 +39,24 @@
             /* empty just used to show elements in the default view */
         }
 
+        a {
+            text-decoration: none;
+        }
+        a:hover, a:active {
+            text-decoration: underline;
+        }
+
+        .a--small {
+            font-size: small;
+            font-weight: unset;
+            padding: unset;
+        }
+
+        .a__footnote {
+            vertical-align: super;
+            font-size: 0.83em;
+        }
+
         svg {
             display: block;
             max-height: 200px;
@@ -63,20 +81,13 @@
             word-wrap: break-word;
         }
 
-        .a--small {
-            font-size: small;
-            font-weight: unset;
-            padding: unset;
-        }
-
-        .a__footnote {
-            vertical-align: super;
-            font-size: 0.83em;
-        }
-
         /* Zebra-Layout */
         tr:nth-child(odd) td:nth-child(2), tr:nth-child(odd) td:nth-child(3) {
             background-color: #f2f2f2;
+        }
+
+        .js-flag-hide-from-toc {
+            /* empty just used to hide h2 headings from TOCS */
         }
 
         .js-notify_box__msg--warning {
@@ -103,6 +114,21 @@
             font-family: monospace;
             overflow: auto;
         }
+
+        .table-of-contents {
+            float: right;
+            width: 40%;
+            background: #eee;
+            font-size: 0.8em;
+            padding: 1em 2em;
+            margin: 0 0 0.5em 0.5em;
+        }
+        .table-of-contents ul {
+            padding: 0;
+        }
+        .table-of-contents li {
+            margin: 0 0 0.25em 0;
+        }
     </style>
     <script>
 function goBack() {
@@ -114,6 +140,12 @@ function goBack() {
 
 
 <h1>Analyse and visualise Linux OOM output</h1>
+
+<nav class="table-of-contents" id="table_of_contents" role="navigation">
+    <h2 class="js-flag-hide-from-toc">On this page</h2>
+    <ul>
+    </ul>
+</nav>
 
 <p>
     This web page analyses Linux Out Of Memory (OOM) messages and shows these
@@ -128,7 +160,7 @@ function goBack() {
 <div class="terminal notify_box text--default-hide js-text--display-none" id="notify_box"></div>
 
 <div class="text--default-show" id="input">
-    <h2>Step 1 - Enter your OOM message</h2>
+    <h2 id="step1">Step 1 - Enter your OOM message</h2>
     <textarea autocomplete="off" cols="100" id="textarea_oom" onfocusin="OOMAnalyser.OOMDisplayInstance.empty_textarea_oom()" rows="20" title="OOM input field">Add your OOMhere</textarea>
     <br/>
     <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it">Analyse</button>
@@ -138,7 +170,7 @@ function goBack() {
 
 <div class="text--default-hide js-text--display-none" id="analysis">
 
-<h2>Step 2 - Results</h2>
+<h2 id="step2">Step 2 - Results</h2>
     <p>
         Go back to
         <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
@@ -577,7 +609,7 @@ function goBack() {
         to run a new analysis.
     </p>
 
-    <h2>Footnotes</h2>
+    <h2 id="h2-footnotes">Footnotes</h2>
     <ol>
         <li id="footnote-proc5"><cite><a href="http://man7.org/linux/man-pages/man5/proc.5.html" target="_blank">
 	proc(5) - process information pseudo-filesystem</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
@@ -585,7 +617,7 @@ function goBack() {
     </ol>
 </div>
 
-<h2>Further Information</h2>
+<h2 id="infos">Further Information</h2>
 <ol>
   <li>
     <a href="https://man7.org/">Linux man pages online</a>
@@ -600,7 +632,7 @@ function goBack() {
   </li>
 </ol>
 
-<h2>
+<h2 id="changes">
     Changelog
     <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('changelog')"
        title="Show / hide news">(click to show / hide)</a>
@@ -632,7 +664,7 @@ function goBack() {
     </ol>
 </div>
 
-<h2>
+<h2 id="install">
     Local Installation
     <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('installation')"
        title="Show / hide installation guide">(click to show / hide)</a>

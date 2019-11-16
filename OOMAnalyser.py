@@ -22,6 +22,10 @@ class OOMEntityState(object):
     complete = 4
 
 
+def is_visible(element):
+    return element.offsetWidth > 0 and element.offsetHeight > 0
+
+
 def hide_element(element_id):
     """Hide the given HTML element"""
     element = document.getElementById(element_id)
@@ -813,6 +817,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def __init__(self):
         self.set_HTML_defaults()
+        self.update_toc()
 
         element = document.getElementById('version')
         element.textContent = "v{}".format(VERSION)
@@ -839,6 +844,20 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         if DEBUG:
             show_element('notify_box')
+
+    def update_toc(self):
+        """Update the TOC to show current and visible headlines only"""
+        new_toc = ''
+
+        toc_content = document.querySelectorAll('nav > ul')[0]
+
+        for element in document.querySelectorAll('h2'):
+            if not is_visible(element) or element.classList.contains('js-flag-hide-from-toc'):
+                continue
+
+            new_toc +='<li><a href="#{}">{}</a></li>'.format(element.id, element.textContent)
+
+        toc_content.innerHTML = new_toc
 
     def set_HTML_defaults(self, clean_oom=True):
         """Reset the whole HTML document"""
@@ -968,6 +987,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def reset_form(self):
         self.set_HTML_defaults()
+        self.update_toc()
 
     def toggle_oom(self, show=False):
         """Toggle the visibility of the full OOM message"""
@@ -999,6 +1019,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # display results
         self.show()
+        self.update_toc()
 
     def load_from_form(self):
         element = document.getElementById('textarea_oom')
