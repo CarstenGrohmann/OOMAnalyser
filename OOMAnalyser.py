@@ -846,13 +846,19 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             show_element('notify_box')
 
     def update_toc(self):
-        """Update the TOC to show current and visible headlines only"""
+        """
+        Update the TOC to show current headlines only
+
+        There are two conditions to show a h2 headline in TOC:
+         * the headline is visible
+         * the id attribute is set
+        """
         new_toc = ''
 
         toc_content = document.querySelectorAll('nav > ul')[0]
 
         for element in document.querySelectorAll('h2'):
-            if not is_visible(element) or element.classList.contains('js-flag-hide-from-toc'):
+            if not (is_visible(element) and element.id):
                 continue
 
             new_toc +='<li><a href="#{}">{}</a></li>'.format(element.id, element.textContent)
