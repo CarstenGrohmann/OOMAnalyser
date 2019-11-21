@@ -57,6 +57,12 @@
             font-size: 0.83em;
         }
 
+        .h2--no-newline {
+            /* Prevent a linebreak after headline to a place a link on the same line */
+            /* Place such headlines within a div container if the next element can be invisible */
+            display: inline-block;
+        }
+
         svg {
             display: block;
             max-height: 200px;
@@ -632,11 +638,11 @@ function goBack() {
   </li>
 </ol>
 
-<h2 id="changes">
-    Changelog
+<div>
+    <h2 class="h2--no-newline" id="changes">Changelog</h2>
     <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('changelog')"
        title="Show / hide news">(click to show / hide)</a>
-</h2>
+</div>
 
 <div class="text--default-hide js-text--display-none" id="changelog">
     <h3>Version 0.3.0 - 2019-XX-XX:</h3>
@@ -664,11 +670,11 @@ function goBack() {
     </ol>
 </div>
 
-<h2 id="install">
-    Local Installation
+<div>
+    <h2 class="h2--no-newline" id="install">Local Installation</h2>
     <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('installation')"
        title="Show / hide installation guide">(click to show / hide)</a>
-</h2>
+</div>
 
 <div class="text--default-hide js-text--display-none" id="installation">
     Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, a
