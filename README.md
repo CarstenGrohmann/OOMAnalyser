@@ -2,17 +2,16 @@
 
 ## Introduction
 
-OOMAnalyser is a small project to transform the OOM output of a Linux kernel
-into a more human friendly format and show the information on a single web
-page. All data will be processed locally in your browser - the data will not
-transferred to foreign servers. Thereby the OOM webpage can be used without an
-Internet connection also.
+OOMAnalyser is a small project to transform the OOM message of a Linux kernel into a more user-friendly format.
 
-This project is written in Python and it uses [Transcrypt](https://www.transcrypt.org/) to
-compile the Python sources into JavaScript.
+OOMAnalyser consists of a web page into whose input field the OOM message is copied. JavaScript code extracts the data
+from it and displays the details. All processing takes place in the browser. No data is transferred to external servers.
+This makes it possible to use a locally stored copy of the website for analysis.
 
-The current online version is available on https://www.carstengrohmann.de/oom/.
+This project is written in Python and uses [Transcrypt](https://www.transcrypt.org/)  to translate the Python sources
+into JavaScript.
 
+The current online version is available at https://www.carstengrohmann.de/oom/ .
 
 ## Installation
 
