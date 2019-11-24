@@ -871,11 +871,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             document.getElementById('textarea_oom').value = self.paste_note
 
         # hide all elements marked to be hidden by default
-        for element in document.querySelectorAll('.text--default-hide'):
+        for element in document.querySelectorAll('.js-text--default-hide'):
             element.classList.add('js-text--display-none')
 
         # show all elements marked to be shown by default
-        for element in document.querySelectorAll('.text--default-show'):
+        for element in document.querySelectorAll('.js-text--default-show'):
             element.classList.remove('js-text--display-none')
 
         # show hidden rows
