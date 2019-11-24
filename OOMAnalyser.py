@@ -10,7 +10,7 @@ import re
 DEBUG = False
 """Show additional information during the development cycle"""
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 """Version number"""
 
 
