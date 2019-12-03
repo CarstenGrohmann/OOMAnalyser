@@ -189,8 +189,8 @@ class OOMEntity(object):
                 continue
 
             if cols_to_strip:
-                elements = line.split(" ", cols_to_strip)
-                line = elements.pop(-1)
+                # [-1] slicing needs Transcrypt operator overloading
+                line = line.split(" ", cols_to_strip)[-1] # __:opov
 
             # OOMs logged to /var/log/messages / journalctl may contain
             # "kernel:" at the begin of the content
