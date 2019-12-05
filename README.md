@@ -8,8 +8,8 @@ OOMAnalyser consists of a web page into whose input field the OOM message is cop
 from it and displays the details. All processing takes place in the browser. No data is transferred to external servers.
 This makes it possible to use a locally stored copy of the website for analysis.
 
-This project is written in Python and uses [Transcrypt](https://www.transcrypt.org/)  to translate the Python sources
-into JavaScript.
+This project is written in [Python](https://www.python.org) and uses [Transcrypt](https://www.transcrypt.org/)  to
+translate Python code into JavaScript.
 
 The current online version is available at https://www.carstengrohmann.de/oom/ .
 

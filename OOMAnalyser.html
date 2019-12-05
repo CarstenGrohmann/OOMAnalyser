@@ -149,12 +149,15 @@ function goBack() {
 </nav>
 
 <p>
-    This web page analyses Linux Out Of Memory (OOM) messages and shows these
-    information in a human friendly presentation.
+    OOMAnalyser is a small project to transform the OOM message of a Linux kernel into a more user-friendly format.
 </p>
 <p>
-    Your input will be analysed locally - in your browser - by an integrated
-    JavaScript script without transferring your data to foreign servers.
+    OOMAnalyser consists of a web page into whose input field the OOM message is copied. JavaScript code extracts
+    the data from it and displays the details. All processing takes place in the browser. No data is transferred
+    to external servers. This makes it possible to use a locally stored copy of the website for analysis.
+
+    This project is written in <a href="https://www.python.org">Python</a> and uses
+    <a href="https://www.transcrypt.org/">Transcrypt</a> to translate Python code into JavaScript.
 </p>
 
 <p>
