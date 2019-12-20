@@ -38,6 +38,10 @@
             /* empty just used to show elements in the default view */
         }
 
+        .table__sub-section--bold {
+            font-weight: bold;
+        }
+
         a {
             text-decoration: none;
         }
@@ -278,11 +282,11 @@ function goBack() {
             <th scope="row" colspan="3">Memory Usage Graphs</th>
         </tr>
         <tr>
-            <td style="font-weight: bold">RAM Summary</td>
+            <td class="table__sub-section--bold">RAM Summary</td>
             <td colspan="2"><div id="svg_ram"></div></td>
         </tr>
         <tr>
-            <td style="font-weight: bold">Swap Summary</td>
+            <td class="table__sub-section--bold">Swap Summary</td>
             <td colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
@@ -290,7 +294,7 @@ function goBack() {
         <!-- Page Usage -->
 
         <tr>
-            <td style="font-weight: bold">Memory Pages</td>
+            <td class="table__sub-section--bold">Memory Pages</td>
             <td></td>
             <td></td>
         </tr>
@@ -336,7 +340,7 @@ function goBack() {
         <!-- Memory Usage Details -->
 
         <tr>
-            <td style="font-weight: bold">Memory Usage Details</td>
+            <td class="table__sub-section--bold">Memory Usage Details</td>
             <td></td>
             <td></td>
         </tr>
@@ -481,7 +485,7 @@ function goBack() {
         <!-- Swap Usage -->
 
         <tr>
-            <td style="font-weight: bold">Swap Usage</td>
+            <td class="table__sub-section--bold">Swap Usage</td>
             <td></td>
             <td></td>
         </tr>
