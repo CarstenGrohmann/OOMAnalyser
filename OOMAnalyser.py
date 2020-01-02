@@ -2,7 +2,7 @@
 #
 # Linux OOM Analyser
 #
-# Copyright (c) 2017-2019 Carsten Grohmann
+# Copyright (c) 2017-2020 Carsten Grohmann
 # License: MIT - THIS PROGRAM COMES WITH NO WARRANTY
 
 import re
