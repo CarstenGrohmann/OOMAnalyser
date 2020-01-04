@@ -1061,9 +1061,36 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         hide_element('input')
         show_element('analysis')
 
+        # copy entries for explanation section
+        for i in ('killed_proc_name', 'killed_proc_pid', 'killed_proc_shmem_rss_kb', 'page_size', 'ram_pages',
+                  'swap_total_kb', 'swap_used_kb', 'trigger_proc_name', 'trigger_proc_pid',
+                  'trigger_proc_requested_memory', 'trigger_proc_requested_memory_kbytes',
+                  ):
+            self.oom_details['explain_'+i] = self.oom_details.get(i)
+
+        # calculate remaining explanation values
+        self.oom_details['explain_ram_kb'] = self.oom_details['ram_pages'] * self.oom_details['page_size']
+
+
+        self.oom_details['explain_killed_proc_rss_kb'] = self.oom_details['killed_proc_anon_rss_kb'] + \
+                                                         self.oom_details['killed_proc_file_rss_kb']
+        self.oom_details['explain_killed_proc_rss_percent'] = int(100 *
+                                                                  self.oom_details['explain_killed_proc_rss_kb'] /
+                                                                  self.oom_details['explain_ram_kb'])
+
+        self.oom_details['explain_total_memory_kb'] = self.oom_details['explain_ram_kb'] + \
+                                                      self.oom_details['swap_total_kb']
+
+        # self.oom_details['explain_used_memory_kb'] = 42
+        # self.oom_details['explain_used_memory_percent'] = 42
+        # self.oom_details['explain_swap_used_percent'] = int(100 *
+        #                                                     self.oom_details['swap_used_kb'] /
+        #                                                     self.oom_details['swap_total_kb'])
+
         for item in self.oom_details.keys():
             self._set_single_item(item)
 
+        # generate swap usage diagram
         svg_swap = self.svg_generate_bar_chart(
             ('Swap Used', self.oom_details['swap_used_kb']),
             ('Swap Free', self.oom_details['swap_free_kb']),
@@ -1072,6 +1099,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         elem_svg_swap = document.getElementById('svg_swap')
         elem_svg_swap.appendChild(svg_swap)
 
+        # generate RAM usage diagram
         svg_ram = self.svg_generate_bar_chart(
             ('Active mem', self.oom_details['active_anon_pages']),
             ('Inactive mem', self.oom_details['inactive_anon_pages']),

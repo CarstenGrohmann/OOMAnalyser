@@ -22,6 +22,13 @@
             content: " pages";
         }
 
+        .text--append-suffix-percent {
+            text-align: right;
+        }
+        .text--append-suffix-percent::after {
+            content: "%";
+        }
+
         .text--align-right {
             text-align: right;
         }
@@ -179,11 +186,52 @@ function goBack() {
 <div class="js-text--default-hide js-text--display-none" id="analysis">
 
 <h2 id="step2">Step 2 - Results</h2>
+
     <p>
         Go back to
         <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
+
+    <h3>Summary</h3>
+    <div id="explanation">
+        <p>
+            The process &quot;<span id="explain_trigger_proc_name"></span>&quot; (pid <span id="explain_trigger_proc_pid"></span>)
+            requested <span class="text--append-suffix-kbytes" id="explain_trigger_proc_requested_memory_kbytes"></span>
+            (<span class="text--append-suffix-pages" id="explain_trigger_proc_requested_memory"></span>) memory.
+
+            The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
+            calculates a score for each process and terminates the process with the highest score.
+
+            The it terminates &quot;<span id="explain_killed_proc_name"></span>&quot; (pid
+            <span id="explain_killed_proc_pid"></span>) to satisfy the initial memory request.
+        </p>
+        <p>
+            The terminated process uses <span class="text--append-suffix-kbytes" id="explain_killed_proc_rss_kb"></span>
+            (<span class="text--append-suffix-percent" id="explain_killed_proc_rss_percent"></span>) resident memory.
+            These values are the sum of resident anonymous memory (anon-rss) and resident file mapping memory
+            (file-rss). Resident shared memory
+            (<span class="text--append-suffix-kbytes" id="explain_killed_proc_shmem_rss_kb"></span>) is ignored in
+            this calculation.
+        <p>
+            The system has <span class="text--append-suffix-kbytes" id="explain_ram_kb"></span>
+            (<span class="text--append-suffix-pages" id="explain_ram_pages"></span> *
+            <span class="text--append-suffix-kbytes" id="explain_page_size"></span>)
+            physical memory and <span class="text--append-suffix-kbytes" id="explain_swap_total_kb"></span> swap space.
+            That's <span class="text--append-suffix-kbytes" id="explain_total_memory_kb"></span> total.
+        </p>
+<!--
+        <p>
+            <span class="text--append-suffix-kbytes" id="explain_used_memory_kb"></span>
+            (<span class="text--append-suffix-percent" id="explain_used_memory_percent"></span>) of the physical memory
+            and <span class="text--append-suffix-kbytes" id="explain_swap_used_kb"></span>
+            (<span class="text--append-suffix-percent" id="explain_swap_used_percent"></span>) of the swap space
+            were used used when the OOM killer has been invoked.
+        </p>
+-->
+    </div>
+
+    <h3>Details of analysis</h3>
     <p>
         The result of the analysis is displayed in three columns. The first column is used to name the property
         including the original OOM identifier in brackets. The extracted information is displayed in the second column.
@@ -651,6 +699,7 @@ function goBack() {
 
     <h4>General</h4>
     <ol>
+        <li>Add a textual summary of the analysis</li>
         <li>...</li>
     </ol>
 
