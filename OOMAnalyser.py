@@ -224,7 +224,7 @@ class OOMEntity(object):
         Search the pattern and set the position to the first found line.
         Otherwise the position pointer won't be changed.
 
-        :param pattern: Text to fine
+        :param pattern: Text to find
         :type pattern: str
 
         :return: True if the marker has found.
