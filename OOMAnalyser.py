@@ -605,8 +605,8 @@ class OOMAnalyser(object):
 
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
-        self.results['trigger_proc_requested_memory'] = 2 ** self.results['trigger_proc_order']
-        self.results['trigger_proc_requested_memory_kbytes'] = self.results['page_size']
+        self.results['trigger_proc_requested_memory_pages'] = 2 ** self.results['trigger_proc_order']
+        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['page_size']
 
         # process gfp_mask
         if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
@@ -1123,7 +1123,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # copy entries for explanation section
         for i in ('killed_proc_name', 'killed_proc_pid', 'killed_proc_rss_kb', 'killed_proc_score', 'page_size',
                   'ram_pages', 'swap_total_kb', 'swap_used_kb', 'trigger_proc_name', 'trigger_proc_pid',
-                  'trigger_proc_requested_memory', 'trigger_proc_requested_memory_kbytes',
+                  'trigger_proc_requested_memory_pages', 'trigger_proc_requested_memory_pages_kb',
                   ):
             self.oom_details['explain_'+i] = self.oom_details.get(i)
 

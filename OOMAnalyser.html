@@ -197,8 +197,8 @@ function goBack() {
     <div id="explanation">
         <p>
             The process &quot;<span id="explain_trigger_proc_name"></span>&quot; (pid <span id="explain_trigger_proc_pid"></span>)
-            requested <span class="text--append-suffix-kbytes" id="explain_trigger_proc_requested_memory_kbytes"></span>
-            (<span class="text--append-suffix-pages" id="explain_trigger_proc_requested_memory"></span>) memory.
+            requested <span class="text--append-suffix-kbytes" id="explain_trigger_proc_requested_memory_pages_kb"></span>
+            (<span class="text--append-suffix-pages" id="explain_trigger_proc_requested_memory_pages"></span>) memory.
 
             The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
             calculates a score for each process and terminates the process with the highest score.
@@ -273,8 +273,8 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         <tr>
             <td>Requested memory<br>(order)</td>
             <td class="text--align-right">
-                <span id="trigger_proc_requested_memory"></span> (2<span id="trigger_proc_order" class="text__superscript"></span>) pages /
-                <span class="text--append-suffix-kbytes" id="trigger_proc_requested_memory_kbytes"></span>
+                <span id="trigger_proc_requested_memory_pages"></span> (2<span class="text__superscript" id="trigger_proc_order"></span>) pages /
+                <span class="text--append-suffix-kbytes" id="trigger_proc_requested_memory_pages_kb"></span>
             </td>
             <td>The kernel specifies the requested number of pages as exponent of power of two.
         </tr>
