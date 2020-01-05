@@ -606,8 +606,8 @@ class OOMAnalyser(object):
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
         self.results['trigger_proc_requested_memory_pages'] = 2 ** self.results['trigger_proc_order']
-        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['page_size']
-
+        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['trigger_proc_requested_memory_pages'] *\
+                                                                 self.results['page_size']
         # process gfp_mask
         if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
             flags = self.results['trigger_proc_gfp_flags']
