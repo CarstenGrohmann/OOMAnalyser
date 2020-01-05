@@ -337,17 +337,24 @@ class OOMAnalyser(object):
         r')?',
         re.MULTILINE)
 
-    REC_PROCESSES = re.compile(
+    REC_PROCESS_TABLE = re.compile(
         r'^\[ pid \].*(?:\n)'
         r'(^(\[[ \d]+.+)(?:\n))+',
         re.MULTILINE)
 
-    REC_KILLED = re.compile(
+    REC_PROCESS_LINE = re.compile(
+        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm>\d+)\s+(?P<rss>\d+)\s+(?P<nr_ptes>\d+)\s+'
+        r'(?P<swapents>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
+
+    REC_OOM_KILL_PROCESS = re.compile(
         r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\w ]+)\) '
-        r'score (?P<killed_proc_score>\d+) or sacrifice child'
-        r'(?:\n)'
-        r'Killed process \d+ \(.*\) total-vm:(?P<killed_proc_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
-        r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB',
+        r'score (?P<killed_proc_score>\d+) or sacrifice child',
+        re.MULTILINE
+    )
+
+    REC_KILLED_PROCESS = re.compile(
+        r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?P<system_anon_rss_kb>\d+)kB, '
+        r'file-rss:(?P<system_file_rss_kb>\d+)kB, shmem-rss:(?P<system_shmem_rss_kb>\d+)kB.*',
         re.MULTILINE)
 
     lines = []
@@ -443,9 +450,10 @@ class OOMAnalyser(object):
         self.results = {}
 
         for rec in [self.REC_INVOKED_OOMKILLER,
-                    self.REC_KILLED,
+                    self.REC_KILLED_PROCESS,
                     self.REC_MEMINFO_1,
                     self.REC_MEMINFO_2,
+                    self.REC_OOM_KILL_PROCESS,
                     self.REC_PAGECACHE,
                     self.REC_PAGEINFO,
                     self.REC_PID_KERNELVERSION,
@@ -453,10 +461,11 @@ class OOMAnalyser(object):
                     ]:
             match = rec.search(self.oom_entity.text)
             if match:
+                gd = match.groupdict()
                 self.results.update(match.groupdict())
 
         for groupname, rec in [('mem_node_info', self.REC_MEM_NODEINFO),
-                               ('process_table', self.REC_PROCESSES),
+                               ('process_table', self.REC_PROCESS_TABLE),
                                ]:
             match = rec.search(self.oom_entity.text)
             if match:
@@ -472,6 +481,21 @@ class OOMAnalyser(object):
                 continue
             call_trace += "{}\n".format(line.strip())
         self.results['call_trace'] = call_trace
+
+        # extract process table
+        self.results['_processes'] = {}
+        self.oom_entity.find_text('[ pid ]')
+        for line in self.oom_entity:
+            if not line.startswith('['):
+                break
+            if line.startswith('[ pid ]'):
+                continue
+            match = self.REC_PROCESS_LINE.match(line)
+            if match:
+                details = match.groupdict()
+                pid = details.pop('pid')
+                self.results['_processes'][pid] = {}
+                self.results['_processes'][pid].update(details)
 
     def _hex2flags(self, hexvalue, flag_definition):
         """\
@@ -544,44 +568,43 @@ class OOMAnalyser(object):
 
         return lvalue
 
-    def _calc_from_oom_details(self):
-        """
-        Calculate values from already extracted details
-
-        @see: self.results
-        """
-        # convert all *_pages and *_kb to integer
+    def _convert_numeric_results_to_integer(self):
+        """Convert all *_pages and *_kb to integer"""
         # __pragma__ ('jsiter')
         for item in self.results:
             if self.results[item] is None:
                 self.results[item] = '<not found>'
                 continue
-            if item.endswith('_kb') or item.endswith('_pages'):
+            if item.endswith('_kb') or item.endswith('_pages') or item.endswith('_pid') or \
+                    item == 'trigger_proc_order':
                 try:
                     self.results[item] = int(self.results[item])
                 except:
-                    error('Converting item {}: {} to integer failed'.format(item, self.results[item]))
+                    error('Converting item "{}={}" to integer failed'.format(item, self.results[item]))
 
         # __pragma__ ('nojsiter')
 
-        kernel_version = self.results.get('kernel_version', '')
-        if 'x86_64' in kernel_version:
-            self.results['platform'] = 'x86 64bit'
-        else:
-            self.results['platform'] = 'unknown'
+    def _convert_numeric_process_values_to_integer(self):
+        """Convert numeric values in process table to integer values"""
+        ps = self.results['_processes']
+        # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
+        #      sets item in "for item in ['uid',..." to 0 instead of 'uid'
+        #      jsiter is necessary to iterate over ps
+        for pid_str in ps.keys():
+            converted = {}
+            process = ps[pid_str]
+            for item in ['uid', 'tgid', 'total_vm', 'rss', 'nr_ptes', 'swapents', 'oom_score_adj']:
+                try:
+                    converted[item] = int(process[item])
+                except:
+                    error('Converting process parameter "{}={}" to integer failed'.format(item, process[item]))
 
-        self.results['dist'] = self.guess_distribution(kernel_version)
+            pid_int = int(pid_str)
+            del ps[pid_str]
+            ps[pid_int] = converted
 
-        # educated guess
-        self.results['page_size'] = 4
-
-        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size']
-        del self.results['swap_cache_pages']
-
-        #  SwapUsed = SwapTotal - SwapFree - SwapCache
-        self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
-                                       self.results['swap_cache_kb']
-
+    def _calc_trigger_process_values(self):
+        """Calculate all values related with the trigger process"""
         self.results['trigger_proc_requested_memory'] = 2 ** self.results['trigger_proc_order']
         self.results['trigger_proc_requested_memory_kbytes'] = self.results['page_size']
 
@@ -600,8 +623,28 @@ class OOMAnalyser(object):
         # already fully processed and no own element to display -> delete otherwise an error msg will be shown
         del self.results['trigger_proc_gfp_flags']
 
-    def guess_distribution(self, kernel_version):
-        """Guess distribution from kernel version"""
+    def _calc_killed_process_values(self):
+        """Calculate all values related with the killed process"""
+        self.results['killed_proc_rss_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['rss']
+        self.results['killed_proc_vm_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['total_vm']
+
+    def _calc_swap_values(self):
+        """Calculate all swap related values"""
+        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size']
+        del self.results['swap_cache_pages']
+
+        #  SwapUsed = SwapTotal - SwapFree - SwapCache
+        self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
+                                       self.results['swap_cache_kb']
+
+    def _determinate_platform_and_distribution(self):
+        """Determinate platform and distribution"""
+        kernel_version = self.results.get('kernel_version', '')
+        if 'x86_64' in kernel_version:
+            self.results['platform'] = 'x86 64bit'
+        else:
+            self.results['platform'] = 'unknown'
+
         dist = 'unknown'
         if '.el7uek' in kernel_version:
             dist = 'Oracle Linux 7 (Unbreakable Enterprise Kernel)'
@@ -615,7 +658,23 @@ class OOMAnalyser(object):
             dist = 'Arch Linux'
         elif '_generic' in kernel_version:
             dist = 'Ubuntu'
-        return dist
+        self.results['dist'] = dist
+
+    def _calc_from_oom_details(self):
+        """
+        Calculate values from already extracted details
+
+        @see: self.results
+        """
+        # educated guess
+        self.results['page_size'] = 4
+
+        self._convert_numeric_results_to_integer()
+        self._convert_numeric_process_values_to_integer()
+        self._calc_trigger_process_values()
+        self._calc_killed_process_values()
+        self._calc_swap_values()
+        self._determinate_platform_and_distribution()
 
     def analyse(self):
         """Extract and calculate values from the given OOM object"""
@@ -1062,8 +1121,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         show_element('analysis')
 
         # copy entries for explanation section
-        for i in ('killed_proc_name', 'killed_proc_pid', 'killed_proc_shmem_rss_kb', 'page_size', 'ram_pages',
-                  'swap_total_kb', 'swap_used_kb', 'trigger_proc_name', 'trigger_proc_pid',
+        for i in ('killed_proc_name', 'killed_proc_pid', 'killed_proc_rss_kb', 'killed_proc_score', 'page_size',
+                  'ram_pages', 'swap_total_kb', 'swap_used_kb', 'trigger_proc_name', 'trigger_proc_pid',
                   'trigger_proc_requested_memory', 'trigger_proc_requested_memory_kbytes',
                   ):
             self.oom_details['explain_'+i] = self.oom_details.get(i)
@@ -1071,9 +1130,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # calculate remaining explanation values
         self.oom_details['explain_ram_kb'] = self.oom_details['ram_pages'] * self.oom_details['page_size']
 
-
-        self.oom_details['explain_killed_proc_rss_kb'] = self.oom_details['killed_proc_anon_rss_kb'] + \
-                                                         self.oom_details['killed_proc_file_rss_kb']
         self.oom_details['explain_killed_proc_rss_percent'] = int(100 *
                                                                   self.oom_details['explain_killed_proc_rss_kb'] /
                                                                   self.oom_details['explain_ram_kb'])
@@ -1088,6 +1144,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         #                                                     self.oom_details['swap_total_kb'])
 
         for item in self.oom_details.keys():
+            # ignore internal items
+            if item.startswith('_'):
+                continue
             self._set_single_item(item)
 
         # generate swap usage diagram

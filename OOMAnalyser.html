@@ -203,16 +203,13 @@ function goBack() {
             The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
             calculates a score for each process and terminates the process with the highest score.
 
-            The it terminates &quot;<span id="explain_killed_proc_name"></span>&quot; (pid
+            It terminates &quot;<span id="explain_killed_proc_name"></span>&quot; (pid
             <span id="explain_killed_proc_pid"></span>) to satisfy the initial memory request.
         </p>
         <p>
             The terminated process uses <span class="text--append-suffix-kbytes" id="explain_killed_proc_rss_kb"></span>
-            (<span class="text--append-suffix-percent" id="explain_killed_proc_rss_percent"></span>) resident memory.
-            These values are the sum of resident anonymous memory (anon-rss) and resident file mapping memory
-            (file-rss). Resident shared memory
-            (<span class="text--append-suffix-kbytes" id="explain_killed_proc_shmem_rss_kb"></span>) is ignored in
-            this calculation.
+            (<span class="text--append-suffix-percent" id="explain_killed_proc_rss_percent"></span>) resident memory
+            and has an OOM score of <span id="explain_killed_proc_score"></span>.
         <p>
             The system has <span class="text--append-suffix-kbytes" id="explain_ram_kb"></span>
             (<span class="text--append-suffix-pages" id="explain_ram_pages"></span> *
@@ -221,6 +218,9 @@ function goBack() {
             That's <span class="text--append-suffix-kbytes" id="explain_total_memory_kb"></span> total.
         </p>
 <!--
+r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?P<system_anon_rss_kb>\d+)kB, '
+        r'file-rss:(?P<system_file_rss_kb>\d+)kB, shmem-rss:(?P<system_shmem_rss_kb>\d+)kB.*'
+
         <p>
             <span class="text--append-suffix-kbytes" id="explain_used_memory_kb"></span>
             (<span class="text--append-suffix-percent" id="explain_used_memory_percent"></span>) of the physical memory
@@ -302,26 +302,14 @@ function goBack() {
             <td>Programs with the highest OOM score are terminated first.</td>
         </tr>
         <tr>
-            <td>Virtual Memory <br> (total-vm) </td>
+            <td>Virtual Memory <br> (total_vm) </td>
             <td id="killed_proc_vm_kb" class="text--append-suffix-kbytes"></td>
             <td>Virtual memory used by this process.</td>
         </tr>
         <tr>
-            <td>Resident anonymous memory <br> (anon-rss) </td>
-            <td id="killed_proc_anon_rss_kb" class="text--append-suffix-kbytes"></td>
+            <td>Resident anonymous memory <br> (rss) </td>
+            <td class="text--append-suffix-kbytes" id="killed_proc_rss_kb"></td>
             <td>Part of the virtual process memory mapped into RAM.</td>
-        </tr>
-        <tr>
-            <td>Resident file mapping memory <br> (file-rss) </td>
-            <td id="killed_proc_file_rss_kb" class="text--append-suffix-kbytes"></td>
-            <td>Files which have been mapped into RAM (with
-                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
-            </td>
-        </tr>
-        <tr>
-            <td>Resident shared memory <br> (shmem-rss) </td>
-            <td id="killed_proc_shmem_rss_kb" class="text--append-suffix-kbytes"></td>
-            <td>This may include System V shared memory and shared anonymous memory.</td>
         </tr>
 
         <!-- Memory Usage Graphs -->
@@ -700,6 +688,7 @@ function goBack() {
     <h4>General</h4>
     <ol>
         <li>Add a textual summary of the analysis</li>
+        <li>Fix interpretation of the last OOM line</li>
         <li>...</li>
     </ol>
 
