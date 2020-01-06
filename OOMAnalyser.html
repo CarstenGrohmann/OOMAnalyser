@@ -8,18 +8,31 @@
     <style>
         /* Use BEM (Block__Element--Modifier) naming convention */
 
-        .text--append-suffix-kbytes {
+        .js-text--append-suffix-kbyte {
             text-align: right;
         }
-        .text--append-suffix-kbytes::after {
+        .js-text--append-suffix-kbyte::after {
+            content: " kByte";
+        }
+        .js-text--append-suffix-kbytes {
+            text-align: right;
+        }
+        .js-text--append-suffix-kbytes::after {
             content: " kBytes";
         }
 
-        .text--append-suffix-pages {
+        .js-text--append-suffix-pages {
             text-align: right;
         }
-        .text--append-suffix-pages::after {
+        .js-text--append-suffix-pages::after {
             content: " pages";
+        }
+
+        .js-text--append-suffix-page {
+            text-align: right;
+        }
+        .js-text--append-suffix-page::after {
+            content: " page";
         }
 
         .text--append-suffix-percent {
@@ -196,26 +209,22 @@ function goBack() {
     <h3>Summary</h3>
     <div id="explanation">
         <p>
-            The process &quot;<span id="explain_trigger_proc_name"></span>&quot; (pid <span id="explain_trigger_proc_pid"></span>)
-            requested <span class="text--append-suffix-kbytes" id="explain_trigger_proc_requested_memory_pages_kb"></span>
-            (<span class="text--append-suffix-pages" id="explain_trigger_proc_requested_memory_pages"></span>) memory.
+            The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
+            requested <span class="trigger_proc_requested_memory_pages_kb"></span>
+            (<span class="trigger_proc_requested_memory_pages"></span>) memory.
 
             The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
-            calculates a score for each process and terminates the process with the highest score.
-
-            It terminates &quot;<span id="explain_killed_proc_name"></span>&quot; (pid
-            <span id="explain_killed_proc_pid"></span>) to satisfy the initial memory request.
+            calculates a score for each process and terminates the process with the highest score
+            &quot;<span class="killed_proc_name"></span>&quot; (PID <span class="killed_proc_pid"></span>) to satisfy the initial
+            memory request.
         </p>
         <p>
-            The terminated process uses <span class="text--append-suffix-kbytes" id="explain_killed_proc_rss_kb"></span>
-            (<span class="text--append-suffix-percent" id="explain_killed_proc_rss_percent"></span>) resident memory
-            and has an OOM score of <span id="explain_killed_proc_score"></span>.
+            The terminated process uses <span class="killed_proc_rss_kb"></span>
+            (<span class="killed_proc_rss_percent text--append-suffix-percent"></span>) resident memory
+            and has an OOM score of <span class="killed_proc_score"></span>.
         <p>
-            The system has <span class="text--append-suffix-kbytes" id="explain_ram_kb"></span>
-            (<span class="text--append-suffix-pages" id="explain_ram_pages"></span> *
-            <span class="text--append-suffix-kbytes" id="explain_page_size"></span>)
-            physical memory and <span class="text--append-suffix-kbytes" id="explain_swap_total_kb"></span> swap space.
-            That's <span class="text--append-suffix-kbytes" id="explain_total_memory_kb"></span> total.
+            The system has <span id="system_total_ram_kb"></span> physical memory and
+            <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span> total.
         </p>
 <!--
 r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?P<system_anon_rss_kb>\d+)kB, '
@@ -256,31 +265,31 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td></td>
-            <td class="text--align-right"><span id="trigger_proc_name"></span> (PID <span id="trigger_proc_pid"></span>)</td>
+            <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
             <td>This process requests memory and is triggering thereby the OOM situation.</td>
         </tr>
         <tr>
             <td>Memory allocation flags<br>(gfp_mask)</td>
-            <td id="trigger_proc_gfp_mask" class="text--align-right"></td>
+            <td class="trigger_proc_gfp_mask text--align-right"></td>
             <td>These flags are used to control the kernel internal memory allocation<br>
                 GFP stands for <code>__get_free_pages()</code>.</td>
         </tr>
         <tr>
             <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
-            <td id="trigger_proc_nodemask" class="text--align-right"></td>
+            <td class="trigger_proc_nodemask text--align-right"></td>
             <td>Bit mask indicating the cores on which the process can run.</td>
         </tr>
         <tr>
             <td>Requested memory<br>(order)</td>
             <td class="text--align-right">
-                <span id="trigger_proc_requested_memory_pages"></span> (2<span class="text__superscript" id="trigger_proc_order"></span>) pages /
-                <span class="text--append-suffix-kbytes" id="trigger_proc_requested_memory_pages_kb"></span>
+                <span class="trigger_proc_requested_memory_pages"></span> (2<span class="trigger_proc_order text__superscript"></span>) pages /
+                <span class="trigger_proc_requested_memory_pages_kb"></span>
             </td>
             <td>The kernel specifies the requested number of pages as exponent of power of two.
         </tr>
         <tr>
             <td>Adjust oom-killer score<br>(oom_score_adj)</td>
-            <td id="trigger_proc_oomscore" class="text--align-right"></td>
+            <td class="trigger_proc_oomscore text--align-right"></td>
             <td>
                 This value is added to the badness score before it's used to determine the process to be killed.
             </td>
@@ -293,22 +302,25 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td></td>
-            <td class="text--align-right"><span id="killed_proc_name"></span> (PID <span id="killed_proc_pid"></span>)</td>
+            <td class="text--align-right">
+                <span class="killed_proc_name"></span>
+                (PID <span class="killed_proc_pid"></span>)
+            </td>
             <td>Process killed by Linux kernel to satisfy the memory request.</td>
         </tr>
         <tr>
             <td>OOM Score<br>(score)</td>
-            <td id="killed_proc_score" class="text--align-right"></td>
+            <td class="killed_proc_score text--align-right"></td>
             <td>Programs with the highest OOM score are terminated first.</td>
         </tr>
         <tr>
             <td>Virtual Memory <br> (total_vm) </td>
-            <td id="killed_proc_vm_kb" class="text--append-suffix-kbytes"></td>
+            <td class="killed_proc_vm_kb"></td>
             <td>Virtual memory used by this process.</td>
         </tr>
         <tr>
             <td>Resident anonymous memory <br> (rss) </td>
-            <td class="text--append-suffix-kbytes" id="killed_proc_rss_kb"></td>
+            <td class="killed_proc_rss_kb"></td>
             <td>Part of the virtual process memory mapped into RAM.</td>
         </tr>
 
@@ -336,13 +348,13 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>RAM pages</td>
-            <td id="ram_pages" class="text--append-suffix-pages"></td>
+            <td class="ram_pages"></td>
             <td>Total number of RAM pages
             </td>
         </tr>
         <tr>
             <td>HighMem/MovableOnly</td>
-            <td id="highmem_pages" class="text--append-suffix-pages"></td>
+            <td id="highmem_pages"></td>
             <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
                 <br>
                 HighMem pages are also counted in the total page number.
@@ -350,25 +362,25 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Reserved pages</td>
-            <td id="reserved_pages" class="text--append-suffix-pages"></td>
+            <td id="reserved_pages"></td>
             <td>Number of reserved pages
             </td>
         </tr>
         <tr>
             <td>CMA reserved pages</td>
-            <td id="cma_pages" class="text--append-suffix-pages">0</td>
+            <td id="cma_pages">0</td>
             <td>Pages reserved for Contiguous Memory Allocator (CMA)
             </td>
         </tr>
         <tr>
             <td>Pagetable Cache</td>
-            <td id="pagetablecache_pages" class="text--append-suffix-pages">0</td>
+            <td id="pagetablecache_pages">0</td>
             <td>Number of pages in pagetable cache
             </td>
         </tr>
         <tr>
             <td>Number of pages with hardware errors</td>
-            <td id="hwpoisoned_pages" class="text--append-suffix-pages">0</td>
+            <td id="hwpoisoned_pages">0</td>
             <td>Pages with uncorrectable memory errors
             </td>
         </tr>
@@ -382,41 +394,41 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Active anonymous memory <br> (active_anon) </td>
-            <td id="active_anon_pages" class="text--append-suffix-pages"></td>
+            <td id="active_anon_pages"></td>
             <td>Recently used anonymous memory.<br>
                 These memory pages will usually not swapped out.
             </td>
         </tr>
         <tr>
             <td>Inactive anonymous memory <br> (inactive_anon)</td>
-            <td id="inactive_anon_pages" class="text--append-suffix-pages"></td>
+            <td id="inactive_anon_pages"></td>
             <td>Least recently used anonymous memory.<br>
                 These memory pages can be swapped out.
             </td>
         </tr>
         <tr>
             <td>Isolated anonymous memory <br> (isolated_anon)</td>
-            <td id="isolated_anon_pages" class="text--append-suffix-pages"></td>
+            <td id="isolated_anon_pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Active Pagecache <br> (active_file)</td>
-            <td id="active_file_pages" class="text--append-suffix-pages"></td>
+            <td id="active_file_pages"></td>
             <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
         </tr>
         <tr>
             <td>Inactive Pagecache <br> (inactive_file)</td>
-            <td id="inactive_file_pages" class="text--append-suffix-pages"></td>
+            <td id="inactive_file_pages"></td>
             <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
         </tr>
         <tr>
             <td>Isolated Pagecache <br> (isolated_file)</td>
-            <td id="isolated_file_pages" class="text--append-suffix-pages"></td>
+            <td id="isolated_file_pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Unevictable Pages <br> (unevictable)</td>
-            <td id="unevictable_pages" class="text--append-suffix-pages"></td>
+            <td id="unevictable_pages"></td>
             <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                 <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
                 <a href="http://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
@@ -425,14 +437,14 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Dirty Pages <br> (dirty)</td>
-            <td id="dirty_pages" class="text--append-suffix-pages"></td>
+            <td id="dirty_pages"></td>
             <td>Memory which is waiting to get written back to the disk.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
             <td>Writeback <br> (writeback)</td>
-            <td id="writeback_pages" class="text--append-suffix-pages"></td>
+            <td id="writeback_pages"></td>
             <td>
                 Memory which is actively being written back to the disk.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -440,12 +452,12 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Unstable <br> (unstable)</td>
-            <td id="unstable_pages" class="text--append-suffix-pages"></td>
+            <td id="unstable_pages"></td>
             <td>Not yet committed to stable storage.</td>
         </tr>
         <tr>
             <td>Slab Reclaimable <br> (slab_reclaimable)</td>
-            <td id="slab_reclaimable_pages" class="text--append-suffix-pages"></td>
+            <td id="slab_reclaimable_pages"></td>
             <td>
                 Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -456,7 +468,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
-            <td id="slab_unreclaimable_pages" class="text--append-suffix-pages"></td>
+            <td id="slab_unreclaimable_pages"></td>
             <td>
                 Part of Slab, that cannot be reclaimed on memory pressure.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -464,7 +476,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Mapped <br> (mapped)</td>
-            <td id="mapped_pages" class="text--append-suffix-pages"></td>
+            <td id="mapped_pages"></td>
             <td>
                 Files which have been mapped into memory (with
                 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
@@ -473,7 +485,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Shared Memory <br> (shmem)</td>
-            <td id="shmem_pages" class="text--append-suffix-pages"></td>
+            <td id="shmem_pages"></td>
             <td>
                 Amount of memory consumed in
                 <a href="http://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
@@ -483,7 +495,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Pagetables <br> (pagetables)</td>
-            <td id="pagetables_pages" class="text--append-suffix-pages"></td>
+            <td id="pagetables_pages"></td>
             <td>
                 Amount of memory dedicated to the lowest level of pagetables.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -491,7 +503,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Bounce <br> (bounce)</td>
-            <td id="bounce_pages" class="text--append-suffix-pages"></td>
+            <td id="bounce_pages"></td>
             <td>
                 Memory used for block device "bounce buffers".
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -499,22 +511,22 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>free <br> (free)</td>
-            <td id="free_pages" class="text--append-suffix-pages"></td>
+            <td id="free_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_pcp <br> (free_pcp)</td>
-            <td id="free_pcp_pages" class="text--append-suffix-pages"></td>
+            <td id="free_pcp_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_cma <br> (free_cma)</td>
-            <td id="free_cma_pages" class="text--append-suffix-pages"></td>
+            <td id="free_cma_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>Total Pagecache</td>
-            <td id="pagecache_total_pages" class="text--append-suffix-pages"></td>
+            <td id="pagecache_total_pages"></td>
             <td></td>
         </tr>
 
@@ -527,21 +539,21 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Swap Total</td>
-            <td id="swap_total_kb" class="text--append-suffix-kbytes"></td>
+            <td class="swap_total_kb"></td>
             <td>Total amount of swap space available.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
             <td>Swap Free</td>
-            <td id="swap_free_kb" class="text--append-suffix-kbytes"></td>
+            <td class="swap_free_kb"></td>
             <td>Amount of swap space that is currently unused.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
             <td>Swap Cached</td>
-            <td id="swap_cache_kb" class="text--append-suffix-kbytes"></td>
+            <td class="swap_cache_kb"></td>
             <td>Memory that once was swapped out, is swapped back in
                 but still also is in the swap file.  (If memory pressure
                 is high, these pages don't need to be swapped out
@@ -552,7 +564,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Swap Used</td>
-            <td id="swap_used_kb" class="text--append-suffix-kbytes"></td>
+            <td class="swap_used_kb"></td>
             <td>Amount of used swap space w/o cached swap <br>
                 (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
             </td>
@@ -580,7 +592,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Page size</td>
-            <td id="page_size" class="text--append-suffix-kbytes"></td>
+            <td class="page_size_kb"></td>
             <td>Guessed</td>
         </tr>
 

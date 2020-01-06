@@ -607,7 +607,7 @@ class OOMAnalyser(object):
         """Calculate all values related with the trigger process"""
         self.results['trigger_proc_requested_memory_pages'] = 2 ** self.results['trigger_proc_order']
         self.results['trigger_proc_requested_memory_pages_kb'] = self.results['trigger_proc_requested_memory_pages'] *\
-                                                                 self.results['page_size']
+                                                                 self.results['page_size_kb']
         # process gfp_mask
         if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
             flags = self.results['trigger_proc_gfp_flags']
@@ -627,15 +627,32 @@ class OOMAnalyser(object):
         """Calculate all values related with the killed process"""
         self.results['killed_proc_rss_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['rss']
         self.results['killed_proc_vm_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['total_vm']
+        self.results['killed_proc_rss_percent'] = int(100 *
+                                                      self.results['killed_proc_rss_kb'] /
+                                                      self.results['system_total_ram_kb'])
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
-        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size']
+        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size_kb']
         del self.results['swap_cache_pages']
 
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
         self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
                                        self.results['swap_cache_kb']
+
+    def _calc_system_values(self):
+        """Calculate system memory"""
+
+        # educated guess
+        self.results['page_size_kb'] = 4
+
+        # calculate remaining explanation values
+        self.results['system_total_ram_kb'] = self.results['ram_pages'] * self.results['page_size_kb']
+        self.results['system_total_ramswap_kb'] = self.results['system_total_ram_kb'] + self.results['swap_total_kb']
+        self.results['system_total_ram_used_kb'] = self.results['system_total_vm_kb'] + \
+                                                   self.results['system_anon_rss_kb'] + \
+                                                   self.results['system_file_rss_kb'] + \
+                                                   self.results['system_shmem_rss_kb']
 
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
@@ -666,15 +683,14 @@ class OOMAnalyser(object):
 
         @see: self.results
         """
-        # educated guess
-        self.results['page_size'] = 4
-
         self._convert_numeric_results_to_integer()
         self._convert_numeric_process_values_to_integer()
+
+        self._determinate_platform_and_distribution()
+        self._calc_system_values()
         self._calc_trigger_process_values()
         self._calc_killed_process_values()
         self._calc_swap_values()
-        self._determinate_platform_and_distribution()
 
     def analyse(self):
         """Extract and calculate values from the given OOM object"""
@@ -881,25 +897,49 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         element = document.getElementById('version')
         element.textContent = "v{}".format(VERSION)
 
-    def _set_single_item(self, item):
+    def _set_item(self, item):
         """
-        Set content of a single item to the HTML element with the same name.
+        Paste the content into HTML elements with the ID / Class that matches the item name.
 
-        The content won't be formatted.
+        The content won't be formatted. Only suffixes for pages and kbytes are added in the singular or plural.
         """
-        element = document.getElementById(item)
-        if not element:
-            print("ERROR: HTML element not found: ", item)
+        element_by_id = document.getElementById(item)
+        if element_by_id:
+            elements = [element_by_id]
+        else:
+            elements = document.getElementsByClassName(item)
+
+        # __pragma__ ('tconv')
+        if not elements:
+            print("ERROR: No HTML element found to set item {}".format(item))
             return
+        # __pragma__ ('notconv')
 
-        content = self.oom_details.get(item, '')
-        if isinstance(content, str):
-            content = content.strip()
-        element.textContent = content
+        for element in elements:
+            content = self.oom_details.get(item, '')
+            if isinstance(content, str):
+                content = content.strip()
+            element.textContent = content
 
-        if content == '<not found>':
-            row = element.parentNode
-            row.classList.add('js-text--display-none')
+            if content == '<not found>':
+                row = element.parentNode
+                row.classList.add('js-text--display-none')
+
+            if item.endswith('_pages') and isinstance(content, int):
+                if content == 1:
+                    element.classList.add('js-text--append-suffix-page')
+                    element.classList.remove('js-text--append-suffix-pages')
+                else:
+                    element.classList.add('js-text--append-suffix-pages')
+                    element.classList.remove('js-text--append-suffix-page')
+
+            if item.endswith('_kb') and isinstance(content, int):
+                if content == 1:
+                    element.classList.add('js-text--append-suffix-kbyte')
+                    element.classList.remove('js-text--append-suffix-kbytes')
+                else:
+                    element.classList.add('js-text--append-suffix-kbytes')
+                    element.classList.remove('js-text--append-suffix-kbyte')
 
         if DEBUG:
             show_element('notify_box')
@@ -1120,34 +1160,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         hide_element('input')
         show_element('analysis')
 
-        # copy entries for explanation section
-        for i in ('killed_proc_name', 'killed_proc_pid', 'killed_proc_rss_kb', 'killed_proc_score', 'page_size',
-                  'ram_pages', 'swap_total_kb', 'swap_used_kb', 'trigger_proc_name', 'trigger_proc_pid',
-                  'trigger_proc_requested_memory_pages', 'trigger_proc_requested_memory_pages_kb',
-                  ):
-            self.oom_details['explain_'+i] = self.oom_details.get(i)
-
-        # calculate remaining explanation values
-        self.oom_details['explain_ram_kb'] = self.oom_details['ram_pages'] * self.oom_details['page_size']
-
-        self.oom_details['explain_killed_proc_rss_percent'] = int(100 *
-                                                                  self.oom_details['explain_killed_proc_rss_kb'] /
-                                                                  self.oom_details['explain_ram_kb'])
-
-        self.oom_details['explain_total_memory_kb'] = self.oom_details['explain_ram_kb'] + \
-                                                      self.oom_details['swap_total_kb']
-
-        # self.oom_details['explain_used_memory_kb'] = 42
-        # self.oom_details['explain_used_memory_percent'] = 42
-        # self.oom_details['explain_swap_used_percent'] = int(100 *
-        #                                                     self.oom_details['swap_used_kb'] /
-        #                                                     self.oom_details['swap_total_kb'])
-
         for item in self.oom_details.keys():
             # ignore internal items
             if item.startswith('_'):
                 continue
-            self._set_single_item(item)
+            self._set_item(item)
 
         # generate swap usage diagram
         svg_swap = self.svg_generate_bar_chart(
