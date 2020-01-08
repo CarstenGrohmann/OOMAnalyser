@@ -353,8 +353,8 @@ class OOMAnalyser(object):
     )
 
     REC_KILLED_PROCESS = re.compile(
-        r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?P<system_anon_rss_kb>\d+)kB, '
-        r'file-rss:(?P<system_file_rss_kb>\d+)kB, shmem-rss:(?P<system_shmem_rss_kb>\d+)kB.*',
+        r'^Killed process \d+ \(.*\) total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
+        r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*',
         re.MULTILINE)
 
     lines = []
@@ -606,7 +606,7 @@ class OOMAnalyser(object):
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
         self.results['trigger_proc_requested_memory_pages'] = 2 ** self.results['trigger_proc_order']
-        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['trigger_proc_requested_memory_pages'] *\
+        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['trigger_proc_requested_memory_pages'] * \
                                                                  self.results['page_size_kb']
         # process gfp_mask
         if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
@@ -625,11 +625,13 @@ class OOMAnalyser(object):
 
     def _calc_killed_process_values(self):
         """Calculate all values related with the killed process"""
-        self.results['killed_proc_rss_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['rss']
-        self.results['killed_proc_vm_kb'] = self.results['_processes'][self.results['killed_proc_pid']]['total_vm']
+        self.results['killed_proc_total_rss_kb'] = self.results['killed_proc_anon_rss_kb'] + \
+                                                   self.results['killed_proc_file_rss_kb'] + \
+                                                   self.results['killed_proc_shmem_rss_kb']
+
         self.results['killed_proc_rss_percent'] = int(100 *
-                                                      self.results['killed_proc_rss_kb'] /
-                                                      self.results['system_total_ram_kb'])
+                                                      self.results['killed_proc_total_rss_kb'] /
+                                                      int(self.results['system_total_ram_kb']))
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
@@ -649,10 +651,10 @@ class OOMAnalyser(object):
         # calculate remaining explanation values
         self.results['system_total_ram_kb'] = self.results['ram_pages'] * self.results['page_size_kb']
         self.results['system_total_ramswap_kb'] = self.results['system_total_ram_kb'] + self.results['swap_total_kb']
-        self.results['system_total_ram_used_kb'] = self.results['system_total_vm_kb'] + \
-                                                   self.results['system_anon_rss_kb'] + \
-                                                   self.results['system_file_rss_kb'] + \
-                                                   self.results['system_shmem_rss_kb']
+        total_rss_pages = 0
+        for pid in self.results['_processes'].keys():
+            total_rss_pages += self.results['_processes'][pid]['rss']
+        self.results['system_total_ram_used_kb'] = total_rss_pages * self.results['page_size_kb']
 
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""

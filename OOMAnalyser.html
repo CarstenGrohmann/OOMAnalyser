@@ -212,32 +212,24 @@ function goBack() {
             The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
             requested <span class="trigger_proc_requested_memory_pages_kb"></span>
             (<span class="trigger_proc_requested_memory_pages"></span>) memory.
-
             The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
             calculates a score for each process and terminates the process with the highest score
             &quot;<span class="killed_proc_name"></span>&quot; (PID <span class="killed_proc_pid"></span>) to satisfy the initial
             memory request.
         </p>
         <p>
-            The terminated process uses <span class="killed_proc_rss_kb"></span>
+            The terminated process uses <span class="killed_proc_total_rss_kb"></span>
             (<span class="killed_proc_rss_percent text--append-suffix-percent"></span>) resident memory
             and has an OOM score of <span class="killed_proc_score"></span>.
+        </p>
         <p>
-            The system has <span id="system_total_ram_kb"></span> physical memory and
+            The system has <span class="system_total_ram_kb"></span> physical memory and
             <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span> total.
+            <br>
+            <span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span> physical
+            memory and <span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span> swap space
+            are in use.
         </p>
-<!--
-r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?P<system_anon_rss_kb>\d+)kB, '
-        r'file-rss:(?P<system_file_rss_kb>\d+)kB, shmem-rss:(?P<system_shmem_rss_kb>\d+)kB.*'
-
-        <p>
-            <span class="text--append-suffix-kbytes" id="explain_used_memory_kb"></span>
-            (<span class="text--append-suffix-percent" id="explain_used_memory_percent"></span>) of the physical memory
-            and <span class="text--append-suffix-kbytes" id="explain_swap_used_kb"></span>
-            (<span class="text--append-suffix-percent" id="explain_swap_used_percent"></span>) of the swap space
-            were used used when the OOM killer has been invoked.
-        </p>
--->
     </div>
 
     <h3>Details of analysis</h3>
@@ -315,26 +307,64 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         </tr>
         <tr>
             <td>Virtual Memory <br> (total_vm) </td>
-            <td class="killed_proc_vm_kb"></td>
+            <td class="killed_proc_total_vm_kb"></td>
             <td>Virtual memory used by this process.</td>
         </tr>
         <tr>
-            <td>Resident anonymous memory <br> (rss) </td>
+            <td>Resident anonymous memory <br> (rss)</td>
             <td class="killed_proc_rss_kb"></td>
             <td>Part of the virtual process memory mapped into RAM.</td>
         </tr>
 
-        <!-- Memory Usage Graphs -->
-
         <tr>
-            <th scope="row" colspan="3">Memory Usage Graphs</th>
+            <td>Total resident anonymous memory <br> (rss)</td>
+            <td class="killed_proc_total_rss_kb"></td>
+            <td>
+                All virtual process memory mapped into RAM. <br>
+                <code>TotalRSS = anon-rss + file-rss + shmem-rss</code>
+            </td>
         </tr>
         <tr>
-            <td class="table__sub-section--bold">RAM Summary</td>
+            <td>Resident anonymous memory <br> (anon-rss)</td>
+            <td class="killed_proc_anon_rss_kb"></td>
+            <td>Resident anonymous pages <br> Part of the virtual process memory mapped into RAM.</td>
+        </tr>
+        <tr>
+            <td>Resident file mapping memory <br> (file-rss)</td>
+            <td class="killed_proc_file_rss_kb"></td>
+            <td>
+                Resident file mapping pages <br> Files which have been mapped into RAM (with
+                <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
+            </td>
+        </tr>
+        <tr>
+            <td>Resident shared memory <br> (shmem-rss)</td>
+            <td class="killed_proc_shmem_rss_kb"></td>
+            <td>
+                Resident shared memory pages <br>
+                This may include System V shared memory and shared anonymous memory.
+            </td>
+        </tr>
+
+        <!-- Memory Usage -->
+
+        <tr>
+            <th colspan="3" scope="row">Memory Usage</th>
+        </tr>
+
+        <!-- Graphs -->
+
+        <tr>
+            <td class="table__sub-section--bold">Graphs</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>RAM Summary</td>
             <td colspan="2"><div id="svg_ram"></div></td>
         </tr>
         <tr>
-            <td class="table__sub-section--bold">Swap Summary</td>
+            <td>Swap Summary</td>
             <td colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
@@ -349,8 +379,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         <tr>
             <td>RAM pages</td>
             <td class="ram_pages"></td>
-            <td>Total number of RAM pages
-            </td>
+            <td>Total number of RAM pages</td>
         </tr>
         <tr>
             <td>HighMem/MovableOnly</td>
@@ -363,26 +392,22 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
         <tr>
             <td>Reserved pages</td>
             <td id="reserved_pages"></td>
-            <td>Number of reserved pages
-            </td>
+            <td>Number of reserved pages</td>
         </tr>
         <tr>
             <td>CMA reserved pages</td>
             <td id="cma_pages">0</td>
-            <td>Pages reserved for Contiguous Memory Allocator (CMA)
-            </td>
+            <td>Pages reserved for Contiguous Memory Allocator (CMA)</td>
         </tr>
         <tr>
             <td>Pagetable Cache</td>
             <td id="pagetablecache_pages">0</td>
-            <td>Number of pages in pagetable cache
-            </td>
+            <td>Number of pages in pagetable cache</td>
         </tr>
         <tr>
             <td>Number of pages with hardware errors</td>
             <td id="hwpoisoned_pages">0</td>
-            <td>Pages with uncorrectable memory errors
-            </td>
+            <td>Pages with uncorrectable memory errors</td>
         </tr>
 
         <!-- Memory Usage Details -->
@@ -393,7 +418,7 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
             <td></td>
         </tr>
         <tr>
-            <td>Active anonymous memory <br> (active_anon) </td>
+            <td>Active anonymous memory <br> (active_anon)</td>
             <td id="active_anon_pages"></td>
             <td>Recently used anonymous memory.<br>
                 These memory pages will usually not swapped out.
@@ -700,7 +725,6 @@ r'^Killed process \d+ \(.*\) total-vm:(?P<system_total_vm_kb>\d+)kB, anon-rss:(?
     <h4>General</h4>
     <ol>
         <li>Add a textual summary of the analysis</li>
-        <li>Fix interpretation of the last OOM line</li>
         <li>Fix calculation of requested memory in kBytes</li>
         <li>...</li>
     </ol>
