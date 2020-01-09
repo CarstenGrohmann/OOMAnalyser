@@ -343,8 +343,8 @@ class OOMAnalyser(object):
         re.MULTILINE)
 
     REC_PROCESS_LINE = re.compile(
-        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm>\d+)\s+(?P<rss>\d+)\s+(?P<nr_ptes>\d+)\s+'
-        r'(?P<swapents>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
+        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
+        r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
 
     REC_OOM_KILL_PROCESS = re.compile(
         r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\w ]+)\) '
@@ -593,7 +593,7 @@ class OOMAnalyser(object):
         for pid_str in ps.keys():
             converted = {}
             process = ps[pid_str]
-            for item in ['uid', 'tgid', 'total_vm', 'rss', 'nr_ptes', 'swapents', 'oom_score_adj']:
+            for item in ['uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages', 'oom_score_adj']:
                 try:
                     converted[item] = int(process[item])
                 except:
@@ -653,7 +653,7 @@ class OOMAnalyser(object):
         self.results['system_total_ramswap_kb'] = self.results['system_total_ram_kb'] + self.results['swap_total_kb']
         total_rss_pages = 0
         for pid in self.results['_processes'].keys():
-            total_rss_pages += self.results['_processes'][pid]['rss']
+            total_rss_pages += self.results['_processes'][pid]['rss_pages']
         self.results['system_total_ram_used_kb'] = total_rss_pages * self.results['page_size_kb']
 
     def _determinate_platform_and_distribution(self):
