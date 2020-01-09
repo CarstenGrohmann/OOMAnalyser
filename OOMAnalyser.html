@@ -366,6 +366,43 @@ function goBack() {
             <td colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
+        <!-- Swap Usage -->
+
+        <tr>
+            <td class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</td>
+        </tr>
+        <tr>
+            <td>Swap Total</td>
+            <td class="swap_total_kb"></td>
+            <td>Total amount of swap space available.
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Free</td>
+            <td class="swap_free_kb"></td>
+            <td>Amount of swap space that is currently unused.
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Cached</td>
+            <td class="swap_cache_kb"></td>
+            <td>Memory that once was swapped out, is swapped back in
+                but still also is in the swap file.  (If memory pressure
+                is high, these pages don't need to be swapped out
+                again because they are already in the swap file.  This
+                saves I/O).
+                <a class="a__footnote" href="#footnote-proc5">[1]</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Swap Used</td>
+            <td class="swap_used_kb"></td>
+            <td>Amount of used swap space w/o cached swap <br>
+                (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
+            </td>
+        </tr>
 
         <!-- Page Usage -->
 
@@ -547,44 +584,6 @@ function goBack() {
             <td>Total Pagecache</td>
             <td id="pagecache_total_pages"></td>
             <td></td>
-        </tr>
-
-        <!-- Swap Usage -->
-
-        <tr>
-            <td class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</td>
-        </tr>
-        <tr>
-            <td>Swap Total</td>
-            <td class="swap_total_kb"></td>
-            <td>Total amount of swap space available.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Swap Free</td>
-            <td class="swap_free_kb"></td>
-            <td>Amount of swap space that is currently unused.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Swap Cached</td>
-            <td class="swap_cache_kb"></td>
-            <td>Memory that once was swapped out, is swapped back in
-                but still also is in the swap file.  (If memory pressure
-                is high, these pages don't need to be swapped out
-                again because they are already in the swap file.  This
-                saves I/O).
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Swap Used</td>
-            <td class="swap_used_kb"></td>
-            <td>Amount of used swap space w/o cached swap <br>
-                (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
-            </td>
         </tr>
 
         <!-- Operating System -->
