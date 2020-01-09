@@ -13,6 +13,7 @@ translate Python code into JavaScript.
 
 The current online version is available at https://www.carstengrohmann.de/oom/ .
 
+
 ## Installation
 
 Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, a
@@ -40,12 +41,13 @@ without an Internet connection.
 ### Prepare the build environment
 
  * Clone the repository:
- ```
+```
 # git clone https://github.com/CarstenGrohmann/OOMAnalyser
- ```
+```
 
  * Setup the Python virtual environment:
- ```
+ 
+```
 # virtualenv env
 # . env/bin/activate
 # env/bin/pip install -Ur requirements.txt
@@ -53,9 +55,10 @@ without an Internet connection.
 or
 
 # make venv
- ```
+```
 
 ### Build OOMAnalyser
+
 ```
 # . env/bin/activate
 # transcrypt --build --map --nomin -e 6 OOMAnalyser.py
@@ -66,19 +69,20 @@ or
 ```
 
 ### Usage
+
  * Change into the source directory and start your own small web server.
 
  * Start Python built-in web server:
 
- ```
- # python3 -m http.server 8080 --bind 127.0.0.1
+```
+# python3 -m http.server 8080 --bind 127.0.0.1
 
  or
 
- # make websrv
- ```
+# make websrv
+```
 
-* Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
+ * Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
 
 
 ## Resources
