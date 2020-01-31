@@ -641,6 +641,9 @@ class OOMAnalyser(object):
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
         self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
                                        self.results['swap_cache_kb']
+        self.results['system_swap_used_percent'] = int(100 *
+                                                       self.results['swap_total_kb'] /
+                                                       self.results['swap_used_kb'])
 
     def _calc_system_values(self):
         """Calculate system memory"""
@@ -655,6 +658,11 @@ class OOMAnalyser(object):
         for pid in self.results['_processes'].keys():
             total_rss_pages += self.results['_processes'][pid]['rss_pages']
         self.results['system_total_ram_used_kb'] = total_rss_pages * self.results['page_size_kb']
+
+        self.results['system_total_used_percent'] = int(100 *
+                                                        self.results['system_total_ram_used_kb'] /
+                                                        self.results['system_total_ram_kb'])
+
 
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
