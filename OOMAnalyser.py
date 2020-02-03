@@ -918,7 +918,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             content = self.oom_details.get(item, '')
             if isinstance(content, str):
                 content = content.strip()
-            element.textContent = content
 
             if content == '<not found>':
                 row = element.parentNode
@@ -926,19 +925,20 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
             if item.endswith('_pages') and isinstance(content, int):
                 if content == 1:
-                    element.classList.add('js-text--append-suffix-page')
-                    element.classList.remove('js-text--append-suffix-pages')
+                    content = "{} page".format(content)
                 else:
-                    element.classList.add('js-text--append-suffix-pages')
-                    element.classList.remove('js-text--append-suffix-page')
+                    content = "{} pages".format(content)
 
             if item.endswith('_kb') and isinstance(content, int):
                 if content == 1:
-                    element.classList.add('js-text--append-suffix-kbyte')
-                    element.classList.remove('js-text--append-suffix-kbytes')
+                    content = "{} kByte".format(content)
                 else:
-                    element.classList.add('js-text--append-suffix-kbytes')
-                    element.classList.remove('js-text--append-suffix-kbyte')
+                    content = "{} kBytes".format(content)
+
+            if item.endswith('_percent') and isinstance(content, int):
+                content = "{}%".format(content)
+
+            element.textContent = content
 
         if DEBUG:
             show_element('notify_box')
