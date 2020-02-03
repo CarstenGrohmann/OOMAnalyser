@@ -866,14 +866,6 @@ Out of memory: Kill process 6576 (java) score 651 or sacrifice child
 Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
 '''
 
-    mem_modinfo_entries = ("active_anon_pages", "inactive_anon_pages", "isolated_anon_pages",
-                           "active_file_pages", "inactive_file_pages", "isolated_file_pages",
-                           "unevictable_pages", "dirty_pages", "writeback_pages", "unstable_pages",
-                           "slab_reclaimable_pages", "slab_unreclaimable_pages",
-                           "mapped_pages", "shmem_pages", "pagetables_pages", "bounce_pages",
-                           "free_pages", "free_pcp_pages", "free_cma_pages",
-                           )
-
     svg_namespace = 'http://www.w3.org/2000/svg'
 
     # from Sasha Trubetskoy - https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
@@ -964,7 +956,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         toc_content.innerHTML = new_toc
 
     def set_HTML_defaults(self, clean_oom=True):
-        """Reset the whole HTML document"""
+        """Reset the HTML document but don't clean elements"""
         if clean_oom:
             document.getElementById('textarea_oom').value = self.paste_note
 
@@ -979,11 +971,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # show hidden rows
         for element in document.querySelectorAll('table .js-text--display-none'):
             element.classList.remove('js-text--display-none')
-
-        for item in self.mem_modinfo_entries:
-            elements = document.getElementsByClassName(item)
-            for element in elements:
-                element.textContent = ""
 
         # clear notification box
         element = document.getElementById('notify_box')
