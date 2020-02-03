@@ -913,18 +913,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         The content won't be formatted. Only suffixes for pages and kbytes are added in the singular or plural.
         """
-        element_by_id = document.getElementById(item)
-        if element_by_id:
-            elements = [element_by_id]
-        else:
-            elements = document.getElementsByClassName(item)
-
-        # __pragma__ ('tconv')
-        if not elements:
-            print("ERROR: No HTML element found to set item {}".format(item))
-            return
-        # __pragma__ ('notconv')
-
+        elements = document.getElementsByClassName(item)
         for element in elements:
             content = self.oom_details.get(item, '')
             if isinstance(content, str):
@@ -992,8 +981,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             element.classList.remove('js-text--display-none')
 
         for item in self.mem_modinfo_entries:
-            element = document.getElementById(item)
-            element.textContent = ""
+            elements = document.getElementsByClassName(item)
+            for element in elements:
+                element.textContent = ""
 
         # clear notification box
         element = document.getElementById('notify_box')

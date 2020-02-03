@@ -411,7 +411,7 @@ function goBack() {
         </tr>
         <tr>
             <td>HighMem/MovableOnly</td>
-            <td id="highmem_pages"></td>
+            <td class="highmem_pages"></td>
             <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
                 <br>
                 HighMem pages are also counted in the total page number.
@@ -419,22 +419,22 @@ function goBack() {
         </tr>
         <tr>
             <td>Reserved pages</td>
-            <td id="reserved_pages"></td>
+            <td class="reserved_pages"></td>
             <td>Number of reserved pages</td>
         </tr>
         <tr>
             <td>CMA reserved pages</td>
-            <td id="cma_pages">0</td>
+            <td class="cma_pages">0</td>
             <td>Pages reserved for Contiguous Memory Allocator (CMA)</td>
         </tr>
         <tr>
             <td>Pagetable Cache</td>
-            <td id="pagetablecache_pages">0</td>
+            <td class="pagetablecache_pages">0</td>
             <td>Number of pages in pagetable cache</td>
         </tr>
         <tr>
             <td>Number of pages with hardware errors</td>
-            <td id="hwpoisoned_pages">0</td>
+            <td class="hwpoisoned_pages">0</td>
             <td>Pages with uncorrectable memory errors</td>
         </tr>
 
@@ -445,41 +445,41 @@ function goBack() {
         </tr>
         <tr>
             <td>Active anonymous memory <br> (active_anon)</td>
-            <td id="active_anon_pages"></td>
+            <td class="active_anon_pages"></td>
             <td>Recently used anonymous memory.<br>
                 These memory pages will usually not swapped out.
             </td>
         </tr>
         <tr>
             <td>Inactive anonymous memory <br> (inactive_anon)</td>
-            <td id="inactive_anon_pages"></td>
+            <td class="inactive_anon_pages"></td>
             <td>Least recently used anonymous memory.<br>
                 These memory pages can be swapped out.
             </td>
         </tr>
         <tr>
             <td>Isolated anonymous memory <br> (isolated_anon)</td>
-            <td id="isolated_anon_pages"></td>
+            <td class="isolated_anon_pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Active Pagecache <br> (active_file)</td>
-            <td id="active_file_pages"></td>
+            <td class="active_file_pages"></td>
             <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
         </tr>
         <tr>
             <td>Inactive Pagecache <br> (inactive_file)</td>
-            <td id="inactive_file_pages"></td>
+            <td class="inactive_file_pages"></td>
             <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
         </tr>
         <tr>
             <td>Isolated Pagecache <br> (isolated_file)</td>
-            <td id="isolated_file_pages"></td>
+            <td class="isolated_file_pages"></td>
             <td>Memory isolation is used to separate memory between different virtual machines.</td>
         </tr>
         <tr>
             <td>Unevictable Pages <br> (unevictable)</td>
-            <td id="unevictable_pages"></td>
+            <td class="unevictable_pages"></td>
             <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                 <a href="http://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
                 <a href="http://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
@@ -488,14 +488,14 @@ function goBack() {
         </tr>
         <tr>
             <td>Dirty Pages <br> (dirty)</td>
-            <td id="dirty_pages"></td>
+            <td class="dirty_pages"></td>
             <td>Memory which is waiting to get written back to the disk.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
         <tr>
             <td>Writeback <br> (writeback)</td>
-            <td id="writeback_pages"></td>
+            <td class="writeback_pages"></td>
             <td>
                 Memory which is actively being written back to the disk.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -503,12 +503,12 @@ function goBack() {
         </tr>
         <tr>
             <td>Unstable <br> (unstable)</td>
-            <td id="unstable_pages"></td>
+            <td class="unstable_pages"></td>
             <td>Not yet committed to stable storage.</td>
         </tr>
         <tr>
             <td>Slab Reclaimable <br> (slab_reclaimable)</td>
-            <td id="slab_reclaimable_pages"></td>
+            <td class="slab_reclaimable_pages"></td>
             <td>
                 Slab is a in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -519,7 +519,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
-            <td id="slab_unreclaimable_pages"></td>
+            <td class="slab_unreclaimable_pages"></td>
             <td>
                 Part of Slab, that cannot be reclaimed on memory pressure.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -527,7 +527,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Mapped <br> (mapped)</td>
-            <td id="mapped_pages"></td>
+            <td class="mapped_pages"></td>
             <td>
                 Files which have been mapped into memory (with
                 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
@@ -536,7 +536,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Shared Memory <br> (shmem)</td>
-            <td id="shmem_pages"></td>
+            <td class="shmem_pages"></td>
             <td>
                 Amount of memory consumed in
                 <a href="http://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
@@ -546,7 +546,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Pagetables <br> (pagetables)</td>
-            <td id="pagetables_pages"></td>
+            <td class="pagetables_pages"></td>
             <td>
                 Amount of memory dedicated to the lowest level of pagetables.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -554,7 +554,7 @@ function goBack() {
         </tr>
         <tr>
             <td>Bounce <br> (bounce)</td>
-            <td id="bounce_pages"></td>
+            <td class="bounce_pages"></td>
             <td>
                 Memory used for block device "bounce buffers".
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
@@ -562,22 +562,22 @@ function goBack() {
         </tr>
         <tr>
             <td>free <br> (free)</td>
-            <td id="free_pages"></td>
+            <td class="free_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_pcp <br> (free_pcp)</td>
-            <td id="free_pcp_pages"></td>
+            <td class="free_pcp_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>free_cma <br> (free_cma)</td>
-            <td id="free_cma_pages"></td>
+            <td class="free_cma_pages"></td>
             <td></td>
         </tr>
         <tr>
             <td>Total Pagecache</td>
-            <td id="pagecache_total_pages"></td>
+            <td class="pagecache_total_pages"></td>
             <td></td>
         </tr>
 
@@ -588,17 +588,17 @@ function goBack() {
         </tr>
         <tr>
             <td>Kernel</td>
-            <td id="kernel_version" class="text--align-right"></td>
+            <td class="kernel_version" class="text--align-right"></td>
             <td></td>
         </tr>
         <tr>
             <td>Distribution</td>
-            <td id="dist" class="text--align-right"></td>
+            <td class="dist" class="text--align-right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
             <td>Platform</td>
-            <td id="platform" class="text--align-right"></td>
+            <td class="platform" class="text--align-right"></td>
             <td>Guessed from the kernel version</td>
         </tr>
         <tr>
@@ -616,7 +616,7 @@ function goBack() {
         <tr>
             <td></td>
             <td colspan="2" class="terminal">
-                <pre id="mem_node_info"></pre>
+                <pre class="mem_node_info"></pre>
             </td>
         </tr>
 
@@ -626,7 +626,7 @@ function goBack() {
         <tr>
             <td></td>
             <td colspan="2" class="terminal">
-                <pre id="process_table"></pre>
+                <pre class="process_table"></pre>
             </td>
         </tr>
 
@@ -638,7 +638,7 @@ function goBack() {
         <tr>
             <td></td>
             <td colspan="2" class="terminal">
-                <pre id="hardware_info"></pre>
+                <pre class="hardware_info"></pre>
             </td>
         </tr>
 
@@ -650,7 +650,7 @@ function goBack() {
         <tr>
             <td></td>
             <td colspan="2" class="terminal">
-                <pre id="call_trace"></pre>
+                <pre class="call_trace"></pre>
             </td>
         </tr>
 
