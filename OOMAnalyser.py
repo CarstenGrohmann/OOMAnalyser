@@ -576,7 +576,7 @@ class OOMAnalyser(object):
                 self.results[item] = '<not found>'
                 continue
             if item.endswith('_kb') or item.endswith('_pages') or item.endswith('_pid') or \
-                    item == 'trigger_proc_order':
+                    item in ['killed_proc_score', 'trigger_proc_order', 'trigger_proc_oomscore']:
                 try:
                     self.results[item] = int(self.results[item])
                 except:
