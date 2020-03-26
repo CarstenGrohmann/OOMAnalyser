@@ -337,11 +337,6 @@ class OOMAnalyser(object):
         r')?',
         re.MULTILINE)
 
-    REC_PROCESS_TABLE = re.compile(
-        r'^\[ pid \].*(?:\n)'
-        r'(^(\[[ \d]+.+)(?:\n))+',
-        re.MULTILINE)
-
     REC_PROCESS_LINE = re.compile(
         r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
         r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
@@ -464,12 +459,9 @@ class OOMAnalyser(object):
                 gd = match.groupdict()
                 self.results.update(match.groupdict())
 
-        for groupname, rec in [('mem_node_info', self.REC_MEM_NODEINFO),
-                               ('process_table', self.REC_PROCESS_TABLE),
-                               ]:
-            match = rec.search(self.oom_entity.text)
-            if match:
-                self.results[groupname] = match.group()
+        match = self.REC_MEM_NODEINFO.search(self.oom_entity.text)
+        if match:
+            self.results['mem_node_info'] = match.group()
 
         self.results['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
 
@@ -599,6 +591,7 @@ class OOMAnalyser(object):
                 except:
                     error('Converting process parameter "{}={}" to integer failed'.format(item, process[item]))
 
+            converted['name'] = process['name']
             pid_int = int(pid_str)
             del ps[pid_str]
             ps[pid_int] = converted
@@ -955,6 +948,45 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         toc_content.innerHTML = new_toc
 
+    def update_process_table(self):
+        """
+        Re-create the process table with additional information
+        """
+        new_table = ''
+        table_content = document.getElementById('process_table')
+
+        for pid in self.oom_details['_processes'].keys():
+            if pid == self.oom_details['trigger_proc_pid']:
+                comment = 'trigger process'
+                css_class = 'class="js-pstable__triggerproc--bgcolor"'
+                # css_class = 'class="js-pstable__killedproc--bgcolor"'
+            elif pid == self.oom_details['killed_proc_pid']:
+                comment = 'killed process'
+                css_class = 'class="js-pstable__killedproc--bgcolor"'
+            else:
+                comment = ''
+                css_class = ''
+            process = self.oom_details['_processes'][pid]
+            line = """
+            <tr {}>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+                <td>{}</td>
+            </tr>
+            """.format(css_class, pid, process['uid'], process['tgid'], process['total_vm_pages'], process['rss_pages'],
+                       process['nr_ptes_pages'], process['swapents_pages'], process['oom_score_adj'], process['name'],
+                       comment)
+            new_table += line
+
+        table_content.innerHTML = new_table
+
     def set_HTML_defaults(self, clean_oom=True):
         """Reset the HTML document but don't clean elements"""
         if clean_oom:
@@ -974,6 +1006,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # clear notification box
         element = document.getElementById('notify_box')
+        while element.firstChild:
+            element.removeChild(element.firstChild)
+
+        # clear process table
+        element = document.getElementById('process_table')
         while element.firstChild:
             element.removeChild(element.firstChild)
 
@@ -1152,6 +1189,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             if item.startswith('_'):
                 continue
             self._set_item(item)
+
+        # generate process table
+        self.update_process_table()
 
         # generate swap usage diagram
         svg_swap = self.svg_generate_bar_chart(

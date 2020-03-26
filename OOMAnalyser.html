@@ -66,6 +66,47 @@
             width: 100%;
         }
 
+        .pstable__table--noborder * {
+            border: none;
+            text-align: right;
+            background-color: unset;
+            padding-left: 5px;
+            padding-right: 5px;
+            table-layout: auto;
+            white-space: nowrap;
+        }
+        .pstable__table--noborder thead {
+            font-weight: bold;
+        }
+
+        /* Align last both columns to left in the process table */
+        .pstable__table--noborder td:nth-of-type(9) {
+            text-align: left;
+        }
+        .pstable__table--noborder td:nth-of-type(10) {
+            text-align: left;
+        }
+
+        .js-pstable__killedproc--bgcolor {
+            background-color: #FFD2D2;
+        }
+        .js-pstable__triggerproc--bgcolor {
+            background-color: #FEEFB3;
+        }
+
+        .pstable__row-pid--width {
+            width: 4ch;
+        }
+        .pstable__row-numeric--width {
+            width: 6ch;
+        }
+        .pstable__row-pages--width {
+            width: 12ch;
+        }
+        .pstable__row-oom-score-adj--width {
+            width: 16ch;
+        }
+
         th {
             font-weight: bold;
             font-size: large;
@@ -582,12 +623,29 @@ function goBack() {
         </tr>
 
         <tr>
-            <th scope="row" colspan="3">Process Table</th>
+            <th colspan="3" scope="row">Process Table</th>
         </tr>
         <tr>
             <td></td>
-            <td colspan="2" class="terminal">
-                <pre class="process_table"></pre>
+            <td class="terminal " colspan="2">
+                <table class="pstable__table--noborder">
+                    <thead>
+                        <tr>
+                            <td class="pstable__row-pid--width">pid</td>
+                            <td class="pstable__row-numeric--width">uid</td>
+                            <td class="pstable__row-numeric--width">tgid</td>
+                            <td class="pstable__row-pages--width">total_vm</td>
+                            <td class="pstable__row-pages--width">rss</td>
+                            <td class="pstable__row-pages--width">nr_ptes</td>
+                            <td class="pstable__row-pages--width">swapents</td>
+                            <td class="pstable__row-oom-score-adj--width">oom_score_adj</td>
+                            <td>name</td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody id="process_table">
+                    </tbody>
+                </table>
             </td>
         </tr>
 
@@ -684,6 +742,7 @@ function goBack() {
         <li>Add a textual summary of the analysis</li>
         <li>Fix calculation of requested memory in kBytes</li>
         <li>Fix issue that prevents units from being copied</li>
+        <li>Show additional information in process table</li>
         <li>...</li>
     </ol>
 
