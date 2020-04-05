@@ -13,6 +13,10 @@ DEBUG = False
 VERSION = "0.4.0 (devel)"
 """Version number"""
 
+# __pragma__ ('skip')
+js_undefined = 0 # Prevent complaints by optional static checker
+# __pragma__ ('noskip')
+
 
 class OOMEntityState(object):
     """Simple enum to track the completeness of an OOM block"""
@@ -47,6 +51,11 @@ def toggle(element_id):
 def error(msg):
     """Show the error box and add the error message"""
     show_notifybox('ERROR', msg)
+
+
+def internal_error(msg):
+    """Show the error box and add the internal error message"""
+    show_notifybox('INTERNAL ERROR', msg)
 
 
 def warning(msg):
@@ -475,7 +484,7 @@ class OOMAnalyser(object):
         self.results['call_trace'] = call_trace
 
         # extract process table
-        self.results['_processes'] = {}
+        self.results['_ps'] = {}
         self.oom_entity.find_text('[ pid ]')
         for line in self.oom_entity:
             if not line.startswith('['):
@@ -485,9 +494,10 @@ class OOMAnalyser(object):
             match = self.REC_PROCESS_LINE.match(line)
             if match:
                 details = match.groupdict()
+                details['notes'] = ''
                 pid = details.pop('pid')
-                self.results['_processes'][pid] = {}
-                self.results['_processes'][pid].update(details)
+                self.results['_ps'][pid] = {}
+                self.results['_ps'][pid].update(details)
 
     def _hex2flags(self, hexvalue, flag_definition):
         """\
@@ -578,23 +588,35 @@ class OOMAnalyser(object):
 
     def _convert_numeric_process_values_to_integer(self):
         """Convert numeric values in process table to integer values"""
-        ps = self.results['_processes']
+        ps = self.results['_ps']
+        ps_index = []
         # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
         #      sets item in "for item in ['uid',..." to 0 instead of 'uid'
         #      jsiter is necessary to iterate over ps
         for pid_str in ps.keys():
             converted = {}
             process = ps[pid_str]
-            for item in ['uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages', 'oom_score_adj']:
+            for item in ['uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
+                         'oom_score_adj']:
                 try:
                     converted[item] = int(process[item])
                 except:
                     error('Converting process parameter "{}={}" to integer failed'.format(item, process[item]))
 
             converted['name'] = process['name']
+            converted['notes'] = process['notes']
             pid_int = int(pid_str)
             del ps[pid_str]
             ps[pid_int] = converted
+            ps_index.append(pid_int)
+
+        ps_index.sort(key=int)
+        self.results['_ps_index'] = ps_index
+
+    def _calc_pstable_values(self):
+        """Set additional notes to processes listed in the process tableX"""
+        self.results['_ps'][self.results['trigger_proc_pid']]['notes'] = 'trigger process'
+        self.results['_ps'][self.results['killed_proc_pid']]['notes'] = 'killed process'
 
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
@@ -648,8 +670,8 @@ class OOMAnalyser(object):
         self.results['system_total_ram_kb'] = self.results['ram_pages'] * self.results['page_size_kb']
         self.results['system_total_ramswap_kb'] = self.results['system_total_ram_kb'] + self.results['swap_total_kb']
         total_rss_pages = 0
-        for pid in self.results['_processes'].keys():
-            total_rss_pages += self.results['_processes'][pid]['rss_pages']
+        for pid in self.results['_ps'].keys():
+            total_rss_pages += self.results['_ps'][pid]['rss_pages']
         self.results['system_total_ram_used_kb'] = total_rss_pages * self.results['page_size_kb']
 
         self.results['system_total_used_percent'] = int(100 *
@@ -688,6 +710,7 @@ class OOMAnalyser(object):
         """
         self._convert_numeric_results_to_integer()
         self._convert_numeric_process_values_to_integer()
+        self._calc_pstable_values()
 
         self._determinate_platform_and_distribution()
         self._calc_system_values()
@@ -859,6 +882,12 @@ Out of memory: Kill process 6576 (java) score 651 or sacrifice child
 Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
 '''
 
+    sorted_column = None
+    """Processes will sort by values in this column"""
+
+    sort_order = None
+    """Sort order for process values"""
+
     svg_namespace = 'http://www.w3.org/2000/svg'
 
     # from Sasha Trubetskoy - https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
@@ -884,6 +913,28 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         '#000080',  # Navy
         '#808080',  # Grey
     ]
+
+    svg_array_updown = """
+<svg width="8" height="11">
+    <polygon points="0,5 8,5 4,0"/>
+    <polygon points="0,6 8,6 4,11"/>
+</svg>
+    """
+    """SVG graphics with two black triangles UP and DOWN for sorting"""
+
+    svg_array_up = """
+<svg width="8" height="11">
+    <polygon points="0,5 8,5 4,0"/>
+</svg>
+    """
+    """SVG graphics with one black triangle UP for sorting"""
+
+    svg_array_down = """
+<svg width="8" height="11">
+    <polygon points="0,6 8,6 4,11"/>
+</svg>
+    """
+    """SVG graphics with one black triangle DOWN for sorting"""
 
     def __init__(self):
         self.set_HTML_defaults()
@@ -955,18 +1006,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         new_table = ''
         table_content = document.getElementById('process_table')
 
-        for pid in self.oom_details['_processes'].keys():
+        for pid in self.oom_details['_ps_index']:
             if pid == self.oom_details['trigger_proc_pid']:
-                comment = 'trigger process'
                 css_class = 'class="js-pstable__triggerproc--bgcolor"'
-                # css_class = 'class="js-pstable__killedproc--bgcolor"'
             elif pid == self.oom_details['killed_proc_pid']:
-                comment = 'killed process'
                 css_class = 'class="js-pstable__killedproc--bgcolor"'
             else:
-                comment = ''
                 css_class = ''
-            process = self.oom_details['_processes'][pid]
+            process = self.oom_details['_ps'][pid]
             line = """
             <tr {}>
                 <td>{}</td>
@@ -982,10 +1029,31 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             </tr>
             """.format(css_class, pid, process['uid'], process['tgid'], process['total_vm_pages'], process['rss_pages'],
                        process['nr_ptes_pages'], process['swapents_pages'], process['oom_score_adj'], process['name'],
-                       comment)
+                       process['notes'])
             new_table += line
 
         table_content.innerHTML = new_table
+
+        self.set_sort_triangle()
+
+    def set_sort_triangle(self):
+        """Set the sorting symbols for all columns in the process table"""
+        for column_name in ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
+                            'oom_score_adj', 'name', 'notes']:
+
+            element_id = "pstable_sort_{}".format(column_name)
+            element = document.getElementById(element_id)
+            if not element:
+                internal_error('Missing id "{}" in process table.'.format(element_id))
+                continue
+
+            if column_name == self.sorted_column:
+                if self.sort_order == 'descending':
+                    element.innerHTML=self.svg_array_down
+                else:
+                    element.innerHTML=self.svg_array_up
+            else:
+                element.innerHTML=self.svg_array_updown
 
     def set_HTML_defaults(self, clean_oom=True):
         """Reset the HTML document but don't clean elements"""
@@ -1013,6 +1081,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         element = document.getElementById('process_table')
         while element.firstChild:
             element.removeChild(element.firstChild)
+
+        # reset sort triangles
+        self.sorted_column = None
+        self.sort_order = None
+        self.set_sort_triangle()
 
         # remove svg charts
         for element_id in ('svg_swap', 'svg_ram'):
@@ -1230,6 +1303,67 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         element = document.getElementById('oom')
         element.textContent = self.oom.text
         self.toggle_oom(show=False)
+
+    def sort_pstable(self, column_name):
+        """Sort process table by the values in the given column"""
+        if column_name not in ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
+                               'oom_score_adj', 'name', 'notes']:
+            internal_error('Can not sort process table with an unknown column name "{}"'.format(column_name))
+            return
+
+        # reset sort order if the column has changes
+        if column_name != self.sorted_column:
+            self.sort_order = None
+        self.sorted_column = column_name
+
+        if not self.sort_order or self.sort_order == 'descending':
+            self.sort_order = 'ascending'
+            self.sort_psindex_by_column(column_name)
+        else:
+            self.sort_order = 'descending'
+            self.sort_psindex_by_column(column_name, True)
+
+        self.sorted_column = column_name
+
+        self.update_process_table()
+
+    def sort_psindex_by_column(self, column_name, reverse=False):
+        """
+        Sort the pid list '_ps_index' based on the values in the process dict '_ps'.
+
+        Is uses bubble sort with all disadvantages but just a few lines of code
+        """
+
+        ps = self.oom_details['_ps']
+        ps_index = self.oom_details['_ps_index']
+
+        def getvalue(column_name, i):
+            if column_name == 'pid':
+                value = ps_index[i]
+            else:
+                value = ps[ps_index[i]][column_name]
+
+            # JS sorts alphanumeric by default, convert values explicit to integers to sort numerically
+            if column_name not in ['name', 'notes'] and value is not js_undefined:
+                value = int(value)
+
+            return value
+
+        # We set swapped to True so the loop looks runs at least once
+        swapped = True
+        while swapped:
+            swapped = False
+            for i in range(len(ps_index) - 1):
+
+                v1 = getvalue(column_name, i)
+                v2 = getvalue(column_name, i+1)
+
+                if (not reverse and v1 > v2) or (reverse and v1 < v2):
+                        # Swap the elements
+                        ps_index[i], ps_index[i+1] = ps_index[i+1], ps_index[i]
+
+                        # Set the flag to True so we'll loop again
+                        swapped = True
 
 
 OOMDisplayInstance = OOMDisplay()

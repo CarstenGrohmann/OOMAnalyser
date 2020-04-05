@@ -66,17 +66,27 @@
             width: 100%;
         }
 
-        .pstable__table--noborder * {
+        .pstable__table--noborder {
             border: none;
             text-align: right;
             background-color: unset;
-            padding-left: 5px;
-            padding-right: 5px;
-            table-layout: auto;
-            white-space: nowrap;
+            table-layout: fixed;
         }
-        .pstable__table--noborder thead {
+
+        .pstable__table--noborder thead * {
             font-weight: bold;
+            padding-right: unset;
+            padding-left: unset;
+            white-space: nowrap;
+            /* overwrite the generic th/td settings */
+            border: none;
+        }
+
+        .pstable__table--noborder tbody * {
+            padding-left: 5px;
+            padding-right: 18px;
+            /* overwrite the generic th/td settings */
+            border: none;
         }
 
         /* Align last both columns to left in the process table */
@@ -95,16 +105,22 @@
         }
 
         .pstable__row-pid--width {
-            width: 4ch;
+            width: 8ch;
         }
         .pstable__row-numeric--width {
-            width: 6ch;
+            width: 10ch;
         }
         .pstable__row-pages--width {
-            width: 12ch;
+            width: 16ch;
         }
         .pstable__row-oom-score-adj--width {
             width: 16ch;
+        }
+        .pstable__row-sort--width {
+            padding-left: unset;
+            padding-right: unset;
+            width: 10px;
+            display: inline-block;
         }
 
         th {
@@ -631,16 +647,46 @@ function goBack() {
                 <table class="pstable__table--noborder">
                     <thead>
                         <tr>
-                            <td class="pstable__row-pid--width">pid</td>
-                            <td class="pstable__row-numeric--width">uid</td>
-                            <td class="pstable__row-numeric--width">tgid</td>
-                            <td class="pstable__row-pages--width">total_vm</td>
-                            <td class="pstable__row-pages--width">rss</td>
-                            <td class="pstable__row-pages--width">nr_ptes</td>
-                            <td class="pstable__row-pages--width">swapents</td>
-                            <td class="pstable__row-oom-score-adj--width">oom_score_adj</td>
-                            <td>name</td>
-                            <td></td>
+                            <td class="pstable__row-pid--width">pid
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_pid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('pid')"></a>
+                            </td>
+                            <td class="pstable__row-numeric--width">uid
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_uid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('uid')"></a>
+                            </td>
+                            <td class="pstable__row-numeric--width">tgid
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_tgid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('tgid')"></a>
+                            </td>
+                            <td class="pstable__row-pages--width">total_vm
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_total_vm_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('total_vm_pages')"></a>
+                            </td>
+                            <td class="pstable__row-pages--width">rss
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_rss_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('rss_pages')"></a>
+                            </td>
+                            <td class="pstable__row-pages--width">nr_ptes
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_nr_ptes_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('nr_ptes_pages')"></a>
+                            </td>
+                            <td class="pstable__row-pages--width">swapents
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_swapents_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('swapents_pages')"></a>
+                            </td>
+                            <td class="pstable__row-oom-score-adj--width">oom_score_adj
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_oom_score_adj" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('oom_score_adj')"></a>
+                            </td>
+                            <td>name
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_name" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('name')"></a>
+                            </td>
+                            <td>notes
+                                <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                   id="pstable_sort_notes" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('notes')"></a>
+                            </td>
                         </tr>
                     </thead>
                     <tbody id="process_table">
@@ -743,6 +789,7 @@ function goBack() {
         <li>Fix calculation of requested memory in kBytes</li>
         <li>Fix issue that prevents units from being copied</li>
         <li>Show additional information in process table</li>
+        <li>Add sorting process table</li>
         <li>...</li>
     </ol>
 
