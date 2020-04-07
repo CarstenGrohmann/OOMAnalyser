@@ -465,7 +465,6 @@ class OOMAnalyser(object):
                    ]:
             match = rec.search(self.oom_entity.text)
             if match:
-                gd = match.groupdict()
                 self.results.update(match.groupdict())
 
         match = self.REC_MEM_NODEINFO.search(self.oom_entity.text)
