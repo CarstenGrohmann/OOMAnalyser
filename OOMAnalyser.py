@@ -141,24 +141,24 @@ class OOMEntity(object):
             pass
 
         return to_strip
-        
+
     def _remove_non_oom_lines(self, oom_lines):
         """Remove all lines before and after OOM message block"""
         cleaned_lines = []
         in_oom_lines = False
-        
+
         for line in oom_lines:
             # first line of the oom message block
             if "invoked oom-killer:" in line:
                 in_oom_lines = True
-                
+
             if in_oom_lines:
                 cleaned_lines.append(line)
 
             # next line will not be part of the oom anymore
             if 'Killed process' in line:
                 break
-        
+
         return cleaned_lines
 
     def _rsyslog_unescape_lf(self, oom_lines):
@@ -413,15 +413,15 @@ class OOMAnalyser(object):
     }
     """
     Definition of GFP flags
-    
-    The decimal value of a flag will be calculated by evaluating the entries from left to right. Grouping by 
+
+    The decimal value of a flag will be calculated by evaluating the entries from left to right. Grouping by
     parentheses is not supported.
-    
+
     Source: include/linux/gpf.h
-    
+
     @note : This list os probably a mixture of different kernel versions - be carefully
-    
-    @todo: Implement kernel specific versions because this flags are not constant 
+
+    @todo: Implement kernel specific versions because this flags are not constant
           (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
     """
 
@@ -462,7 +462,7 @@ class OOMAnalyser(object):
                     self.REC_PAGEINFO,
                     self.REC_PID_KERNELVERSION,
                     self.REC_SWAP,
-                    ]:
+                   ]:
             match = rec.search(self.oom_entity.text)
             if match:
                 gd = match.groupdict()
@@ -995,7 +995,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             if not (is_visible(element) and element.id):
                 continue
 
-            new_toc +='<li><a href="#{}">{}</a></li>'.format(element.id, element.textContent)
+            new_toc += '<li><a href="#{}">{}</a></li>'.format(element.id, element.textContent)
 
         toc_content.innerHTML = new_toc
 
@@ -1049,11 +1049,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
             if column_name == self.sorted_column:
                 if self.sort_order == 'descending':
-                    element.innerHTML=self.svg_array_down
+                    element.innerHTML = self.svg_array_down
                 else:
-                    element.innerHTML=self.svg_array_up
+                    element.innerHTML = self.svg_array_up
             else:
-                element.innerHTML=self.svg_array_updown
+                element.innerHTML = self.svg_array_updown
 
     def set_HTML_defaults(self, clean_oom=True):
         """Reset the HTML document but don't clean elements"""
@@ -1359,11 +1359,11 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
                 v2 = getvalue(column_name, i+1)
 
                 if (not reverse and v1 > v2) or (reverse and v1 < v2):
-                        # Swap the elements
-                        ps_index[i], ps_index[i+1] = ps_index[i+1], ps_index[i]
+                    # Swap the elements
+                    ps_index[i], ps_index[i+1] = ps_index[i+1], ps_index[i]
 
-                        # Set the flag to True so we'll loop again
-                        swapped = True
+                    # Set the flag to True so we'll loop again
+                    swapped = True
 
 
 OOMDisplayInstance = OOMDisplay()
