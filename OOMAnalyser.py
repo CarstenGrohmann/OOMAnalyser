@@ -1092,13 +1092,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             while element.firstChild:
                 element.removeChild(element.firstChild)
 
-    def svg_create_element(self, height, width):
+    def svg_create_element(self, height, width, css_class):
         """Return an empty SVG element"""
         svg = document.createElementNS(self.svg_namespace, 'svg')
         svg.setAttribute('version', '1.1')
         svg.setAttribute('height', height)
         svg.setAttribute('width', width)
         svg.setAttribute('viewBox', '0 0 {} {}'.format(width, height))
+        svg.setAttribute('class', css_class)
         return svg
 
     def svg_create_rect(self, x=0, y=0, width=0, height=0, colour=None):
@@ -1115,15 +1116,16 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             rect.setAttribute('fill', colour)
         return rect
 
-    def svg_generate_bar_chart(self, *elements):
+    def svg_generate_bar_chart(self, css_class, *elements):
         """Generate a SVG bar chart"""
         bar_height = 100
         label_height = 80
         length_factor = 4
         overall_height = bar_height + label_height
         overall_width = 100 * length_factor
+        css_class = 'mem-usage__svg'
 
-        svg = self.svg_create_element(overall_height, overall_width)
+        svg = self.svg_create_element(overall_height, overall_width, css_class)
 
         sum_all_elements = sum([length for unused, length in elements])
 
