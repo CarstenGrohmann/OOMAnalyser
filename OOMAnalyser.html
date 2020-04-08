@@ -26,6 +26,7 @@
 
         .table__sub-section--bold {
             font-weight: bold;
+            font-size: medium;
             padding: 5px;
         }
 
@@ -185,7 +186,7 @@ function goBack() {
 
 <h1>Analyse and visualise Linux OOM output</h1>
 
-<nav class="table-of-contents" id="table_of_contents" role="navigation">
+<nav class="table-of-contents" id="table_of_contents">
     <h2>On this page</h2>
     <ul>
     </ul>
@@ -208,7 +209,7 @@ function goBack() {
 
 <div class="js-text--default-show" id="input">
     <h2 id="step1">Step 1 - Enter your OOM message</h2>
-    <textarea autocomplete="off" cols="100" id="textarea_oom" onfocusin="OOMAnalyser.OOMDisplayInstance.empty_textarea_oom()" rows="20" title="OOM input field">Add your OOMhere</textarea>
+    <textarea autocomplete="off" cols="100" id="textarea_oom" onfocus="OOMAnalyser.OOMDisplayInstance.empty_textarea_oom()" rows="20" title="OOM input field">Add your OOMhere</textarea>
     <br/>
     <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it">Analyse</button>
     <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area">Reset</button>
@@ -368,7 +369,7 @@ function goBack() {
         <!-- Graphs -->
 
         <tr>
-            <td class="table__sub-section--bold" colspan="3" scope="row">Graphs</td>
+            <th class="table__sub-section--bold" colspan="3" scope="row">Graphs</th>
         </tr>
         <tr>
             <td>RAM Summary</td>
@@ -382,7 +383,7 @@ function goBack() {
         <!-- Swap Usage -->
 
         <tr>
-            <td class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</td>
+            <th class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</th>
         </tr>
         <tr>
             <td>Swap Total</td>
@@ -420,7 +421,7 @@ function goBack() {
         <!-- Page Usage -->
 
         <tr>
-            <td class="table__sub-section--bold" colspan="3" scope="row">Memory Pages</td>
+            <th class="table__sub-section--bold" colspan="3" scope="row">Memory Pages</th>
         </tr>
         <tr>
             <td>RAM pages</td>
@@ -459,7 +460,7 @@ function goBack() {
         <!-- Memory Usage Details -->
 
         <tr>
-            <td class="table__sub-section--bold" colspan="3" scope="row">Memory Usage Details</td>
+            <th class="table__sub-section--bold" colspan="3" scope="row">Memory Usage Details</th>
         </tr>
         <tr>
             <td>Active anonymous memory <br> (active_anon)</td>
