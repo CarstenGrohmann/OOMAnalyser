@@ -613,9 +613,17 @@ class OOMAnalyser(object):
         self.results['_ps_index'] = ps_index
 
     def _calc_pstable_values(self):
-        """Set additional notes to processes listed in the process tableX"""
-        self.results['_ps'][self.results['trigger_proc_pid']]['notes'] = 'trigger process'
-        self.results['_ps'][self.results['killed_proc_pid']]['notes'] = 'killed process'
+        """Set additional notes to processes listed in the process table"""
+        tpid = self.results['trigger_proc_pid']
+        kpid = self.results['killed_proc_pid']
+
+        # sometimes the trigger process isn't part of the process table
+        if tpid in self.results['_ps']:
+            self.results['_ps'][tpid]['notes'] = 'trigger process'
+
+        # assume the killed process may also not part of the process table
+        if kpid in self.results['_ps']:
+            self.results['_ps'][kpid]['notes'] = 'killed process'
 
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
