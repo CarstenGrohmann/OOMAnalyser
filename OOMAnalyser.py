@@ -735,9 +735,6 @@ class OOMAnalyser(object):
 class OOMDisplay(object):
     """Display the OOM analysis"""
 
-    paste_note = "<paste your OOM here>"
-    """Note for the user to paste the OOM to the textarea"""
-
     oom_details = {}
     """Extracted result"""
 
@@ -1062,11 +1059,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             else:
                 element.innerHTML = self.svg_array_updown
 
-    def set_HTML_defaults(self, clean_oom=True):
+    def set_HTML_defaults(self):
         """Reset the HTML document but don't clean elements"""
-        if clean_oom:
-            document.getElementById('textarea_oom').value = self.paste_note
-
         # hide all elements marked to be hidden by default
         for element in document.querySelectorAll('.js-text--default-hide'):
             element.classList.add('js-text--display-none')
@@ -1190,12 +1184,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
     def copy_example_to_form(self):
         document.getElementById('textarea_oom').value = self.example
 
-    def empty_textarea_oom(self):
-        element = document.getElementById('textarea_oom')
-        content = element.value
-        if content == self.paste_note:
-            element.value = ""
-
     def reset_form(self):
         self.set_HTML_defaults()
         self.update_toc()
@@ -1222,7 +1210,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         # set defaults and clear notifications
         self.oom_details.clear()
-        self.set_HTML_defaults(False)
+        self.set_HTML_defaults()
 
         # analyse
         analyser = OOMAnalyser(self.oom)
