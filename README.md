@@ -42,7 +42,7 @@ without an Internet connection.
 
  * Clone the repository:
 ```
-# git clone https://github.com/CarstenGrohmann/OOMAnalyser
+# git clone https://git.sr.ht/~carstengrohmann/OOMAnalyser
 ```
 
  * Setup the Python virtual environment:
@@ -95,7 +95,7 @@ or
 
 ## Known Bugs/Issues
 
-Check the project [issue tracker](https://github.com/CarstenGrohmann/OOMAnalyser/issues)
+Check the project [issue tracker](https://todo.sr.ht/~carstengrohmann/OOMAnalyser)
 for current open bugs. New bugs can be reported there also.
 
 
