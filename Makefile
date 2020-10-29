@@ -35,7 +35,7 @@ clean:
 	@find $(BASE_DIR) -depth -type f -name "*.pyo" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*.orig" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*~" -exec rm -f {} \;
-	@$(RM) --force --recursive __javascript__
+	@$(RM) --force --recursive __target__
 
 #+ Remove all automatically generated and Git repository data
 distclean: clean venv-clean

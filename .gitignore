@@ -3,11 +3,11 @@
 # Byte-compiled / optimized / DLL files
 *.py[cod]
 
-# Environments
+# Virtual environment
 env/
 
 # IntelliJ project files
 .idea
 
 # Generated (compiled) JavaScript code
-__javascript__/
+__target__/
