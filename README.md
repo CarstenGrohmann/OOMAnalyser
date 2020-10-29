@@ -1,5 +1,7 @@
 # OOMAnalyser
 
+[![builds.sr.ht status](https://builds.sr.ht/~carstengrohmann/OOMAnalyser.svg)](https://builds.sr.ht/~carstengrohmann/OOMAnalyser?)
+
 ## Introduction
 
 OOMAnalyser is a small project to transform the OOM message of a Linux kernel into a more user-friendly format.
@@ -22,12 +24,10 @@ without an Internet connection.
 
 ### Installation steps
 
- 1. Create an own directory and add a `__javascript__` subdirectory
- 2. Open https://www.carstengrohmann.de/oom/ in a browser 
- 3. Browse down to the paragraph "Local Installation" at the end of the document
- 4. Download the HTML file to the main directory and the javascript file to the 
- `__javascript__` subdirectory
- 5. Open the file `OOMAnalyser.html` in your favourite browser.
+ 1. Open https://www.carstengrohmann.de/oom/ in a browser 
+ 2. Browse down to the paragraph "Local Installation" at the end of the document
+ 3. Download the HTML file and the JavaScript file to the main directory
+ 4. Open the file `OOMAnalyser.html` in your favourite browser
 
  
 ## Building OOMAnalyser
@@ -35,7 +35,7 @@ without an Internet connection.
 ### Requirements
 
  * [Python](http://www.python.org) 3.6 or later
- * [Transcrypt](https://www.transcrypt.org/) 3.6.101
+ * [Transcrypt](https://www.transcrypt.org/) 3.7
 
 
 ### Prepare the build environment
@@ -62,6 +62,7 @@ or
 ```
 # . env/bin/activate
 # transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+# rollup --format=umd --name OOMAnalyser --file=OOMAnalyser.js -- __target__/OOMAnalyser.js
 
 or
 
