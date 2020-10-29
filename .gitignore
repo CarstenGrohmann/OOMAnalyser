@@ -11,3 +11,4 @@ env/
 
 # Generated (compiled) JavaScript code
 __target__/
+OOMAnalyser.js

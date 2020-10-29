@@ -63,6 +63,7 @@ venv-clean:
 build: venv
 	. $(VIRTUAL_ENV)/bin/activate
 	transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+	rollup --format=umd --name OOMAnalyser --file=OOMAnalyser.js -- __target__/OOMAnalyser.js
 
 #+ Serve the current directory on http://127.0.0.1:8080
 websrv:
