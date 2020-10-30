@@ -1125,7 +1125,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         length_factor = 4
         overall_height = bar_height + label_height
         overall_width = 100 * length_factor
-        css_class = 'mem-usage__svg'
+        css_class = 'js-mem-usage__svg'
 
         svg = self.svg_create_element(overall_height, overall_width, css_class)
 
