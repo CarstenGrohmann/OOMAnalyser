@@ -14,7 +14,7 @@ VERSION = "0.4.0 (devel)"
 """Version number"""
 
 # __pragma__ ('skip')
-js_undefined = 0 # Prevent complaints by optional static checker
+js_undefined = 0  # Prevent complaints by optional static checker
 # __pragma__ ('noskip')
 
 
@@ -199,7 +199,7 @@ class OOMEntity(object):
 
             if cols_to_strip:
                 # [-1] slicing needs Transcrypt operator overloading
-                line = line.split(" ", cols_to_strip)[-1] # __:opov
+                line = line.split(" ", cols_to_strip)[-1]  # __:opov
 
             # OOMs logged to /var/log/messages / journalctl may contain
             # "kernel:" at the begin of the content
@@ -462,7 +462,7 @@ class OOMAnalyser(object):
                     self.REC_PAGEINFO,
                     self.REC_PID_KERNELVERSION,
                     self.REC_SWAP,
-                   ]:
+                    ]:
             match = rec.search(self.oom_entity.text)
             if match:
                 self.results.update(match.groupdict())
@@ -684,7 +684,6 @@ class OOMAnalyser(object):
         self.results['system_total_used_percent'] = int(100 *
                                                         self.results['system_total_ram_used_kb'] /
                                                         self.results['system_total_ram_kb'])
-
 
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
