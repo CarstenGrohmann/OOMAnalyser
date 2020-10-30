@@ -232,22 +232,24 @@ function goBack() {
             The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
             requested <span class="trigger_proc_requested_memory_pages_kb"></span>
             (<span class="trigger_proc_requested_memory_pages"></span>) memory.
-            The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
-            calculates a score for each process and terminates the process with the highest score
-            &quot;<span class="killed_proc_name"></span>&quot; (PID <span class="killed_proc_pid"></span>) to satisfy the initial
-            memory request.
         </p>
         <p>
-            The terminated process uses <span class="killed_proc_rss_percent text--align-right"></span>
-            (<span class="killed_proc_total_rss_kb"></span>) resident memory and has an OOM score of
-            <span class="killed_proc_score"></span>.
+            The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
+            calculates a score for each process and terminates the process with the highest score to satisfy the
+            initial memory request.
+        </p>
+        <p>
+            The process &quot;<span class="killed_proc_name"></span>&quot;
+            (PID <span class="killed_proc_pid"></span>) with an OOM score of <span class="killed_proc_score"></span>
+            has been terminated. It uses <span class="killed_proc_rss_percent"></span>
+            (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
         </p>
         <p>
             The system has <span class="system_total_ram_kb"></span> physical memory and
             <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span> total.
-            <span class="system_total_used_percent text--align-right"></span>
+            <span class="system_total_used_percent"></span>
             (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>) physical
-            memory and <span class="system_swap_used_percent text--align-right"></span>
+            memory and <span class="system_swap_used_percent"></span>
             (<span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span>) swap space are in use.
         </p>
     </div>
