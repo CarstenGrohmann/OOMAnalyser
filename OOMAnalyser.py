@@ -77,6 +77,14 @@ def show_notifybox(prefix, msg):
     notify_box.appendChild(notification)
 
 
+class KernelConfig(object):
+    """Kernel configuration"""
+
+    ps_table_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
+                      'oom_score_adj']
+    """Elements of the process table"""
+
+
 class OOMEntity(object):
     """Hold whole OOM message block and provide access"""
 
@@ -364,11 +372,14 @@ class OOMAnalyser(object):
     lines = []
     """All lines of an OOM without leading timestamps"""
 
+    kernel_cfg = KernelConfig()
+    """Kernel configuration"""
+
     results = {}
     """Extracted result"""
 
-    # Reference to the OOMEntity object
     oom_entity = None
+    """Reference to the OOMEntity object"""
 
     GFP_FLAGS = {
         'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
@@ -595,8 +606,9 @@ class OOMAnalyser(object):
         for pid_str in ps.keys():
             converted = {}
             process = ps[pid_str]
-            for item in ['uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
-                         'oom_score_adj']:
+            for item in self.kernel_cfg.ps_table_items:
+                if item == 'pid':
+                    continue
                 try:
                     converted[item] = int(process[item])
                 except:
@@ -733,6 +745,9 @@ class OOMAnalyser(object):
 
 class OOMDisplay(object):
     """Display the OOM analysis"""
+
+    kernel_cfg = KernelConfig()
+    """Kernel configuration"""
 
     oom_details = {}
     """Extracted result"""
@@ -1041,9 +1056,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def set_sort_triangle(self):
         """Set the sorting symbols for all columns in the process table"""
-        for column_name in ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
-                            'oom_score_adj', 'name', 'notes']:
-
+        # TODO Check operator overloading
+        #      Operator overloading (Pragma opov) does not work in this context.
+        #      self.kernel_cfg.ps_table_items + ['notes'] will compile to a string
+        #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
+        #      array
+        ps_table_and_notes = self.kernel_cfg.ps_table_items[:]
+        ps_table_and_notes.append('notes')
+        for column_name in ps_table_and_notes:
             element_id = "pstable_sort_{}".format(column_name)
             element = document.getElementById(element_id)
             if not element:
@@ -1214,6 +1234,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # analyse
         analyser = OOMAnalyser(self.oom)
         self.oom_details = analyser.analyse()
+        # Update kernel configuration
+        self.kernel_cfg = analyser.kernel_cfg
 
         # display results
         self.show()
@@ -1302,8 +1324,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def sort_pstable(self, column_name):
         """Sort process table by the values in the given column"""
-        if column_name not in ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
-                               'oom_score_adj', 'name', 'notes']:
+        # TODO Check operator overloading
+        #      Operator overloading (Pragma opov) does not work in this context.
+        #      self.kernel_cfg.ps_table_items + ['notes'] will compile to a string
+        #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
+        #      array
+        ps_table_and_notes = self.kernel_cfg.ps_table_items[:]
+        ps_table_and_notes.append('notes')
+        if column_name not in ps_table_and_notes:
             internal_error('Can not sort process table with an unknown column name "{}"'.format(column_name))
             return
 
