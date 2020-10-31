@@ -80,6 +80,61 @@ def show_notifybox(prefix, msg):
 class KernelConfig(object):
     """Kernel configuration"""
 
+    GFP_FLAGS = {
+        'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
+        'GFP_KERNEL':           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'},
+        'GFP_KERNEL_ACCOUNT':   {'value': 'GFP_KERNEL | __GFP_ACCOUNT'},
+        'GFP_NOWAIT':           {'value': '__GFP_KSWAPD_RECLAIM'},
+        'GFP_NOIO':             {'value': '__GFP_RECLAIM'},
+        'GFP_NOFS':             {'value': '__GFP_RECLAIM | __GFP_IO'},
+        'GFP_USER':             {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL'},
+        'GFP_DMA':              {'value': '__GFP_DMA'},
+        'GFP_DMA32':            {'value': '__GFP_DMA32'},
+        'GFP_HIGHUSER':         {'value': 'GFP_USER | __GFP_HIGHMEM'},
+        'GFP_HIGHUSER_MOVABLE': {'value': 'GFP_HIGHUSER | __GFP_MOVABLE'},
+        'GFP_TRANSHUGE_LIGHT':  {'value': 'GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM'},
+        'GFP_TRANSHUGE':        {'value': 'GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM'},
+        '__GFP_DMA':            {'value': 0x01},
+        '__GFP_HIGHMEM':        {'value': 0x02},
+        '__GFP_DMA32':          {'value': 0x04},
+        '__GFP_MOVABLE':        {'value': 0x08},
+        '__GFP_RECLAIMABLE':    {'value': 0x10},
+        '__GFP_HIGH':           {'value': 0x20},
+        '__GFP_IO':             {'value': 0x40},
+        '__GFP_FS':             {'value': 0x80},
+        '__GFP_COLD':           {'value': 0x100},
+        '__GFP_NOWARN':         {'value': 0x200},
+        '__GFP_RETRY_MAYFAIL':  {'value': 0x400},
+        '__GFP_NOFAIL':         {'value': 0x800},
+        '__GFP_NORETRY':        {'value': 0x1000},
+        '__GFP_MEMALLOC':       {'value': 0x2000},
+        '__GFP_COMP':           {'value': 0x4000},
+        '__GFP_ZERO':           {'value': 0x8000},
+        '__GFP_NOMEMALLOC':     {'value': 0x10000},
+        '__GFP_HARDWALL':       {'value': 0x20000},
+        '__GFP_THISNODE':       {'value': 0x40000},
+        '__GFP_ATOMIC':         {'value': 0x80000},
+        '__GFP_ACCOUNT':        {'value': 0x100000},
+        '__GFP_DIRECT_RECLAIM': {'value': 0x400000},
+        '__GFP_WRITE':          {'value': 0x800000},
+        '__GFP_KSWAPD_RECLAIM': {'value': 0x1000000},
+        '__GFP_NOLOCKDEP':      {'value': 0x2000000},
+        '__GFP_RECLAIM':        {'value': '__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM'},
+    }
+    """
+    Definition of GFP flags
+
+    The decimal value of a flag will be calculated by evaluating the entries from left to right. Grouping by
+    parentheses is not supported.
+
+    Source: include/linux/gpf.h
+
+    @note : This list os probably a mixture of different kernel versions - be carefully
+
+    @todo: Implement kernel specific versions because this flags are not constant
+          (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
+    """
+
     ps_table_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
                       'oom_score_adj']
     """Elements of the process table"""
@@ -381,61 +436,6 @@ class OOMAnalyser(object):
     oom_entity = None
     """Reference to the OOMEntity object"""
 
-    GFP_FLAGS = {
-        'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
-        'GFP_KERNEL':           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'},
-        'GFP_KERNEL_ACCOUNT':   {'value': 'GFP_KERNEL | __GFP_ACCOUNT'},
-        'GFP_NOWAIT':           {'value': '__GFP_KSWAPD_RECLAIM'},
-        'GFP_NOIO':             {'value': '__GFP_RECLAIM'},
-        'GFP_NOFS':             {'value': '__GFP_RECLAIM | __GFP_IO'},
-        'GFP_USER':             {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL'},
-        'GFP_DMA':              {'value': '__GFP_DMA'},
-        'GFP_DMA32':            {'value': '__GFP_DMA32'},
-        'GFP_HIGHUSER':         {'value': 'GFP_USER | __GFP_HIGHMEM'},
-        'GFP_HIGHUSER_MOVABLE': {'value': 'GFP_HIGHUSER | __GFP_MOVABLE'},
-        'GFP_TRANSHUGE_LIGHT':  {'value': 'GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM'},
-        'GFP_TRANSHUGE':        {'value': 'GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM'},
-        '__GFP_DMA':            {'value': 0x01},
-        '__GFP_HIGHMEM':        {'value': 0x02},
-        '__GFP_DMA32':          {'value': 0x04},
-        '__GFP_MOVABLE':        {'value': 0x08},
-        '__GFP_RECLAIMABLE':    {'value': 0x10},
-        '__GFP_HIGH':           {'value': 0x20},
-        '__GFP_IO':             {'value': 0x40},
-        '__GFP_FS':             {'value': 0x80},
-        '__GFP_COLD':           {'value': 0x100},
-        '__GFP_NOWARN':         {'value': 0x200},
-        '__GFP_RETRY_MAYFAIL':  {'value': 0x400},
-        '__GFP_NOFAIL':         {'value': 0x800},
-        '__GFP_NORETRY':        {'value': 0x1000},
-        '__GFP_MEMALLOC':       {'value': 0x2000},
-        '__GFP_COMP':           {'value': 0x4000},
-        '__GFP_ZERO':           {'value': 0x8000},
-        '__GFP_NOMEMALLOC':     {'value': 0x10000},
-        '__GFP_HARDWALL':       {'value': 0x20000},
-        '__GFP_THISNODE':       {'value': 0x40000},
-        '__GFP_ATOMIC':         {'value': 0x80000},
-        '__GFP_ACCOUNT':        {'value': 0x100000},
-        '__GFP_DIRECT_RECLAIM': {'value': 0x400000},
-        '__GFP_WRITE':          {'value': 0x800000},
-        '__GFP_KSWAPD_RECLAIM': {'value': 0x1000000},
-        '__GFP_NOLOCKDEP':      {'value': 0x2000000},
-        '__GFP_RECLAIM':        {'value': '__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM'},
-    }
-    """
-    Definition of GFP flags
-
-    The decimal value of a flag will be calculated by evaluating the entries from left to right. Grouping by
-    parentheses is not supported.
-
-    Source: include/linux/gpf.h
-
-    @note : This list os probably a mixture of different kernel versions - be carefully
-
-    @todo: Implement kernel specific versions because this flags are not constant
-          (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
-    """
-
     def __init__(self, oom):
         self.results = {}
         self.oom_entity = oom
@@ -647,7 +647,7 @@ class OOMAnalyser(object):
             flags = self.results['trigger_proc_gfp_flags']
             del self.results['trigger_proc_gfp_flags']
         else:
-            flags, unknown = self._hex2flags(self.results['trigger_proc_gfp_mask'], self.GFP_FLAGS)
+            flags, unknown = self._hex2flags(self.results['trigger_proc_gfp_mask'], self.kernel_cfg.GFP_FLAGS)
             if unknown:
                 # TODO Missing format specifier {0:x} in Transcrypt?
                 flags.append('0x{}'.format(unknown.toString(16)))
