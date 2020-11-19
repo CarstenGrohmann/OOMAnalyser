@@ -36,6 +36,7 @@ without an Internet connection.
 
  * [Python](http://www.python.org) 3.6 or later
  * [Transcrypt](https://www.transcrypt.org/) 3.7
+ * [Rollup](https://rollupjs.org/)
 
 
 ### Prepare the build environment
