@@ -11,10 +11,10 @@ SHELL             = /bin/sh
 
 BASE_DIR          = .
 PYTHON3_BIN       = python3
-VIRTUAL_ENV       = env
+VIRTUAL_ENV_DIR   = env
 
-export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV})
-export PATH := ${VIRTUAL_ENV}/bin:${PATH}
+export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV_DIR})
+export PATH := ${VIRTUAL_ENV_DIR}/bin:${PATH}
 
 HELP= @grep -B1 '^[a-zA-Z\-]*:' Makefile |\
          awk 'function p(h,t){printf"%-12s=%s\n",h,t;};\
@@ -42,26 +42,26 @@ distclean: clean venv-clean
 	@echo "Remove Git repository data (.git*) ..."
 	@(RM) --force .git .gitignore
 
-$(VIRTUAL_ENV)/bin/activate: requirements.txt
-	test -d $(VIRTUAL_ENV) || virtualenv $(VIRTUAL_ENV)
-	. $(VIRTUAL_ENV)/bin/activate
-	$(VIRTUAL_ENV)/bin/pip install -Ur requirements.txt
-	touch $(VIRTUAL_ENV)/bin/activate
+$(VIRTUAL_ENV_DIR)/bin/activate: requirements.txt
+	test -d $(VIRTUAL_ENV_DIR) || virtualenv $(VIRTUAL_ENV_DIR)
+	. $(VIRTUAL_ENV_DIR)/bin/activate
+	$(VIRTUAL_ENV_DIR)/bin/pip install -Ur requirements.txt
+	touch $(VIRTUAL_ENV_DIR)/bin/activate
 
 #+ Setup the virtual environment from scratch
-venv: $(VIRTUAL_ENV)/bin/activate
+venv: $(VIRTUAL_ENV_DIR)/bin/activate
 
 #+ Freeze the current virtual environment by update requirements.txt
 venv-freeze:
-	source $(VIRTUAL_ENV)/bin/activate && $(VIRTUAL_ENV)/bin/pip freeze > requirements.txt
+	source $(VIRTUAL_ENV_DIR)/bin/activate && $(VIRTUAL_ENV_DIR)/bin/pip freeze > requirements.txt
 
 #+ Remove the virtual environment
 venv-clean:
-	rm -rf $(VIRTUAL_ENV)
+	rm -rf $(VIRTUAL_ENV_DIR)
 
 #+ Compile Python to JavaScript
 build: venv
-	. $(VIRTUAL_ENV)/bin/activate
+	. $(VIRTUAL_ENV_DIR)/bin/activate
 	transcrypt --build --map --nomin -e 6 OOMAnalyser.py
 	rollup --format=umd --name OOMAnalyser --file=OOMAnalyser.js -- __target__/OOMAnalyser.js
 
