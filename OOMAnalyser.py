@@ -420,7 +420,9 @@ class OOMAnalyser(object):
     )
 
     REC_KILLED_PROCESS = re.compile(
-        r'^Killed process \d+ \(.*\) total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
+        r'^Killed process \d+ \(.*\)'
+        r'(, UID \d+,)?'
+        r' total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
         r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*',
         re.MULTILINE)
 
