@@ -67,6 +67,10 @@
             width: 100%;
         }
 
+        .result__table--size-col-1 {
+            width: 300px;
+        }
+
         .pstable__table--noborder {
             border: none;
             text-align: right;
@@ -258,16 +262,11 @@ function goBack() {
         The last column contains further details and additional information.
     </p>
     <table>
-        <!--
-        <thead>
-        <tr>
-            <th scope="col"></th>
-            <th scope="col">Entry</th>
-            <th scope="col">Description</th>
-        </tr>
-        </thead>
-        -->
-        <tbody>
+        <colgroup>
+            <col class="result__table--size-col-1">
+            <col>
+            <col>
+        </colgroup>
 
         <!-- Trigger process -->
 
