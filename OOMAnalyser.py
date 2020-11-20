@@ -1206,6 +1206,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         document.getElementById('textarea_oom').value = self.example
 
     def reset_form(self):
+        document.getElementById('textarea_oom').value = ""
         self.set_HTML_defaults()
         self.update_toc()
 
