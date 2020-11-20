@@ -62,7 +62,7 @@ venv-clean:
 #+ Compile Python to JavaScript
 build: venv
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+	transcrypt --build --map --nomin --sform -e 6 OOMAnalyser.py
 	rollup --format=umd --name OOMAnalyser --file=OOMAnalyser.js -- __target__/OOMAnalyser.js
 
 #+ Serve the current directory on http://127.0.0.1:8080

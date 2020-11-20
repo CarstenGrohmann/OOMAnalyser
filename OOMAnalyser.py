@@ -651,8 +651,7 @@ class OOMAnalyser(object):
         else:
             flags, unknown = self._hex2flags(self.results['trigger_proc_gfp_mask'], self.kernel_cfg.GFP_FLAGS)
             if unknown:
-                # TODO Missing format specifier {0:x} in Transcrypt?
-                flags.append('0x{}'.format(unknown.toString(16)))
+                flags.append('0x{0:x}'.format(unknown))
             flags = ' | '.join(flags)
 
         self.results['trigger_proc_gfp_mask'] = '{} ({})'.format(self.results['trigger_proc_gfp_mask'], flags)
