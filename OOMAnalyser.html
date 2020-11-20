@@ -180,6 +180,31 @@
 function goBack() {
     window.history.back();
 }
+
+// Add listener after the document has been loaded completely
+window.addEventListener('DOMContentLoaded', function() {
+    let dropArea = document.getElementById('input');
+    dropArea.addEventListener('drop', file_dragged, false);
+});
+
+// Event handler triggered if a file has been dragged
+function file_dragged(event) {
+    let file = event.dataTransfer.files[0]
+    event.preventDefault()
+    read_and_display_file(file)
+    return true;
+};
+
+// Read and display local file
+function read_and_display_file(file) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let textarea_oom = document.getElementById('textarea_oom')
+        textarea_oom.value = reader.result;
+    }
+    reader.readAsText(file);
+}
+
     </script>
 </head>
 <body>
@@ -210,7 +235,13 @@ function goBack() {
 
 <div class="js-text--default-show" id="input">
     <h2 id="step1">Step 1 - Enter your OOM message</h2>
-    <textarea autocomplete="off" cols="100" id="textarea_oom" placeholder="<Paste your OOM here>" rows="20" title="OOM input field"></textarea>
+    <textarea autocomplete="off" cols="100" id="textarea_oom"
+              placeholder="<Paste your OOM here, drag & drop a file or use the file dialog below>"
+              rows="20" title="OOM input field"></textarea>
+    <br/>
+    <div>
+        <input accept=".txt,.log" onchange="read_and_display_file(this.files[0])" type="file">
+    </div>
     <br/>
     <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it">Analyse</button>
     <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area">Reset</button>
@@ -792,6 +823,7 @@ function goBack() {
         <li>Fix: Trigger process isn't part of process table</li>
         <li>Update to Transcrypt 3.7</li>
         <li>Line "Killed process" can contain the process UID</li>
+        <li>Add drag-and-drop support for files</li>
         <li>...</li>
     </ol>
 
