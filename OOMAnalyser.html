@@ -609,24 +609,24 @@ function read_and_display_file(file) {
             </td>
         </tr>
         <tr>
-            <td>free <br> (free)</td>
+            <td>Free pages <br> (free)</td>
             <td class="free_pages text--align-right"></td>
-            <td></td>
+            <td>Free pages</td>
         </tr>
         <tr>
-            <td>free_pcp <br> (free_pcp)</td>
+            <td>Free per-CPU pages <br> (free_pcp)</td>
             <td class="free_pcp_pages text--align-right"></td>
-            <td></td>
+            <td>Free number of pages per CPU</td>
         </tr>
         <tr>
-            <td>free_cma <br> (free_cma)</td>
+            <td>Free CMA pages <br> (free_cma)</td>
             <td class="free_cma_pages text--align-right"></td>
-            <td></td>
+            <td>Pages reserved but not used by Contiguous Memory Allocator (CMA)</td>
         </tr>
         <tr>
             <td>Total Pagecache</td>
             <td class="pagecache_total_pages text--align-right"></td>
-            <td></td>
+            <td>Total number of pages in pagecache</td>
         </tr>
 
         <!-- Operating System -->
@@ -824,6 +824,7 @@ function read_and_display_file(file) {
         <li>Update to Transcrypt 3.7</li>
         <li>Line "Killed process" can contain the process UID</li>
         <li>Add drag-and-drop support for files</li>
+        <li>Add missing explanations</li>
         <li>...</li>
     </ol>
 
