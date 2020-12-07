@@ -11,6 +11,10 @@ SHELL             = /bin/sh
 
 BASE_DIR          = .
 PYTHON3_BIN       = python3
+ROLLUP_BIN        = rollup
+ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=OOMAnalyser.js
+TRANSCRYPT_BIN    = transcrypt
+TRANSCRYPT_OPTS   = --build --map --nomin --sform --esv 6
 VIRTUAL_ENV_DIR   = env
 
 export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV_DIR})
@@ -62,8 +66,8 @@ venv-clean:
 #+ Compile Python to JavaScript
 build: venv
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	transcrypt --build --map --nomin --sform -e 6 OOMAnalyser.py
-	rollup --format=umd --name OOMAnalyser --file=OOMAnalyser.js -- __target__/OOMAnalyser.js
+	$(TRANSCRYPT_BIN) $(TRANSCRYPT_OPTS) OOMAnalyser.py
+	$(ROLLUP_BIN) $(ROLLUP_OPTS) -- __target__/OOMAnalyser.js
 
 #+ Serve the current directory on http://127.0.0.1:8080
 websrv:
