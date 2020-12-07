@@ -318,7 +318,7 @@ class OOMAnalyser(object):
     """Analyse an OOM object and calculate additional values"""
 
     REC_INVOKED_OOMKILLER = re.compile(
-        r'^(?P<trigger_proc_name>[\w\- ]+) invoked oom-killer: '
+        r'^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: '
         r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
         r'(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?'
         r'order=(?P<trigger_proc_order>\d+), '
@@ -414,7 +414,7 @@ class OOMAnalyser(object):
         r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
 
     REC_OOM_KILL_PROCESS = re.compile(
-        r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\w ]+)\) '
+        r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) '
         r'score (?P<killed_proc_score>\d+) or sacrifice child',
         re.MULTILINE
     )
