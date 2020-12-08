@@ -33,6 +33,16 @@ tasks:
       git clone https://aur.archlinux.org/rollup.git
       cd rollup
       makepkg --noconfirm -si
+  - setup_py37: |
+      cd OOMAnalyser
+      git clone https://aur.archlinux.org/python37.git
+      cd python37
+      makepkg --noconfirm -si --skippgpcheck
+      cd ..
+      # create virtualenv for Python 3.7
+      make venv-clean
+      virtualenv3 -p /usr/bin/python3.7 env
+      env/bin/pip  install -Ur requirements.txt
   - build: |
       cd OOMAnalyser
       make build

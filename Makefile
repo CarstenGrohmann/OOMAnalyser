@@ -10,7 +10,7 @@
 SHELL             = /bin/sh
 
 BASE_DIR          = .
-PYTHON3_BIN       = python3
+PYTHON3_BIN       = /usr/bin/python3.7
 ROLLUP_BIN        = rollup
 ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=OOMAnalyser.js
 TRANSCRYPT_BIN    = transcrypt
@@ -47,7 +47,7 @@ distclean: clean venv-clean
 	@(RM) --force .git .gitignore
 
 $(VIRTUAL_ENV_DIR)/bin/activate: requirements.txt
-	test -d $(VIRTUAL_ENV_DIR) || virtualenv $(VIRTUAL_ENV_DIR)
+	test -d $(VIRTUAL_ENV_DIR) || virtualenv -p $(PYTHON3_BIN) $(VIRTUAL_ENV_DIR)
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	$(VIRTUAL_ENV_DIR)/bin/pip install -Ur requirements.txt
 	touch $(VIRTUAL_ENV_DIR)/bin/activate

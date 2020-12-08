@@ -34,7 +34,7 @@ without an Internet connection.
 
 ### Requirements
 
- * [Python](http://www.python.org) 3.6 or later
+ * [Python](http://www.python.org) 3.7
  * [Transcrypt](https://www.transcrypt.org/) 3.7
  * [Rollup](https://rollupjs.org/)
 
