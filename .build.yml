@@ -27,22 +27,17 @@ sources:
   - https://git.sr.ht/~carstengrohmann/OOMAnalyser
 shell: null
 tasks:
-  - setup: |
-      cd OOMAnalyser
-      make venv
+  - setup_pkgs: |
       git clone https://aur.archlinux.org/rollup.git
       cd rollup
       makepkg --noconfirm -si
-  - setup_py37: |
-      cd OOMAnalyser
+      cd ..
       git clone https://aur.archlinux.org/python37.git
       cd python37
       makepkg --noconfirm -si --skippgpcheck
-      cd ..
-      # create virtualenv for Python 3.7
-      make venv-clean
-      virtualenv3 -p /usr/bin/python3.7 env
-      env/bin/pip  install -Ur requirements.txt
+  - setup_venv: |
+      cd OOMAnalyser
+      make venv
   - build: |
       cd OOMAnalyser
       make build
