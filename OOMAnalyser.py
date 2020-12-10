@@ -10,7 +10,7 @@ import re
 DEBUG = False
 """Show additional information during the development cycle"""
 
-VERSION = "0.4.0 (devel)"
+VERSION = "0.4.0"
 """Version number"""
 
 # __pragma__ ('skip')
