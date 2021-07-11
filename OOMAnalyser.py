@@ -909,28 +909,28 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     svg_namespace = 'http://www.w3.org/2000/svg'
 
-    # from Sasha Trubetskoy - https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+    # 20 different colours generated with Colorgorical http://vrl.cs.brown.edu/color
     svg_colours = [
-        '#e6194b',  # Red
-        '#3cb44b',  # Green
-        '#ffe119',  # Yellow
-        '#0082c8',  # Blue
-        '#f58231',  # Orange
-        '#911eb4',  # Purple
-        '#46f0f0',  # Cyan
-        '#f032e6',  # Magenta
-        '#d2f53c',  # Lime
-        '#fabebe',  # Pink
-        '#008080',  # Teal
-        '#e6beff',  # Lavender
-        '#aa6e28',  # Brown
-        '#fffac8',  # Beige
-        '#800000',  # Maroon
-        '#aaffc3',  # Mint
-        '#808000',  # Olive
-        '#ffd8b1',  # Coral
-        '#000080',  # Navy
-        '#808080',  # Grey
+        '#aee39a',
+        '#344b46',
+        '#1ceaf9',
+        '#5d99aa',
+        '#32e195',
+        '#b02949',
+        '#deae9e',
+        '#805257',
+        '#add51f',
+        '#544793',
+        '#a794d3',
+        '#e057e1',
+        '#769b5a',
+        '#76f014',
+        '#621da6',
+        '#ffce54',
+        '#d64405',
+        '#bb8801',
+        '#096013',
+        '#ff0087'
     ]
 
     svg_array_updown = """
