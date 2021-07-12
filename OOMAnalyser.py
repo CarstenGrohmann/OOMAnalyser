@@ -1363,16 +1363,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         ps = self.oom_details['_ps']
         ps_index = self.oom_details['_ps_index']
 
-        def getvalue(column_name, i):
-            if column_name == 'pid':
-                value = ps_index[i]
+        def getvalue(column, pos):
+            if column == 'pid':
+                value = ps_index[pos]
             else:
-                value = ps[ps_index[i]][column_name]
-
+                value = ps[ps_index[pos]][column]
             # JS sorts alphanumeric by default, convert values explicit to integers to sort numerically
-            if column_name not in ['name', 'notes'] and value is not js_undefined:
+            if column not in ['name', 'notes'] and value is not js_undefined:
                 value = int(value)
-
             return value
 
         # We set swapped to True so the loop looks runs at least once
