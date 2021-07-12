@@ -34,6 +34,8 @@ tasks:
       cd ..
       git clone https://aur.archlinux.org/python37.git
       cd python37
+      # disable optimizations to speedup build process
+      sed -i '/enable-optimizations/d' PKGBUILD
       makepkg --noconfirm -si --skippgpcheck
   - setup_venv: |
       cd OOMAnalyser
