@@ -72,3 +72,8 @@ build: venv
 #+ Serve the current directory on http://127.0.0.1:8080
 websrv:
 	$(PYTHON3_BIN) -m http.server 8080 --bind 127.0.0.1
+
+#+ Run Selenium based web tests
+test: build
+	. $(VIRTUAL_ENV_DIR)/bin/activate
+	DISPLAY=:1 xvfb-run python ./test.py

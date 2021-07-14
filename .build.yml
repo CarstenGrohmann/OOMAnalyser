@@ -23,6 +23,7 @@ packages:
   - python3
   - python-virtualenv
   - git
+  - xorg-server-xvfb
 sources:
   - https://git.sr.ht/~carstengrohmann/OOMAnalyser
 shell: null
@@ -37,6 +38,10 @@ tasks:
       # disable optimizations to speedup build process
       sed -i '/enable-optimizations/d' PKGBUILD
       makepkg --noconfirm -si --skippgpcheck
+      cd ..
+      git clone https://aur.archlinux.org/chromedriver.git
+      cd chromedriver
+      makepkg --noconfirm -si --skippgpcheck
   - setup_venv: |
       cd OOMAnalyser
       make venv
@@ -44,6 +49,9 @@ tasks:
       cd OOMAnalyser
       make build
       ls -l OOMAnalyser.html OOMAnalyser.js
+  - webtest: |
+      cd OOMAnalyser
+      make test
 triggers:
   - action: email
     condition: failure
