@@ -185,7 +185,7 @@ function goBack() {
 window.addEventListener('DOMContentLoaded', function() {
     let dropArea = document.getElementById('input');
     dropArea.addEventListener('drop', file_dragged, false);
-});
+})
 
 // Event handler triggered if a file has been dragged
 function file_dragged(event) {
@@ -193,7 +193,7 @@ function file_dragged(event) {
     event.preventDefault()
     read_and_display_file(file)
     return true;
-};
+}
 
 // Read and display local file
 function read_and_display_file(file) {
