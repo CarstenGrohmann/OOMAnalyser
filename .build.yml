@@ -29,19 +29,13 @@ sources:
 shell: null
 tasks:
   - setup_pkgs: |
-      git clone https://aur.archlinux.org/rollup.git
-      cd rollup
-      makepkg --noconfirm -si
-      cd ..
+      yay -S --noconfirm --noeditmenu --noupgrademenu rollup chromedriver google-chrome
       git clone https://aur.archlinux.org/python37.git
       cd python37
-      # disable optimizations to speedup build process
+      # disable optimizations to speedup build process by 8 minutes
       sed -i '/enable-optimizations/d' PKGBUILD
       makepkg --noconfirm -si --skippgpcheck
       cd ..
-      git clone https://aur.archlinux.org/chromedriver.git
-      cd chromedriver
-      makepkg --noconfirm -si --skippgpcheck
   - setup_venv: |
       cd OOMAnalyser
       make venv
