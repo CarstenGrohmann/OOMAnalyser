@@ -14,7 +14,34 @@ VERSION = "0.5.0 (devel)"
 """Version number"""
 
 # __pragma__ ('skip')
-js_undefined = 0  # Prevent complaints by optional static checker
+# MOC objects to satisfy statical checker and imports in unit tests
+js_undefined = 0
+class classList():
+
+    def add(self, *args, **kwargs):
+        pass
+
+    def remove(self, *args, **kwargs):
+        pass
+
+
+class document():
+
+    def querySelectorAll(self, *args, **kwargs):
+        return [element()]
+
+    def getElementById(self, *arg, **kwargs):
+        return element()
+
+
+class element():
+
+    firstChild = []
+    classList = classList()
+    offsetWidth = 0
+
+    def removeChild(self, *args, **kwargs):
+        return
 # __pragma__ ('noskip')
 
 
