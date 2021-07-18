@@ -874,7 +874,7 @@ Total swap = 8388604kB
 [ 8685]     0  8685   137169    23313      97     3256             0 oacore
 [ 6330] 12345  6330     7520       15      18       61             0 rotatelogs
 [ 6331] 12345  6331    28318        0      12       83             0 run.sh
-[ 6576] 12345  6576  8478546  5157063   15483  1527848             0 java
+[ 6576] 12345  6576  8478546  5157063   15483  1527848             0 mysqld
 [27171] 12345 27171     7522       10      18       58             0 rotatelogs
 [27172] 12345 27172    28320        3      11       94             0 run.sh
 [27502] 12345 27502  4029300  2716569    6505   226225             0 java
@@ -924,8 +924,8 @@ Total swap = 8388604kB
 [29110] 12345 29110    29558      745      12        0             0 svr05
 [29481] 12345 29481    29214       58      14        0             0 sed
 [29752] 12345 29752     7522      296      19        0             0 rotatelogs
-Out of memory: Kill process 6576 (java) score 651 or sacrifice child
-Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
+Out of memory: Kill process 6576 (mysqld) score 651 or sacrifice child
+Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
 '''
 
     sorted_column = None
