@@ -220,13 +220,24 @@ class OOMEntity(object):
         strip later.
         """
         to_strip = 0
-
         columns = first_line.split(" ")
+
+        # Examples:
+        # [11686.888109] sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_adj=0, oom_score_adj=0
+        # Apr 01 14:13:32 mysrv kernel: sed invoked OOM-killer: gfp_mask=0x201da, order=0
+        # Apr 01 14:13:32 mysrv kernel: [11686.888109] sed invoked oom-killer: gfp_mask=0x84d0, order=0, oom_adj=0, oom_score_adj=0
         try:
-            # strip all before "<program name> invoked oom-killer: gfp_mask=0x280da, order=0, oom_score_adj=0
-            to_strip = columns.index("invoked")
-            # decrease to include <program name>
-            to_strip -= 1
+            # strip all incl. "kernel:"
+            if 'kernel:' in first_line:
+                to_strip = columns.index("kernel:")
+                # increase to include "kernel:"
+                to_strip += 1
+
+            # check if next column is a timestamp like "[11686.888109]" and remove it too
+            rec = re.compile('\[\d+\.\d+\]')
+            if rec.match(columns[to_strip]):
+                # increase to include timestamp
+                to_strip += 1
         except ValueError:
             pass
 
@@ -290,12 +301,6 @@ class OOMEntity(object):
             if cols_to_strip:
                 # [-1] slicing needs Transcrypt operator overloading
                 line = line.split(" ", cols_to_strip)[-1]  # __:opov
-
-            # OOMs logged to /var/log/messages / journalctl may contain
-            # "kernel:" at the begin of the content
-            if line.startswith('kernel:'):
-                line = line[7:]
-
             stripped_lines.append(line)
 
         return stripped_lines

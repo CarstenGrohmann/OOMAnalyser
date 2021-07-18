@@ -100,6 +100,12 @@ class TestInBrowser(TestBase):
         with self.assertRaises(NoSuchElementException):
             notify_box.find_element_by_class_name('js-notify_box__msg--error')
 
+        for event in self.driver.get_log('browser'):
+            # ignore favicon.ico errors
+            if 'favicon.ico' in event['message']:
+                continue
+            self.fail('Error on browser console reported: %s' % event)
+
     def click_analyse(self):
         analyse = self.driver.find_element_by_xpath('//button[text()="Analyse"]')
         analyse.click()
@@ -193,11 +199,27 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_006_trigger_proc_space(self):
         """Test trigger process name contains a space"""
-        pass
+        example = OOMAnalyser.OOMDisplay.example
+        example = example.replace('sed', 'VM Monitoring Task')
+
+        self.analyse_oom(example)
+
+        self.assert_on_warn_error()
+
+        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
     def test_007_kill_proc_space(self):
         """Test killed process name contains a space"""
-        pass
+        example = OOMAnalyser.OOMDisplay.example
+        example = example.replace('mysqld', 'VM Monitoring Task')
+
+        self.analyse_oom(example)
+
+        self.assert_on_warn_error()
+
+        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
 
 class TestPython(TestBase):
@@ -228,8 +250,18 @@ class TestPython(TestBase):
         self.assertTrue(match, 'Error: re.search(REC_OOM_KILL_PROCESS) failed for process name '
                                'with space')
 
+    def test_003_OOMEntity_number_of_columns_to_strip(self):
+        """Test stripping useless / leading columns"""
+        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        for pos, line in [
+            (1, '[11686.888109] sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_adj=0, oom_score_adj=0'),
+            (5, 'Apr 01 14:13:32 mysrv kernel: sed invoked OOM-killer: gfp_mask=0x201da, order=0'),
+            (6, 'Apr 01 14:13:32 mysrv kernel: [11686.888109] sed invoked oom-killer: gfp_mask=0x84d0, order=0, oom_adj=0, oom_score_adj=0'),
+        ]:
+            to_strip = oom_entity._number_of_columns_to_strip(line)
+            self.assertEqual(to_strip, pos, 'Calc wrong number of colums to strip for "%s": got: %d, expect: %d' % (
+                line, to_strip, pos))
+
 
 if __name__ == "__main__":
-    # import logging, sys
-    # logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     unittest.main(verbosity=2)
