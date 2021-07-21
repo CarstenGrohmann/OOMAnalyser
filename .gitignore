@@ -9,6 +9,9 @@ env/
 # IntelliJ project files
 .idea
 
+# Webdriver Manager: cache for selenium drivers
+.wdm
+
 # Generated (compiled) JavaScript code
 __target__/
 OOMAnalyser.js

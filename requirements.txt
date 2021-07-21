@@ -1,2 +1,3 @@
 Transcrypt == 3.7.16
 selenium
+webdriver-manager

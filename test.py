@@ -24,6 +24,7 @@ import threading
 import unittest
 from selenium import webdriver
 from selenium.common.exceptions import *
+from webdriver_manager.chrome import ChromeDriverManager
 import warnings
 
 import OOMAnalyser
@@ -84,7 +85,13 @@ class TestInBrowser(TestBase):
         server_thread.daemon = True
         server_thread.start()
 
-        self.driver = webdriver.Chrome()
+        # silent Webdriver Manager
+        os.environ['WDM_LOG_LEVEL'] = '0'
+
+        # store driver locally
+        os.environ['WDM_LOCAL'] = '1'
+
+        self.driver = webdriver.Chrome(ChromeDriverManager().install())
         self.driver.get("http://127.0.0.1:8000/OOMAnalyser.html")
 
     def tearDown(self):
