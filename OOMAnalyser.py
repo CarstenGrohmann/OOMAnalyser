@@ -264,7 +264,7 @@ class OOMEntity(object):
 
     def _rsyslog_unescape_lf(self, oom_lines):
         """
-        Rsyslog replaces line breaks with their ocal representation #012.
+        Rsyslog replaces line breaks with their octal representation #012.
 
         This feature can be controlled inside the rsyslog configuration with the directives
         $EscapeControlCharactersOnReceive, $Escape8BitCharactersOnReceive and $ControlCharactersEscapePrefix.

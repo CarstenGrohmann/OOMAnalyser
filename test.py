@@ -259,7 +259,7 @@ class TestPython(TestBase):
             (6, 'Apr 01 14:13:32 mysrv kernel: [11686.888109] sed invoked oom-killer: gfp_mask=0x84d0, order=0, oom_adj=0, oom_score_adj=0'),
         ]:
             to_strip = oom_entity._number_of_columns_to_strip(line)
-            self.assertEqual(to_strip, pos, 'Calc wrong number of colums to strip for "%s": got: %d, expect: %d' % (
+            self.assertEqual(to_strip, pos, 'Calc wrong number of columns to strip for "%s": got: %d, expect: %d' % (
                 line, to_strip, pos))
 
 
