@@ -28,6 +28,7 @@ import warnings
 
 import OOMAnalyser
 
+
 class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def __init__(self, request, client_address, server, directory=None):
@@ -69,6 +70,7 @@ class TestBase(unittest.TestCase):
         @type text: str
         """
         return self.get_lines(text, -1)
+
 
 class TestInBrowser(TestBase):
     """Test OOM web page in a browser"""
@@ -169,6 +171,15 @@ class TestInBrowser(TestBase):
         killed_proc_score = self.driver.find_element_by_class_name('killed_proc_score')
         self.assertEqual(killed_proc_score.text, '651', 'Unexpected OOM score of killed process')
 
+        swap_cache_kb = self.driver.find_element_by_class_name('swap_cache_kb')
+        self.assertEqual(swap_cache_kb.text, '45368 kBytes')
+        swap_used_kb = self.driver.find_element_by_class_name('swap_used_kb')
+        self.assertEqual(swap_used_kb.text, '8343236 kBytes')
+        swap_free_kb = self.driver.find_element_by_class_name('swap_free_kb')
+        self.assertEqual(swap_free_kb.text, '0 kBytes')
+        swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
+        self.assertEqual(swap_total_kb.text, '8388604 kBytes')
+
     def test_004_begin_but_no_end(self):
         """Test incomplete OOM text - just the beginning"""
         example = """\
@@ -261,6 +272,19 @@ class TestPython(TestBase):
             to_strip = oom_entity._number_of_columns_to_strip(line)
             self.assertEqual(to_strip, pos, 'Calc wrong number of columns to strip for "%s": got: %d, expect: %d' % (
                 line, to_strip, pos))
+
+    def test_004_extract_block_from_next_pos(self):
+        """Test extracting a single block (all lines till the next line with a colon)"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        text = analyser._extract_block_from_next_pos('Hardware name:')
+        expected = '''\
+Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
+ ffff880182272f10 00000000021dcb0a ffff880418207938 ffffffff816861ac
+ ffff8804182079c8 ffffffff81681157 ffffffff810eab9c ffff8804182fe910
+ ffff8804182fe928 0000000000000202 ffff880182272f10 ffff8804182079b8
+'''
+        self.assertEqual(text, expected)
 
 
 if __name__ == "__main__":
