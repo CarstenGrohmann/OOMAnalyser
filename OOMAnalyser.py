@@ -511,6 +511,8 @@ class OOMAnalyser(object):
             match = rec.search(self.oom_entity.text)
             if match:
                 self.results.update(match.groupdict())
+            else:
+                warning('No match for regex: "{}"'.format(rec.pattern))
 
         match = self.REC_MEM_NODEINFO.search(self.oom_entity.text)
         if match:
