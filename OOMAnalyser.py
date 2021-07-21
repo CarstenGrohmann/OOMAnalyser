@@ -476,8 +476,7 @@ class OOMAnalyser(object):
 
     def _extract_block_from_next_pos(self, marker):
         """
-        Extract a block starting with the marker and add all lines with a leading space character
-
+        Extract a block that starts with the marker and contains all lines up to the next line with ":".
         :rtype: str
         """
         block = ''
@@ -487,7 +486,7 @@ class OOMAnalyser(object):
         line = self.oom_entity.current()
         block += "{}\n".format(line)
         for line in self.oom_entity:
-            if not line.startswith(' '):
+            if ':' in line:
                 self.oom_entity.back()
                 break
             block += "{}\n".format(line)
