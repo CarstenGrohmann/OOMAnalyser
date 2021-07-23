@@ -18,6 +18,7 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import http.server
+import logging
 import os
 import socketserver
 import threading
@@ -101,13 +102,21 @@ class TestInBrowser(TestBase):
 
     def assert_on_warn(self):
         notify_box = self.driver.find_element_by_id('notify_box')
-        with self.assertRaises(NoSuchElementException):
-            notify_box.find_element_by_class_name('js-notify_box__msg--warning')
+        try:
+            warning = notify_box.find_element_by_class_name('js-notify_box__msg--warning')
+        except NoSuchElementException:
+            pass
+        else:
+            self.fail('Unexpected warning message: %s' % warning.text)
 
     def assert_on_error(self):
         notify_box = self.driver.find_element_by_id('notify_box')
-        with self.assertRaises(NoSuchElementException):
-            notify_box.find_element_by_class_name('js-notify_box__msg--error')
+        try:
+            error = notify_box.find_element_by_class_name('js-notify_box__msg--error')
+        except NoSuchElementException:
+            pass
+        else:
+            self.fail('Unexpected error message: %s' % error.text)
 
         for event in self.driver.get_log('browser'):
             # ignore favicon.ico errors
@@ -115,13 +124,23 @@ class TestInBrowser(TestBase):
                 continue
             self.fail('Error on browser console reported: %s' % event)
 
+    def assert_on_warn_error(self):
+        self.assert_on_warn()
+        self.assert_on_error()
+
     def click_analyse(self):
         analyse = self.driver.find_element_by_xpath('//button[text()="Analyse"]')
         analyse.click()
 
     def click_reset(self):
+        # OOMAnalyser.OOMDisplayInstance.reset_form()
         reset = self.driver.find_element_by_xpath('//button[text()="Reset"]')
-        reset.click()
+        if reset.is_displayed():
+            reset.click()
+        else:
+            new_analysis = self.driver.find_element_by_xpath('//a[contains(text(), "Step 1 - Enter your OOM message")]')
+            # new_analysis = self.driver.find_element_by_link_text('Run a new analysis')
+            new_analysis.click()
         self.assert_on_warn_error()
 
     def analyse_oom(self, text):
@@ -141,9 +160,28 @@ class TestInBrowser(TestBase):
 
         self.click_analyse()
 
-    def assert_on_warn_error(self):
-        self.assert_on_warn()
-        self.assert_on_error()
+    def check_results(self):
+        """Check the results of the analysis of the default example"""
+        self.assert_on_warn_error()
+        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
+
+        trigger_proc_name = self.driver.find_element_by_class_name('trigger_proc_name')
+        self.assertEqual(trigger_proc_name.text, 'sed', 'Unexpected trigger process name')
+        trigger_proc_pid = self.driver.find_element_by_class_name('trigger_proc_pid')
+        self.assertEqual(trigger_proc_pid.text, '29481', 'Unexpected trigger process pid')
+
+        killed_proc_score = self.driver.find_element_by_class_name('killed_proc_score')
+        self.assertEqual(killed_proc_score.text, '651', 'Unexpected OOM score of killed process')
+
+        swap_cache_kb = self.driver.find_element_by_class_name('swap_cache_kb')
+        self.assertEqual(swap_cache_kb.text, '45368 kBytes')
+        swap_used_kb = self.driver.find_element_by_class_name('swap_used_kb')
+        self.assertEqual(swap_used_kb.text, '8343236 kBytes')
+        swap_free_kb = self.driver.find_element_by_class_name('swap_free_kb')
+        self.assertEqual(swap_free_kb.text, '0 kBytes')
+        swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
+        self.assertEqual(swap_total_kb.text, '8388604 kBytes')
 
     def test_001_load_page(self):
         """Test if the page is loading"""
@@ -166,32 +204,14 @@ class TestInBrowser(TestBase):
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
-
-        self.assert_on_warn_error()
-        self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
-
-        trigger_proc_name = self.driver.find_element_by_class_name('trigger_proc_name')
-        self.assertEqual(trigger_proc_name.text, 'sed', 'Unexpected trigger process name')
-        trigger_proc_pid = self.driver.find_element_by_class_name('trigger_proc_pid')
-        self.assertEqual(trigger_proc_pid.text, '29481', 'Unexpected trigger process pid')
-
-        killed_proc_score = self.driver.find_element_by_class_name('killed_proc_score')
-        self.assertEqual(killed_proc_score.text, '651', 'Unexpected OOM score of killed process')
-
-        swap_cache_kb = self.driver.find_element_by_class_name('swap_cache_kb')
-        self.assertEqual(swap_cache_kb.text, '45368 kBytes')
-        swap_used_kb = self.driver.find_element_by_class_name('swap_used_kb')
-        self.assertEqual(swap_used_kb.text, '8343236 kBytes')
-        swap_free_kb = self.driver.find_element_by_class_name('swap_free_kb')
-        self.assertEqual(swap_free_kb.text, '0 kBytes')
-        swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
-        self.assertEqual(swap_total_kb.text, '8388604 kBytes')
+        self.check_results()
 
     def test_004_begin_but_no_end(self):
         """Test incomplete OOM text - just the beginning"""
         example = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
 sed cpuset=/ mems_allowed=0-1
+CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
         self.analyse_oom(example)
 
@@ -239,6 +259,33 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
+    def test_removal_of_leading_but_useless_columns(self):
+        """Test removal of leading but useless columns"""
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example)
+        self.check_results()
+        self.click_reset()
+        for prefix in ["[11686.888109] ",
+                       "Apr 01 14:13:32 mysrv: ",
+                       "Apr 01 14:13:32 mysrv kernel: ",
+                       "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+                       "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+                       "kernel:",
+                       "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+                       ]:
+            lines = OOMAnalyser.OOMDisplay.example.split('\n')
+            lines = ["{}{}".format(prefix, line) for line in lines]
+            oom_text = "\n".join(lines)
+            self.analyse_oom(oom_text)
+
+            try:
+                self.check_results()
+            except AssertionError:
+                logging.error('prefix %s', prefix)
+                import pdb; pdb.set_trace()
+                oom = OOMAnalyser.OOMEntity(oom_text)
+                print(oom.text)
+            self.click_reset()
+
 
 class TestPython(TestBase):
 
@@ -272,9 +319,9 @@ class TestPython(TestBase):
         """Test stripping useless / leading columns"""
         oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
         for pos, line in [
-            (1, '[11686.888109] sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_adj=0, oom_score_adj=0'),
-            (5, 'Apr 01 14:13:32 mysrv kernel: sed invoked OOM-killer: gfp_mask=0x201da, order=0'),
-            (6, 'Apr 01 14:13:32 mysrv kernel: [11686.888109] sed invoked oom-killer: gfp_mask=0x84d0, order=0, oom_adj=0, oom_score_adj=0'),
+            (1, '[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1'),
+            (5, 'Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1'),
+            (6, 'Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1'),
         ]:
             to_strip = oom_entity._number_of_columns_to_strip(line)
             self.assertEqual(to_strip, pos, 'Calc wrong number of columns to strip for "%s": got: %d, expect: %d' % (

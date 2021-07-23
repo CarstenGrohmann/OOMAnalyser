@@ -201,8 +201,9 @@ class OOMEntity(object):
             return
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
-        oom_lines = self._strip_needless_columns(oom_lines)
+        oom_lines = self._remove_kernel_colon(oom_lines)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
+        oom_lines = self._strip_needless_columns(oom_lines)
 
         self.lines = oom_lines
         self.text = '\n'.join(oom_lines)
@@ -223,21 +224,13 @@ class OOMEntity(object):
         columns = first_line.split(" ")
 
         # Examples:
-        # [11686.888109] sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_adj=0, oom_score_adj=0
-        # Apr 01 14:13:32 mysrv kernel: sed invoked OOM-killer: gfp_mask=0x201da, order=0
-        # Apr 01 14:13:32 mysrv kernel: [11686.888109] sed invoked oom-killer: gfp_mask=0x84d0, order=0, oom_adj=0, oom_score_adj=0
+        # [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
+        # Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
+        # Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         try:
-            # strip all incl. "kernel:"
-            if 'kernel:' in first_line:
-                to_strip = columns.index("kernel:")
-                # increase to include "kernel:"
-                to_strip += 1
-
-            # check if next column is a timestamp like "[11686.888109]" and remove it too
-            rec = re.compile('\[\d+\.\d+\]')
-            if rec.match(columns[to_strip]):
-                # increase to include timestamp
-                to_strip += 1
+            # strip all excl. "CPU:"
+            if 'CPU:' in first_line:
+                to_strip = columns.index("CPU:")
         except ValueError:
             pass
 
@@ -283,6 +276,16 @@ class OOMEntity(object):
 
         return lines
 
+    def _remove_kernel_colon(self, oom_lines):
+        """
+        Remove the "kernel:" pattern w/o leading and tailing spaces.
+
+        Some OOM messages don't have a space between "kernel:" and the process name. _strip_needless_columns() will
+        fail in such cases. Therefore the pattern is removed.
+        """
+        oom_lines = [i.replace('kernel:', '') for i in oom_lines]
+        return oom_lines
+
     def _strip_needless_columns(self, oom_lines):
         """
         Remove needless columns at the start of every line.
@@ -291,7 +294,7 @@ class OOMEntity(object):
         syslog priority/facility.
         """
         stripped_lines = []
-        cols_to_strip = self._number_of_columns_to_strip(oom_lines[0])
+        cols_to_strip = self._number_of_columns_to_strip(oom_lines[2])
 
         for line in oom_lines:
             # remove empty lines
@@ -412,7 +415,7 @@ class OOMAnalyser(object):
     REC_SWAP = re.compile(
         r'^(?P<swap_cache_pages>\d+) pages in swap cache'
         r'(?:\n)'
-        r'^Swap cache stats: add \d+, delete \d+, find \d+/\d+'
+        r'^Swap cache stats: add \d+, delete \d+, find \d+\/\d+'
         r'(?:\n)'
         r'^Free swap  = (?P<swap_free_kb>\d+)kB'
         r'(?:\n)'
@@ -989,6 +992,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
     """SVG graphics with one black triangle DOWN for sorting"""
 
     def __init__(self):
+        self.oom = None
         self.set_HTML_defaults()
         self.update_toc()
 
