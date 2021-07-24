@@ -205,6 +205,23 @@ function read_and_display_file(file) {
     reader.readAsText(file);
 }
 
+// Report uncaught errors to the user
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+    let text = `INTERNAL ERROR: ${msg} at ${url}:${lineNo}:${columnNo}<br> ` +
+        `Details: ${error.__args__} <br>` +
+        `${error.stack.replaceAll('\n', '<br>')}`
+
+    let notify_box = document.getElementById('notify_box')
+    notify_box.classList.remove('js-text--display-none')
+    let notification = document.createElement('div')
+    notification.classList.add('js-notify_box__msg--error')
+    notification.innerHTML = text
+    notify_box.appendChild(notification)
+
+    // true - don't propagate the event to the default handler
+    return true
+};
+
     </script>
 </head>
 <body>
@@ -819,6 +836,7 @@ function read_and_display_file(file) {
         <li>Add Selenium based unit tests</li>
         <li>Fix to allow process names with spaces</li>
         <li>Rework removal of unused information</li>
+        <li>Report uncaught errors to the user</li>
         <li>...</li>
     </ol>
 
