@@ -4,18 +4,26 @@
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 
-.PHONY: help clean distclean
+.PHONY: help clean distclean venv venv-clean venv-freeze build websrv test
 
 # Makefile defaults
 SHELL             = /bin/sh
 
 BASE_DIR          = .
 PYTHON3_BIN       = /usr/bin/python3.7
+TARGET_DIR        = $(BASE_DIR)/__target__
+VIRTUAL_ENV_DIR   = env
+
+HTML_FILE         = $(BASE_DIR)/OOMAnalyser.html
+JS_OUT_FILE       = $(BASE_DIR)/OOMAnalyser.js
+JS_TEMP_FILE      = $(TARGET_DIR)/OOMAnalyser.js
+PY_SOURCE         = $(BASE_DIR)/OOMAnalyser.py
+
 ROLLUP_BIN        = rollup
-ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=OOMAnalyser.js
+ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=${JS_OUT_FILE}
+
 TRANSCRYPT_BIN    = transcrypt
 TRANSCRYPT_OPTS   = --build --map --nomin --sform --esv 6
-VIRTUAL_ENV_DIR   = env
 
 export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV_DIR})
 export PATH := ${VIRTUAL_ENV_DIR}/bin:${PATH}
@@ -40,7 +48,7 @@ clean:
 	@find $(BASE_DIR) -depth -type f -name "*.orig" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*~" -exec rm -f {} \;
 	@$(RM) --force --recursive .wdm
-	@$(RM) --force --recursive __target__
+	@$(RM) --force --recursive ${TARGET_DIR}
 
 #+ Remove all automatically generated and Git repository data
 distclean: clean venv-clean
@@ -64,17 +72,22 @@ venv-freeze:
 venv-clean:
 	rm -rf $(VIRTUAL_ENV_DIR)
 
-#+ Compile Python to JavaScript
-build: venv
+${JS_TEMP_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${PY_SOURCE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	$(TRANSCRYPT_BIN) $(TRANSCRYPT_OPTS) OOMAnalyser.py
-	$(ROLLUP_BIN) $(ROLLUP_OPTS) -- __target__/OOMAnalyser.js
+	$(TRANSCRYPT_BIN) $(TRANSCRYPT_OPTS) ${PY_SOURCE}
+
+${JS_OUT_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_TEMP_FILE}
+	. $(VIRTUAL_ENV_DIR)/bin/activate
+	$(ROLLUP_BIN) $(ROLLUP_OPTS) -- ${JS_TEMP_FILE}
+
+#+ Compile Python to JavaScript
+build: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 
 #+ Serve the current directory on http://127.0.0.1:8080
-websrv:
+websrv: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	$(PYTHON3_BIN) -m http.server 8080 --bind 127.0.0.1
 
 #+ Run Selenium based web tests
-test: build
+test: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	DISPLAY=:1 xvfb-run python ./test.py
