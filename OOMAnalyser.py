@@ -33,6 +33,9 @@ class document():
     def getElementById(self, *arg, **kwargs):
         return element()
 
+    def createElementNS(self, *arg, **kwargs):
+        return element()
+
 
 class element():
 
@@ -1161,7 +1164,8 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         svg.setAttribute('class', css_class)
         return svg
 
-    def svg_create_rect(self, x=0, y=0, width=0, height=0, colour=None):
+    def svg_create_rect(self, x=0, y=0, width=0, height=0, colour=None, title=None):
+        g = document.createElementNS(self.svg_namespace, 'g')
         rect = document.createElementNS(self.svg_namespace, 'rect')
         if x:
             rect.setAttribute('x', x)
@@ -1173,7 +1177,12 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
             rect.setAttribute('height', height)
         if colour:
             rect.setAttribute('fill', colour)
-        return rect
+        if title:
+            t = document.createElementNS(self.svg_namespace, 'title')
+            t.textContent = title
+            g.appendChild(t)
+        g.appendChild(rect)
+        return g
 
     def svg_generate_bar_chart(self, css_class, *elements):
         """Generate a SVG bar chart"""
@@ -1207,7 +1216,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
             colour = self.svg_colours[nr_processed_elements % len(self.svg_colours)]
 
-            rect = self.svg_create_rect(current_pos, 0, rect_len, bar_height, colour)
+            rect = self.svg_create_rect(current_pos, 0, rect_len, bar_height, colour, title)
             bar_group.appendChild(rect)
 
             label_group = document.createElementNS(self.svg_namespace, 'g')
