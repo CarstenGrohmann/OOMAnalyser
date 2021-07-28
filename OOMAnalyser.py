@@ -271,9 +271,7 @@ class OOMEntity(object):
 
         for line in oom_lines:
             if '#012' in line:
-                line = line.replace('#012', '\r')
-                expanded = line.split('\r')
-                lines.extend(expanded)
+                lines.extend(line.split('#012'))
             else:
                 lines.append(line)
 
