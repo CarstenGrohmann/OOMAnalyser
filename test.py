@@ -277,13 +277,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             oom_text = "\n".join(lines)
             self.analyse_oom(oom_text)
 
-            try:
-                self.check_results()
-            except AssertionError:
-                logging.error('prefix %s', prefix)
-                import pdb; pdb.set_trace()
-                oom = OOMAnalyser.OOMEntity(oom_text)
-                print(oom.text)
+            self.check_results()
             self.click_reset()
 
 
