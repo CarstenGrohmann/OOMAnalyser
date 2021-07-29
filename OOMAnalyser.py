@@ -205,8 +205,8 @@ class OOMEntity(object):
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
         oom_lines = self._remove_kernel_colon(oom_lines)
-        oom_lines = self._rsyslog_unescape_lf(oom_lines)
         oom_lines = self._strip_needless_columns(oom_lines)
+        oom_lines = self._rsyslog_unescape_lf(oom_lines)
 
         self.lines = oom_lines
         self.text = '\n'.join(oom_lines)
@@ -822,12 +822,7 @@ Call Trace:
  [<ffffffff81691fc5>] do_page_fault+0x35/0x90
  [<ffffffff8168e288>] page_fault+0x28/0x30
 Mem-Info:
-active_anon:7355653 inactive_anon:660960 isolated_anon:0
- active_file:1263 inactive_file:1167 isolated_file:32
- unevictable:0 dirty:4 writeback:0 unstable:0
- slab_reclaimable:27412 slab_unreclaimable:13708
- mapped:4818 shmem:87896 pagetables:25222 bounce:0
- free:39513 free_pcp:2958 free_cma:0
+active_anon:7355653 inactive_anon:660960 isolated_anon:0#012 active_file:1263 inactive_file:1167 isolated_file:32#012 unevictable:0 dirty:4 writeback:0 unstable:0#012 slab_reclaimable:27412 slab_unreclaimable:13708#012 mapped:4818 shmem:87896 pagetables:25222 bounce:0#012 free:39513 free_pcp:2958 free_cma:0
 Node 0 DMA free:15872kB min:40kB low:48kB high:60kB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB isolated(anon):0kB isolated(file):0kB present:15992kB managed:15908kB mlocked:0kB dirty:0kB writeback:0kB mapped:0kB shmem:0kB slab_reclaimable:0kB slab_unreclaimable:0kB kernel_stack:0kB pagetables:0kB unstable:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB writeback_tmp:0kB pages_scanned:0 all_unreclaimable? yes lowmem_reserve[]: 0 2780 15835 15835
 Node 0 DMA32 free:59728kB min:7832kB low:9788kB high:11748kB active_anon:2154380kB inactive_anon:604748kB active_file:500kB inactive_file:112kB unevictable:0kB isolated(anon):0kB isolated(file):0kB present:3094644kB managed:2848912kB mlocked:0kB dirty:0kB writeback:0kB mapped:4016kB shmem:5140kB slab_reclaimable:6448kB slab_unreclaimable:2796kB kernel_stack:1040kB pagetables:6876kB unstable:0kB bounce:0kB free_pcp:3788kB local_pcp:228kB free_cma:0kB writeback_tmp:0kB pages_scanned:28 all_unreclaimable? no lowmem_reserve[]: 0 0 13055 13055
 Node 0 Normal free:36692kB min:36784kB low:45980kB high:55176kB active_anon:12301636kB inactive_anon:793132kB active_file:604kB inactive_file:176kB unevictable:0kB isolated(anon):0kB isolated(file):128kB present:13631488kB managed:13368348kB mlocked:0kB dirty:0kB writeback:0kB mapped:4108kB shmem:207940kB slab_reclaimable:47900kB slab_unreclaimable:28884kB kernel_stack:6624kB pagetables:43340kB unstable:0kB bounce:0kB free_pcp:4204kB local_pcp:640kB free_cma:0kB writeback_tmp:0kB pages_scanned:128 all_unreclaimable? no lowmem_reserve[]: 0 0 0 0
