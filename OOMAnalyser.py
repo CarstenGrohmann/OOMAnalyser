@@ -967,22 +967,21 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
     svg_array_updown = """
 <svg width="8" height="11">
-    <polygon points="0,5 8,5 4,0"/>
-    <polygon points="0,6 8,6 4,11"/>
+  <use xlink:href="#svg_array_updown" />
 </svg>
     """
     """SVG graphics with two black triangles UP and DOWN for sorting"""
 
     svg_array_up = """
 <svg width="8" height="11">
-    <polygon points="0,5 8,5 4,0"/>
+    <use xlink:href="#svg_array_up" />
 </svg>
     """
     """SVG graphics with one black triangle UP for sorting"""
 
     svg_array_down = """
 <svg width="8" height="11">
-    <polygon points="0,6 8,6 4,11"/>
+    <use xlink:href="#svg_array_down" />
 </svg>
     """
     """SVG graphics with one black triangle DOWN for sorting"""
