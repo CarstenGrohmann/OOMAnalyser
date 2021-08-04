@@ -71,6 +71,11 @@
             width: 300px;
         }
 
+        .result__table--border {
+            border-collapse: collapse;
+            padding: 10px;
+        }
+
         .pstable__table--noborder {
             border: none;
             text-align: right;
@@ -419,11 +424,11 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
         </tr>
         <tr>
             <td>RAM Summary</td>
-            <td colspan="2"><div id="svg_ram"></div></td>
+            <td class="result__table--border" colspan="2"><div id="svg_ram"></div></td>
         </tr>
         <tr>
             <td>Swap Summary</td>
-            <td colspan="2"><div id="svg_swap"></div></td>
+            <td class="result__table--border" colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
         <!-- Swap Usage -->
