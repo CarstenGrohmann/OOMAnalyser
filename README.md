@@ -13,7 +13,7 @@ This makes it possible to use a locally stored copy of the website for analysis.
 This project is written in [Python](https://www.python.org) and uses [Transcrypt](https://www.transcrypt.org/)  to
 translate Python code into JavaScript.
 
-The current online version is available at https://www.carstengrohmann.de/oom/ .
+The current online version is available at [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) .
 
 
 ## Installation
