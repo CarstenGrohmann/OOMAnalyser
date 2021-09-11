@@ -941,8 +941,8 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
     svg_namespace = 'http://www.w3.org/2000/svg'
 
-    # 20 different colours generated with Colorgorical http://vrl.cs.brown.edu/color
-    svg_colours = [
+    # generated with Colorgorical http://vrl.cs.brown.edu/color
+    svg_colors_mem = [
         '#aee39a',
         '#344b46',
         '#1ceaf9',
@@ -964,6 +964,15 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         '#096013',
         '#ff0087'
     ]
+    """20 different colors for memory usage diagram"""
+
+    # generated with ColorBrewer (v2.0) https://colorbrewer2.org/?type=diverging&scheme=PuOr&n=3
+    svg_colors_swap = [
+        '#f1a340',
+        '#f7f7f7',
+        '#998ec3'
+    ]
+    """3 different colors for swap usage diagram"""
 
     svg_array_updown = """
 <svg width="8" height="11">
@@ -1156,7 +1165,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         svg.setAttribute('class', css_class)
         return svg
 
-    def svg_create_rect(self, x=0, y=0, width=0, height=0, colour=None, title=None):
+    def svg_create_rect(self, x=0, y=0, width=0, height=0, color=None, title=None):
         g = document.createElementNS(self.svg_namespace, 'g')
         rect = document.createElementNS(self.svg_namespace, 'rect')
         if x:
@@ -1167,8 +1176,8 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
             rect.setAttribute('width', width)
         if height:
             rect.setAttribute('height', height)
-        if colour:
-            rect.setAttribute('fill', colour)
+        if color:
+            rect.setAttribute('fill', color)
         if title:
             t = document.createElementNS(self.svg_namespace, 'title')
             t.textContent = title
@@ -1176,7 +1185,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         g.appendChild(rect)
         return g
 
-    def svg_generate_bar_chart(self, css_class, *elements):
+    def svg_generate_bar_chart(self, color_list, *elements):
         """Generate a SVG bar chart"""
         bar_height = 100
         label_height = 80
@@ -1206,23 +1215,23 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
             if not rect_len:
                 continue
 
-            colour = self.svg_colours[nr_processed_elements % len(self.svg_colours)]
+            color = color_list[nr_processed_elements % len(color_list)]
 
-            rect = self.svg_create_rect(current_pos, 0, rect_len, bar_height, colour, title)
+            rect = self.svg_create_rect(current_pos, 0, rect_len, bar_height, color, title)
             bar_group.appendChild(rect)
 
             label_group = document.createElementNS(self.svg_namespace, 'g')
             label_group.setAttribute('id', title)
-            colour_rect = self.svg_create_rect(0, 0, 20, 20, colour)
-            colour_rect.setAttribute('stroke', 'black')
-            colour_rect.setAttribute('stroke-width', 2)
+            color_rect = self.svg_create_rect(0, 0, 20, 20, color)
+            color_rect.setAttribute('stroke', 'black')
+            color_rect.setAttribute('stroke-width', 2)
 
             text = document.createElementNS(self.svg_namespace, 'text')
             text.setAttribute('x', '30')
             text.setAttribute('y', '18')
             text.textContent = title
 
-            label_group.appendChild(colour_rect)
+            label_group.appendChild(color_rect)
             label_group.appendChild(text)
 
             # TODO replace hardcoded values
@@ -1326,6 +1335,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
         # generate swap usage diagram
         svg_swap = self.svg_generate_bar_chart(
+            self.svg_colors_swap,
             ('Swap Used', self.oom_details['swap_used_kb']),
             ('Swap Free', self.oom_details['swap_free_kb']),
             ('Swap Cached', self.oom_details['swap_cache_kb']),
@@ -1335,6 +1345,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
         # generate RAM usage diagram
         svg_ram = self.svg_generate_bar_chart(
+            self.svg_colors_mem,
             ('Active mem', self.oom_details['active_anon_pages']),
             ('Inactive mem', self.oom_details['inactive_anon_pages']),
             ('Isolated mem', self.oom_details['isolated_anon_pages']),
