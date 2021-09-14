@@ -20,6 +20,7 @@
 import http.server
 import logging
 import os
+import re
 import socketserver
 import threading
 import unittest
@@ -286,28 +287,26 @@ class TestPython(TestBase):
     def test_001_trigger_proc_space(self):
         """Test RE to find name of trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example)
-        rec = OOMAnalyser.OOMAnalyser.REC_INVOKED_OOMKILLER
+        pattern = OOMAnalyser.OOMAnalyser.EXTRACT_PATTERN['invoked oom-killer'][0]
+        rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(first)
-        self.assertTrue(match, 'Error: re.search(REC_INVOKED_OOMKILLER) failed for simple '
-                               'process name')
+        self.assertTrue(match, "Error: re.search('invoked oom-killer') failed for simple process name")
 
         first = first.replace('sed', 'VM Monitoring Task')
         match = rec.search(first)
-        self.assertTrue(match, 'Error: re.search(REC_INVOKED_OOMKILLER) failed for process name '
-                               'with space')
+        self.assertTrue(match, "Error: re.search('invoked oom-killer') failed for process name with space")
 
     def test_002_killed_proc_space(self):
         """Test RE to find name of killed process"""
         last = self.get_last_line(OOMAnalyser.OOMDisplay.example)
-        rec = OOMAnalyser.OOMAnalyser.REC_OOM_KILL_PROCESS
+        pattern = OOMAnalyser.OOMAnalyser.EXTRACT_PATTERN['Process killed by OOM'][0]
+        rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(last)
-        self.assertTrue(match, 'Error: re.search(REC_OOM_KILL_PROCESS) failed for simple '
-                               'process name')
+        self.assertTrue(match, "Error: re.search('Process killed by OOM') failed for simple process name")
 
         last = last.replace('sed', 'VM Monitoring Task')
         match = rec.search(last)
-        self.assertTrue(match, 'Error: re.search(REC_OOM_KILL_PROCESS) failed for process name '
-                               'with space')
+        self.assertTrue(match, "Error: re.search('Process killed by OOM') failed for process name with space")
 
     def test_003_OOMEntity_number_of_columns_to_strip(self):
         """Test stripping useless / leading columns"""
