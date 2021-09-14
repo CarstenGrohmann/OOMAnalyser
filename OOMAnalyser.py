@@ -78,6 +78,20 @@ def toggle(element_id):
     element.classList.toggle('js-text--display-none')
 
 
+def escape_html(unsafe):
+    """
+    Escape unsafe HTML entities
+
+    @type unsafe: str
+    @rtype: str
+    """
+    return unsafe.replace('&', "&amp;")\
+        .replace('<', "&lt;")\
+        .replace('>', "&gt;")\
+        .replace('"', "&quot;")\
+        .replace("'", "&#039;")
+
+
 def error(msg):
     """Show the error box and add the error message"""
     show_notifybox('ERROR', msg)
@@ -94,7 +108,7 @@ def warning(msg):
 
 
 def show_notifybox(prefix, msg):
-    """Show the error box and the message"""
+    """Show escaped message in the notification box"""
     if prefix == 'WARNING':
         css_class = 'js-notify_box__msg--warning'
     else:
@@ -103,7 +117,7 @@ def show_notifybox(prefix, msg):
     notify_box = document.getElementById('notify_box')
     notification = document.createElement('div')
     notification.classList.add(css_class)
-    notification.innerHTML = '{}: {}<br>'.format(prefix, msg)
+    notification.innerHTML = '{}: {}<br>'.format(prefix, escape_html(msg))
     notify_box.appendChild(notification)
 
 
