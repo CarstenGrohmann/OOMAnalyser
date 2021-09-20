@@ -108,7 +108,7 @@ class TestInBrowser(TestBase):
         except NoSuchElementException:
             pass
         else:
-            self.fail('Unexpected warning message: %s' % warning.text)
+            self.fail('Unexpected warning message: "%s"' % warning.text)
 
     def assert_on_error(self):
         notify_box = self.driver.find_element_by_id('notify_box')
@@ -117,13 +117,13 @@ class TestInBrowser(TestBase):
         except NoSuchElementException:
             pass
         else:
-            self.fail('Unexpected error message: %s' % error.text)
+            self.fail('Unexpected error message: "%s"' % error.text)
 
         for event in self.driver.get_log('browser'):
             # ignore favicon.ico errors
             if 'favicon.ico' in event['message']:
                 continue
-            self.fail('Error on browser console reported: %s' % event)
+            self.fail('Error on browser console reported: "%s"' % event)
 
     def assert_on_warn_error(self):
         self.assert_on_warn()
@@ -260,7 +260,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
-    def test_removal_of_leading_but_useless_columns(self):
+    def test_008_removal_of_leading_but_useless_columns(self):
         """Test removal of leading but useless columns"""
         self.analyse_oom(OOMAnalyser.OOMDisplay.example)
         self.check_results()

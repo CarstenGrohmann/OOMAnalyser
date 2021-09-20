@@ -36,6 +36,9 @@ class document():
     def createElementNS(self, *arg, **kwargs):
         return element()
 
+    def createElement(self, *args, **kwargs):
+        return element()
+
 
 class element():
 
@@ -44,6 +47,9 @@ class element():
     offsetWidth = 0
 
     def removeChild(self, *args, **kwargs):
+        return
+
+    def appendChild(self, *args, **kwargs):
         return
 # __pragma__ ('noskip')
 
