@@ -54,8 +54,9 @@ class element():
 # __pragma__ ('noskip')
 
 
-class OOMEntityState(object):
-    """Simple enum to track the completeness of an OOM block"""
+class OOMEntityState:
+    """Enum for completeness of the OOM block"""
+    unknown = 0
     empty = 1
     invalid = 2
     started = 3
@@ -127,8 +128,11 @@ def show_notifybox(prefix, msg):
     notify_box.appendChild(notification)
 
 
-class KernelConfig(object):
-    """Kernel configuration"""
+class BaseKernelConfig:
+    """Base class for all kernel specific configuration"""
+
+    name = 'Base configuration for all kernels'
+    """Name/description of this kernel configuration"""
 
     GFP_FLAGS = {
         'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
@@ -189,8 +193,38 @@ class KernelConfig(object):
                       'oom_score_adj']
     """Elements of the process table"""
 
+    rec_version4kconfig = re.compile('.+')
+    """RE to match kernel version to kernel configuration"""
 
-class OOMEntity(object):
+    rec_oom_begin = re.compile('invoked oom-killer:', re.MULTILINE)
+    """RE to match the first line of an OOM block"""
+
+    rec_oom_end = re.compile('^Killed process \d+', re.MULTILINE)
+    """RE to match the last line of an OOM block"""
+
+
+class KernelConfigRhel7(BaseKernelConfig):
+    """RHEL7 / CentOS7 specific configuration"""
+
+    name = 'RHEL7 / CentOS7 specific kernel configuration'
+
+    rec_version4kconfig = re.compile('^3\..+')
+
+
+AllKernelConfigs = [
+    KernelConfigRhel7(),
+    BaseKernelConfig(),
+]
+"""
+Instances of all available kernel configurations.
+
+The last entry in this list is the base configuration as a fallback.
+
+@type: List(BaseKernelConfig)
+"""
+
+
+class OOMEntity:
     """Hold whole OOM message block and provide access"""
 
     current_line = 0
@@ -199,7 +233,7 @@ class OOMEntity(object):
     lines = []
     """OOM text as list of lines"""
 
-    state = "unknown"
+    state = OOMEntityState.unknown
     """State of the OOM after initial parsing"""
 
     text = ""
@@ -370,7 +404,45 @@ class OOMEntity(object):
         return self.next()
 
 
-class OOMAnalyser(object):
+class OOMResult:
+    """Results of an OOM analysis"""
+
+    kconfig = BaseKernelConfig()
+    """Kernel configuration"""
+
+    details = {}
+    """Extracted result"""
+
+    oom_entity = None
+    """
+    State of this OOM (unknown, incomplete, ...)
+    
+    :type: OOMEntityState
+    """
+
+    error_msg = ""
+    """
+    Error message
+    
+    @type: str
+    """
+
+    kversion = None
+    """
+    Kernel version
+    
+    @type: str
+    """
+
+    oom_text = None
+    """
+    OOM text
+    
+    @type: str
+    """
+
+
+class OOMAnalyser:
     """Analyse an OOM object and calculate additional values"""
 
     EXTRACT_PATTERN = {
@@ -482,21 +554,91 @@ class OOMAnalyser(object):
         r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
         r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
 
-    lines = []
-    """All lines of an OOM without leading timestamps"""
-
-    kernel_cfg = KernelConfig()
-    """Kernel configuration"""
-
-    results = {}
-    """Extracted result"""
-
     oom_entity = None
-    """Reference to the OOMEntity object"""
+    """
+    State of this OOM (unknown, incomplete, ...)
+    
+    :type: OOMEntityState
+    """
+
+    oom_result = None
+    """
+    Store details of OOM analysis
+    
+    :type: OOMResult
+    """
 
     def __init__(self, oom):
-        self.results = {}
         self.oom_entity = oom
+        self.oom_result = OOMResult()
+
+    def _identify_kernel_version(self):
+        """
+        Identify the used kernel version and
+
+        @rtype: bool
+        """
+        pattern = r'CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z ]+) (?P<kernel_version>\d[\w.-]+) #.+'
+        rec = re.compile(pattern, re.MULTILINE)
+        match = rec.search(self.oom_entity.text)
+        if not match:
+            self.oom_result.error_msg = 'Failed to extract kernel version from OOM text'
+            return False
+        self.oom_result.kversion = match.group('kernel_version')
+        return True
+
+    def _choose_kernel_config(self):
+        """
+        Select proper kernel configuration
+
+        @rtype: bool
+        """
+        for kcfg in AllKernelConfigs:
+            match = kcfg.rec_version4kconfig.match(self.oom_result.kversion)
+            if match:
+                self.oom_result.kconfig = kcfg
+                break
+
+        if not self.oom_result.kconfig:
+            warning('Failed to find a proper configuration for kernel "{}"'.format(self.oom_result.kversion))
+            self.oom_result.kconfig = BaseKernelConfig()
+        return True
+
+    def _check_for_empty_oom(self):
+        """
+        Check for an empty OOM text
+
+        @rtype: bool
+        """
+        if not self.oom_entity.text:
+            self.state = OOMEntityState.empty
+            self.oom_result.error_msg = 'Empty OOM text. Please insert an OOM message block.'
+            return False
+        return True
+
+    def _check_for_complete_oom(self):
+        """
+        Check if the OOM in self.oom_entity is complete and update self.oom_state accordingly
+
+        @rtype: bool
+        """
+        self.oom_state = OOMEntityState.unknown
+        self.oom_result.error_msg = 'Unknown OOM format'
+
+        if not self.oom_result.kconfig.rec_oom_begin.search(self.oom_entity.text):
+            self.state = OOMEntityState.invalid
+            self.oom_result.error_msg = 'The inserted text is not a valid OOM block! The initial pattern was not found!'
+            return False
+
+        if not self.oom_result.kconfig.rec_oom_end.search(self.oom_entity.text):
+            self.state = OOMEntityState.started
+            self.oom_result.error_msg = 'The inserted OOM is incomplete! The initial pattern was found ' \
+                               'but not the final. The result may be incomplete!'
+            return False
+
+        self.state = OOMEntityState.complete
+        self.oom_result.error_msg = None
+        return True
 
     def _extract_block_from_next_pos(self, marker):
         """
@@ -519,20 +661,20 @@ class OOMAnalyser(object):
     def _extract_from_oom_text(self):
         """Extract details from OOM message text"""
 
-        self.results = {}
+        self.oom_result.details = {}
         # __pragma__ ('jsiter')
         for k in self.EXTRACT_PATTERN:
             pattern, is_mandatory = self.EXTRACT_PATTERN[k]
             rec = re.compile(pattern, re.MULTILINE)
             match = rec.search(self.oom_entity.text)
             if match:
-                self.results.update(match.groupdict())
+                self.oom_result.details.update(match.groupdict())
             elif is_mandatory:
                 error('Failed to extract information from OOM text. The regular expression "{}" (pattern "{}") '
                       'does not find anything. This will cause subsequent errors.'.format(k, pattern))
         # __pragma__ ('nojsiter')
 
-        self.results['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
+        self.oom_result.details['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
 
         # strip "Call Trace" line at beginning and remove leading spaces
         call_trace = ''
@@ -541,10 +683,10 @@ class OOMAnalyser(object):
             if line.startswith('Call Trace'):
                 continue
             call_trace += "{}\n".format(line.strip())
-        self.results['call_trace'] = call_trace
+        self.oom_result.details['call_trace'] = call_trace
 
         # extract process table
-        self.results['_ps'] = {}
+        self.oom_result.details['_ps'] = {}
         self.oom_entity.find_text('[ pid ]')
         for line in self.oom_entity:
             if not line.startswith('['):
@@ -556,8 +698,8 @@ class OOMAnalyser(object):
                 details = match.groupdict()
                 details['notes'] = ''
                 pid = details.pop('pid')
-                self.results['_ps'][pid] = {}
-                self.results['_ps'][pid].update(details)
+                self.oom_result.details['_ps'][pid] = {}
+                self.oom_result.details['_ps'][pid].update(details)
 
     def _hex2flags(self, hexvalue, flag_definition):
         """\
@@ -633,22 +775,22 @@ class OOMAnalyser(object):
     def _convert_numeric_results_to_integer(self):
         """Convert all *_pages and *_kb to integer"""
         # __pragma__ ('jsiter')
-        for item in self.results:
-            if self.results[item] is None:
-                self.results[item] = '<not found>'
+        for item in self.oom_result.details:
+            if self.oom_result.details[item] is None:
+                self.oom_result.details[item] = '<not found>'
                 continue
             if item.endswith('_kb') or item.endswith('_pages') or item.endswith('_pid') or \
                     item in ['killed_proc_score', 'trigger_proc_order', 'trigger_proc_oomscore']:
                 try:
-                    self.results[item] = int(self.results[item])
+                    self.oom_result.details[item] = int(self.oom_result.details[item])
                 except:
-                    error('Converting item "{}={}" to integer failed'.format(item, self.results[item]))
+                    error('Converting item "{}={}" to integer failed'.format(item, self.oom_result.details[item]))
 
         # __pragma__ ('nojsiter')
 
     def _convert_numeric_process_values_to_integer(self):
         """Convert numeric values in process table to integer values"""
-        ps = self.results['_ps']
+        ps = self.oom_result.details['_ps']
         ps_index = []
         # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
         #      sets item in "for item in ['uid',..." to 0 instead of 'uid'
@@ -656,7 +798,7 @@ class OOMAnalyser(object):
         for pid_str in ps.keys():
             converted = {}
             process = ps[pid_str]
-            for item in self.kernel_cfg.ps_table_items:
+            for item in self.oom_result.kconfig.ps_table_items:
                 if item == 'pid':
                     continue
                 try:
@@ -672,87 +814,87 @@ class OOMAnalyser(object):
             ps_index.append(pid_int)
 
         ps_index.sort(key=int)
-        self.results['_ps_index'] = ps_index
+        self.oom_result.details['_ps_index'] = ps_index
 
     def _calc_pstable_values(self):
         """Set additional notes to processes listed in the process table"""
-        tpid = self.results['trigger_proc_pid']
-        kpid = self.results['killed_proc_pid']
+        tpid = self.oom_result.details['trigger_proc_pid']
+        kpid = self.oom_result.details['killed_proc_pid']
 
         # sometimes the trigger process isn't part of the process table
-        if tpid in self.results['_ps']:
-            self.results['_ps'][tpid]['notes'] = 'trigger process'
+        if tpid in self.oom_result.details['_ps']:
+            self.oom_result.details['_ps'][tpid]['notes'] = 'trigger process'
 
         # assume the killed process may also not part of the process table
-        if kpid in self.results['_ps']:
-            self.results['_ps'][kpid]['notes'] = 'killed process'
+        if kpid in self.oom_result.details['_ps']:
+            self.oom_result.details['_ps'][kpid]['notes'] = 'killed process'
 
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
-        self.results['trigger_proc_requested_memory_pages'] = 2 ** self.results['trigger_proc_order']
-        self.results['trigger_proc_requested_memory_pages_kb'] = self.results['trigger_proc_requested_memory_pages'] * \
-                                                                 self.results['page_size_kb']
+        self.oom_result.details['trigger_proc_requested_memory_pages'] = 2 ** self.oom_result.details['trigger_proc_order']
+        self.oom_result.details['trigger_proc_requested_memory_pages_kb'] = self.oom_result.details['trigger_proc_requested_memory_pages'] * \
+                                                                            self.oom_result.details['page_size_kb']
         # process gfp_mask
-        if self.results['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
-            flags = self.results['trigger_proc_gfp_flags']
-            del self.results['trigger_proc_gfp_flags']
+        if self.oom_result.details['trigger_proc_gfp_flags'] != '<not found>':     # None has been is converted to '<not found>'
+            flags = self.oom_result.details['trigger_proc_gfp_flags']
+            del self.oom_result.details['trigger_proc_gfp_flags']
         else:
-            flags, unknown = self._hex2flags(self.results['trigger_proc_gfp_mask'], self.kernel_cfg.GFP_FLAGS)
+            flags, unknown = self._hex2flags(self.oom_result.details['trigger_proc_gfp_mask'], self.oom_result.kconfig.GFP_FLAGS)
             if unknown:
                 flags.append('0x{0:x}'.format(unknown))
             flags = ' | '.join(flags)
 
-        self.results['trigger_proc_gfp_mask'] = '{} ({})'.format(self.results['trigger_proc_gfp_mask'], flags)
+        self.oom_result.details['trigger_proc_gfp_mask'] = '{} ({})'.format(self.oom_result.details['trigger_proc_gfp_mask'], flags)
         # already fully processed and no own element to display -> delete otherwise an error msg will be shown
-        del self.results['trigger_proc_gfp_flags']
+        del self.oom_result.details['trigger_proc_gfp_flags']
 
     def _calc_killed_process_values(self):
         """Calculate all values related with the killed process"""
-        self.results['killed_proc_total_rss_kb'] = self.results['killed_proc_anon_rss_kb'] + \
-                                                   self.results['killed_proc_file_rss_kb'] + \
-                                                   self.results['killed_proc_shmem_rss_kb']
+        self.oom_result.details['killed_proc_total_rss_kb'] = self.oom_result.details['killed_proc_anon_rss_kb'] + \
+                                                              self.oom_result.details['killed_proc_file_rss_kb'] + \
+                                                              self.oom_result.details['killed_proc_shmem_rss_kb']
 
-        self.results['killed_proc_rss_percent'] = int(100 *
-                                                      self.results['killed_proc_total_rss_kb'] /
-                                                      int(self.results['system_total_ram_kb']))
+        self.oom_result.details['killed_proc_rss_percent'] = int(100 *
+                                                                 self.oom_result.details['killed_proc_total_rss_kb'] /
+                                                                 int(self.oom_result.details['system_total_ram_kb']))
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
-        self.results['swap_cache_kb'] = self.results['swap_cache_pages'] * self.results['page_size_kb']
-        del self.results['swap_cache_pages']
+        self.oom_result.details['swap_cache_kb'] = self.oom_result.details['swap_cache_pages'] * self.oom_result.details['page_size_kb']
+        del self.oom_result.details['swap_cache_pages']
 
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
-        self.results['swap_used_kb'] = self.results['swap_total_kb'] - self.results['swap_free_kb'] - \
-                                       self.results['swap_cache_kb']
-        self.results['system_swap_used_percent'] = int(100 *
-                                                       self.results['swap_total_kb'] /
-                                                       self.results['swap_used_kb'])
+        self.oom_result.details['swap_used_kb'] = self.oom_result.details['swap_total_kb'] - self.oom_result.details['swap_free_kb'] - \
+                                                  self.oom_result.details['swap_cache_kb']
+        self.oom_result.details['system_swap_used_percent'] = int(100 *
+                                                                  self.oom_result.details['swap_total_kb'] /
+                                                                  self.oom_result.details['swap_used_kb'])
 
     def _calc_system_values(self):
         """Calculate system memory"""
 
         # educated guess
-        self.results['page_size_kb'] = 4
+        self.oom_result.details['page_size_kb'] = 4
 
         # calculate remaining explanation values
-        self.results['system_total_ram_kb'] = self.results['ram_pages'] * self.results['page_size_kb']
-        self.results['system_total_ramswap_kb'] = self.results['system_total_ram_kb'] + self.results['swap_total_kb']
+        self.oom_result.details['system_total_ram_kb'] = self.oom_result.details['ram_pages'] * self.oom_result.details['page_size_kb']
+        self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb'] + self.oom_result.details['swap_total_kb']
         total_rss_pages = 0
-        for pid in self.results['_ps'].keys():
-            total_rss_pages += self.results['_ps'][pid]['rss_pages']
-        self.results['system_total_ram_used_kb'] = total_rss_pages * self.results['page_size_kb']
+        for pid in self.oom_result.details['_ps'].keys():
+            total_rss_pages += self.oom_result.details['_ps'][pid]['rss_pages']
+        self.oom_result.details['system_total_ram_used_kb'] = total_rss_pages * self.oom_result.details['page_size_kb']
 
-        self.results['system_total_used_percent'] = int(100 *
-                                                        self.results['system_total_ram_used_kb'] /
-                                                        self.results['system_total_ram_kb'])
+        self.oom_result.details['system_total_used_percent'] = int(100 *
+                                                                   self.oom_result.details['system_total_ram_used_kb'] /
+                                                                   self.oom_result.details['system_total_ram_kb'])
 
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
-        kernel_version = self.results.get('kernel_version', '')
+        kernel_version = self.oom_result.details.get('kernel_version', '')
         if 'x86_64' in kernel_version:
-            self.results['platform'] = 'x86 64bit'
+            self.oom_result.details['platform'] = 'x86 64bit'
         else:
-            self.results['platform'] = 'unknown'
+            self.oom_result.details['platform'] = 'unknown'
 
         dist = 'unknown'
         if '.el7uek' in kernel_version:
@@ -767,13 +909,13 @@ class OOMAnalyser(object):
             dist = 'Arch Linux'
         elif '_generic' in kernel_version:
             dist = 'Ubuntu'
-        self.results['dist'] = dist
+        self.oom_result.details['dist'] = dist
 
     def _calc_from_oom_details(self):
         """
         Calculate values from already extracted details
 
-        @see: self.results
+        @see: self.details
         """
         self._convert_numeric_results_to_integer()
         self._convert_numeric_process_values_to_integer()
@@ -786,20 +928,52 @@ class OOMAnalyser(object):
         self._calc_swap_values()
 
     def analyse(self):
-        """Extract and calculate values from the given OOM object"""
+        """
+        Extract and calculate values from the given OOM object
+
+        If the return value is False, the OOM is too incomplete to perform an analysis.
+
+        @rtype: bool
+        """
+        if not self._check_for_empty_oom():
+            error(self.oom_result.error_msg)
+            return False
+
+        if not self._identify_kernel_version():
+            error(self.oom_result.error_msg)
+            return False
+
+        if not self._choose_kernel_config():
+            error(self.oom_result.error_msg)
+            return False
+
+        if not self._check_for_complete_oom():
+            error(self.oom_result.error_msg)
+            return False
+
+        # 4. extract values
         self._extract_from_oom_text()
+
+        # 5. calculate details
         self._calc_from_oom_details()
-        return self.results
+
+        # 6. store results
+        self.oom_result.oom_text = self.oom_entity.text
+
+        # 7. return results
+        return True
 
 
-class OOMDisplay(object):
+class OOMDisplay:
     """Display the OOM analysis"""
 
-    kernel_cfg = KernelConfig()
-    """Kernel configuration"""
-
-    oom_details = {}
-    """Extracted result"""
+    # result ergibt an manchen stellen self.result.result :-/
+    oom_result = OOMResult()
+    """
+    OOM analysis details
+    
+    @rtype: OOMResult
+    """
 
     example = u'''\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -1022,7 +1196,7 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         """
         elements = document.getElementsByClassName(item)
         for element in elements:
-            content = self.oom_details.get(item, '')
+            content = self.oom_result.details.get(item, '')
             if isinstance(content, str):
                 content = content.strip()
 
@@ -1077,14 +1251,14 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         new_table = ''
         table_content = document.getElementById('process_table')
 
-        for pid in self.oom_details['_ps_index']:
-            if pid == self.oom_details['trigger_proc_pid']:
+        for pid in self.oom_result.details['_ps_index']:
+            if pid == self.oom_result.details['trigger_proc_pid']:
                 css_class = 'class="js-pstable__triggerproc--bgcolor"'
-            elif pid == self.oom_details['killed_proc_pid']:
+            elif pid == self.oom_result.details['killed_proc_pid']:
                 css_class = 'class="js-pstable__killedproc--bgcolor"'
             else:
                 css_class = ''
-            process = self.oom_details['_ps'][pid]
+            process = self.oom_result.details['_ps'][pid]
             line = """
             <tr {}>
                 <td>{}</td>
@@ -1111,10 +1285,10 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         """Set the sorting symbols for all columns in the process table"""
         # TODO Check operator overloading
         #      Operator overloading (Pragma opov) does not work in this context.
-        #      self.kernel_cfg.ps_table_items + ['notes'] will compile to a string
+        #      self.oom_result.kconfig.ps_table_items + ['notes'] will compile to a string
         #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
         #      array
-        ps_table_and_notes = self.kernel_cfg.ps_table_items[:]
+        ps_table_and_notes = self.oom_result.kconfig.ps_table_items[:]
         ps_table_and_notes.append('notes')
         for column_name in ps_table_and_notes:
             element_id = "pstable_sort_{}".format(column_name)
@@ -1283,59 +1457,41 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
     def analyse_and_show(self):
         """Analyse the OOM text inserted into the form and show the results"""
         self.oom = OOMEntity(self.load_from_form())
-        if not self.is_valid(self.oom):
-            self.oom = None
-            return
 
         # set defaults and clear notifications
-        self.oom_details.clear()
         self.set_HTML_defaults()
 
-        # analyse
         analyser = OOMAnalyser(self.oom)
-        self.oom_details = analyser.analyse()
-        # Update kernel configuration
-        self.kernel_cfg = analyser.kernel_cfg
-
-        # display results
-        self.show()
-        self.update_toc()
+        success = analyser.analyse()
+        if success:
+            self.oom_result = analyser.oom_result
+            self.show_oom_details()
+            self.update_toc()
+        else:
+            # don't show results - just return
+            return
 
     def load_from_form(self):
+        """
+        Return the OOM text from textarea element
+        
+        @rtype: str 
+        """
         element = document.getElementById('textarea_oom')
         oom_text = element.value
         return oom_text
 
-    def is_valid(self, oom):
-        """
-        Return True for a complete OOM otherwise False and a warning msg for a incomplete or an error msg
-        if the start sequence was not found.
-        """
-        if oom.state == OOMEntityState.complete:
-            return True
-        elif oom.state == OOMEntityState.started:
-            warning('The inserted OOM is incomplete!')
-            warning('The initial pattern was found but not the final. The result may be incomplete!')
-        elif oom.state == OOMEntityState.invalid:
-            error('The inserted text is not a valid OOM block!')
-            error('The initial pattern was not found!')
-        elif oom.state == OOMEntityState.empty:
-            error('The inserted text is empty! Please insert an OOM message block.')
-        else:
-            error('Invalid state "{}" after the OOM has formally checked!'.format(self.oom.state))
-        return False
-
-    def show(self):
+    def show_oom_details(self):
         """
         Show all extracted details as well as additionally generated information
         """
         if DEBUG:
-            print(self.oom_details)
+            print(self.oom_result.details)
 
         hide_element('input')
         show_element('analysis')
 
-        for item in self.oom_details.keys():
+        for item in self.oom_result.details.keys():
             # ignore internal items
             if item.startswith('_'):
                 continue
@@ -1347,9 +1503,9 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         # generate swap usage diagram
         svg_swap = self.svg_generate_bar_chart(
             self.svg_colors_swap,
-            ('Swap Used', self.oom_details['swap_used_kb']),
-            ('Swap Free', self.oom_details['swap_free_kb']),
-            ('Swap Cached', self.oom_details['swap_cache_kb']),
+            ('Swap Used', self.oom_result.details['swap_used_kb']),
+            ('Swap Free', self.oom_result.details['swap_free_kb']),
+            ('Swap Cached', self.oom_result.details['swap_cache_kb']),
         )
         elem_svg_swap = document.getElementById('svg_swap')
         elem_svg_swap.appendChild(svg_swap)
@@ -1357,41 +1513,41 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         # generate RAM usage diagram
         svg_ram = self.svg_generate_bar_chart(
             self.svg_colors_mem,
-            ('Active mem', self.oom_details['active_anon_pages']),
-            ('Inactive mem', self.oom_details['inactive_anon_pages']),
-            ('Isolated mem', self.oom_details['isolated_anon_pages']),
-            ('Active PC', self.oom_details['active_file_pages']),
-            ('Inactive PC', self.oom_details['inactive_file_pages']),
-            ('Isolated PC', self.oom_details['isolated_file_pages']),
-            ('Unevictable', self.oom_details['unevictable_pages']),
-            ('Dirty', self.oom_details['dirty_pages']),
-            ('Writeback', self.oom_details['writeback_pages']),
-            ('Unstable', self.oom_details['unstable_pages']),
-            ('Slab reclaimable', self.oom_details['slab_reclaimable_pages']),
-            ('Slab unreclaimable', self.oom_details['slab_unreclaimable_pages']),
-            ('Mapped', self.oom_details['mapped_pages']),
-            ('Shared', self.oom_details['shmem_pages']),
-            ('Pagetable', self.oom_details['pagetables_pages']),
-            ('Bounce', self.oom_details['bounce_pages']),
-            ('Free', self.oom_details['free_pages']),
-            ('Free PCP', self.oom_details['free_pcp_pages']),
-            ('Free CMA', self.oom_details['free_cma_pages']),
+            ('Active mem', self.oom_result.details['active_anon_pages']),
+            ('Inactive mem', self.oom_result.details['inactive_anon_pages']),
+            ('Isolated mem', self.oom_result.details['isolated_anon_pages']),
+            ('Active PC', self.oom_result.details['active_file_pages']),
+            ('Inactive PC', self.oom_result.details['inactive_file_pages']),
+            ('Isolated PC', self.oom_result.details['isolated_file_pages']),
+            ('Unevictable', self.oom_result.details['unevictable_pages']),
+            ('Dirty', self.oom_result.details['dirty_pages']),
+            ('Writeback', self.oom_result.details['writeback_pages']),
+            ('Unstable', self.oom_result.details['unstable_pages']),
+            ('Slab reclaimable', self.oom_result.details['slab_reclaimable_pages']),
+            ('Slab unreclaimable', self.oom_result.details['slab_unreclaimable_pages']),
+            ('Mapped', self.oom_result.details['mapped_pages']),
+            ('Shared', self.oom_result.details['shmem_pages']),
+            ('Pagetable', self.oom_result.details['pagetables_pages']),
+            ('Bounce', self.oom_result.details['bounce_pages']),
+            ('Free', self.oom_result.details['free_pages']),
+            ('Free PCP', self.oom_result.details['free_pcp_pages']),
+            ('Free CMA', self.oom_result.details['free_cma_pages']),
         )
         elem_svg_ram = document.getElementById('svg_ram')
         elem_svg_ram.appendChild(svg_ram)
 
         element = document.getElementById('oom')
-        element.textContent = self.oom.text
+        element.textContent = self.oom_result.oom_text
         self.toggle_oom(show=False)
 
     def sort_pstable(self, column_name):
         """Sort process table by the values in the given column"""
         # TODO Check operator overloading
         #      Operator overloading (Pragma opov) does not work in this context.
-        #      self.kernel_cfg.ps_table_items + ['notes'] will compile to a string
+        #      self.oom_result.kconfig.ps_table_items + ['notes'] will compile to a string
         #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
         #      array
-        ps_table_and_notes = self.kernel_cfg.ps_table_items[:]
+        ps_table_and_notes = self.oom_result.kconfig.ps_table_items[:]
         ps_table_and_notes.append('notes')
         if column_name not in ps_table_and_notes:
             internal_error('Can not sort process table with an unknown column name "{}"'.format(column_name))
@@ -1420,8 +1576,8 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         Is uses bubble sort with all disadvantages but just a few lines of code
         """
 
-        ps = self.oom_details['_ps']
-        ps_index = self.oom_details['_ps_index']
+        ps = self.oom_result.details['_ps']
+        ps_index = self.oom_result.details['_ps_index']
 
         def getvalue(column, pos):
             if column == 'pid':

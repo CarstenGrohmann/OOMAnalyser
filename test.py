@@ -18,7 +18,6 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import http.server
-import logging
 import os
 import re
 import socketserver
@@ -111,13 +110,9 @@ class TestInBrowser(TestBase):
             self.fail('Unexpected warning message: "%s"' % warning.text)
 
     def assert_on_error(self):
-        notify_box = self.driver.find_element_by_id('notify_box')
-        try:
-            error = notify_box.find_element_by_class_name('js-notify_box__msg--error')
-        except NoSuchElementException:
-            pass
-        else:
-            self.fail('Unexpected error message: "%s"' % error.text)
+        error = self.get_error_text()
+        if error:
+            self.fail('Unexpected error message: "%s"' % error)
 
         for event in self.driver.get_log('browser'):
             # ignore favicon.ico errors
@@ -133,14 +128,25 @@ class TestInBrowser(TestBase):
         analyse = self.driver.find_element_by_xpath('//button[text()="Analyse"]')
         analyse.click()
 
+    def get_error_text(self):
+        """
+        Return text from error notification box or an empty string if no error message exists
+
+        :@rtype: str
+        """
+        notify_box = self.driver.find_element_by_id('notify_box')
+        try:
+            notify_box.find_element_by_class_name('js-notify_box__msg--error')
+        except NoSuchElementException:
+            return ""
+        return notify_box.text
+
     def click_reset(self):
-        # OOMAnalyser.OOMDisplayInstance.reset_form()
         reset = self.driver.find_element_by_xpath('//button[text()="Reset"]')
         if reset.is_displayed():
             reset.click()
         else:
             new_analysis = self.driver.find_element_by_xpath('//a[contains(text(), "Step 1 - Enter your OOM message")]')
-            # new_analysis = self.driver.find_element_by_link_text('Run a new analysis')
             new_analysis.click()
         self.assert_on_warn_error()
 
@@ -184,16 +190,16 @@ class TestInBrowser(TestBase):
         swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
         self.assertEqual(swap_total_kb.text, '8388604 kBytes')
 
-    def test_001_load_page(self):
+    def test_010_load_page(self):
         """Test if the page is loading"""
         assert "OOM Analyser" in self.driver.title
 
-    def test_002_load_js(self):
+    def test_020_load_js(self):
         """Test if JS is loaded"""
         elem = self.driver.find_element_by_id("version")
         self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
 
-    def test_003_insert_and_analyse_example(self):
+    def test_030_insert_and_analyse_example(self):
         """Test loading and analysing example"""
         textarea = self.driver.find_element_by_id('textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
@@ -207,7 +213,22 @@ class TestInBrowser(TestBase):
         self.click_analyse()
         self.check_results()
 
-    def test_004_begin_but_no_end(self):
+    def test_031_empty_textarea(self):
+        """Test "Analyse" with empty textarea"""
+        textarea = self.driver.find_element_by_id('textarea_oom')
+        self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
+        # textarea.send_keys(text)
+
+        self.assertEqual(textarea.get_attribute('value'), '', 'Expected empty text area, but text found')
+
+        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
+
+        self.click_analyse()
+        self.assertEqual(self.get_error_text(), "ERROR: Empty OOM text. Please insert an OOM message block.")
+        self.click_reset()
+
+    def test_032_begin_but_no_end(self):
         """Test incomplete OOM text - just the beginning"""
         example = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -215,52 +236,41 @@ sed cpuset=/ mems_allowed=0-1
 CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
         self.analyse_oom(example)
-
-        notify_box = self.driver.find_element_by_id('notify_box')
-        notify_box.find_element_by_class_name('js-notify_box__msg--warning')
-        self.assertTrue(notify_box.text.startswith("WARNING: The inserted OOM is incomplete!"))
-
+        self.assertEqual(self.get_error_text(), "ERROR: The inserted OOM is incomplete! The initial pattern was "
+                                                "found but not the final. The result may be incomplete!")
         self.click_reset()
 
-    def test_005_no_begin_but_end(self):
+    def test_033_no_begin_but_end(self):
         """Test incomplete OOM text - just the end"""
         example = """\
 Out of memory: Kill process 6576 (java) score 651 or sacrifice child
 Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
         """
         self.analyse_oom(example)
-
-        notify_box = self.driver.find_element_by_id('notify_box')
-        notify_box.find_element_by_class_name('js-notify_box__msg--error')
-        self.assertTrue(notify_box.text.startswith("ERROR: The inserted text is not a valid OOM block!"))
-
+        self.assertEqual(self.get_error_text(), "ERROR: Failed to extract kernel version from OOM text")
         self.click_reset()
 
-    def test_006_trigger_proc_space(self):
+    def test_040_trigger_proc_space(self):
         """Test trigger process name contains a space"""
         example = OOMAnalyser.OOMDisplay.example
         example = example.replace('sed', 'VM Monitoring Task')
 
         self.analyse_oom(example)
-
         self.assert_on_warn_error()
-
         h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
-    def test_007_kill_proc_space(self):
+    def test_050_kill_proc_space(self):
         """Test killed process name contains a space"""
         example = OOMAnalyser.OOMDisplay.example
         example = example.replace('mysqld', 'VM Monitoring Task')
 
         self.analyse_oom(example)
-
         self.assert_on_warn_error()
-
         h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
-    def test_008_removal_of_leading_but_useless_columns(self):
+    def test_060_removal_of_leading_but_useless_columns(self):
         """Test removal of leading but useless columns"""
         self.analyse_oom(OOMAnalyser.OOMDisplay.example)
         self.check_results()
@@ -332,6 +342,19 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
  ffff8804182fe928 0000000000000202 ffff880182272f10 ffff8804182079b8
 '''
         self.assertEqual(text, expected)
+
+    def test_005_extract_kernel_version(self):
+        """Test extracting kernel version"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        for text, kversion in [
+            ('CPU: 0 PID: 19163 Comm: kworker/0:0 Tainted: G           OE     5.4.0-80-lowlatency #90~18.04.1-Ubuntu', '5.4.0-80-lowlatency'),
+            ('CPU: 4 PID: 1 Comm: systemd Not tainted 3.10.0-1062.9.1.el7.x86_64 #1', '3.10.0-1062.9.1.el7.x86_64'),
+        ]:
+            analyser.oom_entity.text = text
+            success = analyser._identify_kernel_version()
+            self.assertTrue(analyser._identify_kernel_version(), analyser.oom_result.error_msg)
+            self.assertEqual(analyser.oom_result.kversion, kversion)
 
 
 if __name__ == "__main__":
