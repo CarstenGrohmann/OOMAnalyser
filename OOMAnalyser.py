@@ -63,6 +63,13 @@ class OOMEntityState:
     complete = 4
 
 
+class OOMEntityType:
+    """Enum for the type of the OOM"""
+    unknown = 0
+    automatic = 1
+    manual = 2
+
+
 def is_visible(element):
     return element.offsetWidth > 0 and element.offsetHeight > 0
 
@@ -77,6 +84,18 @@ def show_element(element_id):
     """Show the given HTML element"""
     element = document.getElementById(element_id)
     element.classList.remove('js-text--display-none')
+
+
+def hide_elements(selector):
+    """Hide all matching elements by adding class js-text--display-none"""
+    for element in document.querySelectorAll(selector):
+        element.classList.add('js-text--display-none')
+
+
+def show_elements(selector):
+    """Show all matching elements by removing class js-text--display-none"""
+    for element in document.querySelectorAll(selector):
+        element.classList.remove('js-text--display-none')
 
 
 def toggle(element_id):
@@ -420,6 +439,13 @@ class OOMResult:
     :type: OOMEntityState
     """
 
+    oom_type = OOMEntityType.unknown
+    """
+    Type of this OOM (manually or automatically triggered)
+    
+    :type: OOMEntityType
+    """
+
     error_msg = ""
     """
     Error message
@@ -450,7 +476,7 @@ class OOMAnalyser:
             r'^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: '
             r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
             r'(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?'
-            r'order=(?P<trigger_proc_order>\d+), '
+            r'order=(?P<trigger_proc_order>-?\d+), '
             r'oom_score_adj=(?P<trigger_proc_oomscore>\d+)',
             True,
         ),
@@ -673,6 +699,11 @@ class OOMAnalyser:
                 error('Failed to extract information from OOM text. The regular expression "{}" (pattern "{}") '
                       'does not find anything. This will cause subsequent errors.'.format(k, pattern))
         # __pragma__ ('nojsiter')
+
+        if self.oom_result.details['trigger_proc_order'] == "-1":
+            self.oom_result.oom_type = OOMEntityType.manual
+        else:
+            self.oom_result.oom_type = OOMEntityType.automatic
 
         self.oom_result.details['hardware_info'] = self._extract_block_from_next_pos('Hardware name:')
 
@@ -1308,16 +1339,13 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
     def set_HTML_defaults(self):
         """Reset the HTML document but don't clean elements"""
         # hide all elements marked to be hidden by default
-        for element in document.querySelectorAll('.js-text--default-hide'):
-            element.classList.add('js-text--display-none')
+        hide_elements('.js-text--default-hide')
 
         # show all elements marked to be shown by default
-        for element in document.querySelectorAll('.js-text--default-show'):
-            element.classList.remove('js-text--display-none')
+        show_elements('.js-text--default-show')
 
         # show hidden rows
-        for element in document.querySelectorAll('table .js-text--display-none'):
-            element.classList.remove('js-text--display-none')
+        show_elements('table .js-text--display-none')
 
         # clear notification box
         element = document.getElementById('notify_box')
@@ -1490,6 +1518,12 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
         hide_element('input')
         show_element('analysis')
+        if self.oom_result.oom_type == OOMEntityType.manual:
+            hide_elements('.js-oom-automatic--show')
+            show_elements('.js-oom-manual--show')
+        else:
+            show_elements('.js-oom-automatic--show')
+            hide_elements('.js-oom-manual--show')
 
         for item in self.oom_result.details.keys():
             # ignore internal items

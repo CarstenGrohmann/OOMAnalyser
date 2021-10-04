@@ -190,6 +190,10 @@ class TestInBrowser(TestBase):
         swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
         self.assertEqual(swap_total_kb.text, '8388604 kBytes')
 
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertTrue('OOM killer was automatically triggered' in explanation.text,
+                        'Missing text "OOM killer was automatically triggered"')
+
     def test_010_load_page(self):
         """Test if the page is loading"""
         assert "OOM Analyser" in self.driver.title
@@ -290,6 +294,17 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
             self.check_results()
             self.click_reset()
+
+    def test_070_manually_triggered_OOM(self):
+        """Test for manually triggered OOM"""
+        example = OOMAnalyser.OOMDisplay.example
+        example = example.replace('order=0', 'order=-1')
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertTrue('OOM killer was manually triggered' in explanation.text,
+                        'Missing text "OOM killer was manually triggered"')
 
 
 class TestPython(TestBase):

@@ -23,6 +23,9 @@
         .js-text--default-show {
             /* empty just used to show elements in the default view */
         }
+        .js-text--display-none {
+            display: none;
+        }
 
         .table__sub-section--bold {
             font-weight: bold;
@@ -57,6 +60,13 @@
         .js-mem-usage__svg {
             display: block;
             max-height: 200px;
+        }
+
+        .js-oom-automatic--show {
+            /* empty - used to show sections for automatically triggered OOMs */
+        }
+        .js-oom-manual--show {
+            /* empty - used to show sections for manually triggered OOMs */
         }
 
         .result__table {
@@ -148,9 +158,6 @@
         .js-notify_box__msg--error {
             color: #D8000C;
             background-color: #FFD2D2;
-        }
-        .js-text--display-none {
-            display: none;
         }
 
         .license__text {
@@ -282,16 +289,28 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
 
     <h3>Summary</h3>
     <div id="explanation">
-        <p>
-            The system couldn't satisfy this request and started the OOM killer to free memory. The OOM killer
-            calculates a score for each process and terminates the process with the highest score to satisfy the
-            initial memory request.
-        </p>
-        <p>
-            The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
-            requested <span class="trigger_proc_requested_memory_pages_kb"></span>
-            (<span class="trigger_proc_requested_memory_pages"></span>) memory.
-        </p>
+        <div class="js-text--default-show js-oom-automatic--show">
+            <p>
+                The OOM killer was automatically triggered to free memory, because the system couldn't satisfy the
+                memory request.
+                The OOM killer calculates a score for each process and terminates the process with the highest score
+                to satisfy the original memory request.
+            </p>
+            <p>
+                The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span
+                    class="trigger_proc_pid"></span>)
+                requested <span class="trigger_proc_requested_memory_pages_kb"></span>
+                (<span class="trigger_proc_requested_memory_pages"></span>) memory.
+            </p>
+        </div>
+        <div class="js-text--default-show js-oom-manual--show">
+            <p>
+                The OOM killer was manually triggered (e.g. with &quot;<code>echo f > /proc/sysrq-trigger</code>&quot;)
+                by a user with root privileges.
+                There is no demand to free memory but the OOM killer started nevertheless.
+                The OOM killer calculates a score for each process and terminates the process with the highest score.
+            </p>
+        </div>
         <p>
             The process &quot;<span class="killed_proc_name"></span>&quot;
             (PID <span class="killed_proc_pid"></span>) with an OOM score of <span class="killed_proc_score"></span>
@@ -326,7 +345,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
         <tr>
             <th colspan="3" scope="row">Trigger Process</th>
         </tr>
-        <tr>
+        <tr class="js-oom-automatic--show">
             <td></td>
             <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
             <td>This process requests memory and is triggering thereby the OOM situation.</td>
@@ -342,7 +361,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
             <td class="trigger_proc_nodemask text--align-right"></td>
             <td>Bit mask indicating the cores on which the process can run.</td>
         </tr>
-        <tr>
+        <tr class="js-oom-automatic--show">
             <td>Requested memory<br>(order)</td>
             <td class="text--align-right">
                 <span class="trigger_proc_requested_memory_pages"></span> (2<span class="trigger_proc_order text__superscript"></span>) pages /
@@ -842,6 +861,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
         <li>Fix to allow process names with spaces</li>
         <li>Rework removal of unused information</li>
         <li>Report uncaught errors to the user</li>
+        <li>Add support for manually triggered OOM (suggested by Mikko Rantalainen)</li>
         <li>...</li>
     </ol>
 
