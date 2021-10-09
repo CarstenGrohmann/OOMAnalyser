@@ -69,6 +69,13 @@
             /* empty - used to show sections for manually triggered OOMs */
         }
 
+        .js-swap-active--show {
+            /* empty - used to show if the swap space is activated */
+        }
+        .js-swap-inactive--show {
+            /* empty - used to show if the swap space is not activated */
+        }
+
         .result__table {
             border-collapse: collapse;
             padding: 10px;
@@ -317,14 +324,25 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
             has been terminated. It uses <span class="killed_proc_rss_percent"></span>
             (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
         </p>
-        <p>
-            The system has <span class="system_total_ram_kb"></span> physical memory and
-            <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span> total.
-            <span class="system_total_used_percent"></span>
-            (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>) physical
-            memory and <span class="system_swap_used_percent"></span>
-            (<span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span>) swap space are in use.
-        </p>
+
+        <div class="js-text--default-show js-swap-active--show">
+            <p>
+                The system has <span class="system_total_ram_kb"></span> physical memory and
+                <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span>
+                total. <span class="system_total_used_percent"></span>
+                (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
+                physical memory and <span class="system_swap_used_percent"></span>
+                (<span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span>) swap space are in use.
+            </p>
+        </div>
+        <div class="js-text--default-show js-swap-inactive--show">
+            <p>
+                The system has <span class="system_total_ram_kb"></span> physical memory and no swap space.
+                <span class="system_total_used_percent"></span>
+                (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
+                physical memory are in use.
+            </p>
+        </div>
     </div>
 
     <h3>Details of analysis</h3>
@@ -445,31 +463,34 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
             <td>RAM Summary</td>
             <td class="result__table--border" colspan="2"><div id="svg_ram"></div></td>
         </tr>
-        <tr>
+        <tr class="js-text--default-show js-swap-active--show">>
             <td>Swap Summary</td>
             <td class="result__table--border" colspan="2"><div id="svg_swap"></div></td>
         </tr>
 
         <!-- Swap Usage -->
 
-        <tr>
+        <tr class="js-text--default-show">
             <th class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</th>
         </tr>
-        <tr>
+        <tr class="js-text--default-show js-swap-inactive--show">
+            <td colspan="3">No swap space available</td>
+        </tr>
+        <tr class="js-text--default-show js-swap-active--show">
             <td>Swap Total</td>
             <td class="swap_total_kb text--align-right"></td>
             <td>Total amount of swap space available.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
-        <tr>
+        <tr class="js-text--default-show js-swap-active--show">
             <td>Swap Free</td>
             <td class="swap_free_kb text--align-right"></td>
             <td>Amount of swap space that is currently unused.
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
-        <tr>
+        <tr class="js-text--default-show js-swap-active--show">
             <td>Swap Cached</td>
             <td class="swap_cache_kb text--align-right"></td>
             <td>Memory that once was swapped out, is swapped back in
@@ -480,7 +501,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
                 <a class="a__footnote" href="#footnote-proc5">[1]</a>
             </td>
         </tr>
-        <tr>
+        <tr class="js-text--default-show js-swap-active--show">
             <td>Swap Used</td>
             <td class="swap_used_kb text--align-right"></td>
             <td>Amount of used swap space w/o cached swap <br>
@@ -862,6 +883,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
         <li>Rework removal of unused information</li>
         <li>Report uncaught errors to the user</li>
         <li>Add support for manually triggered OOM (suggested by Mikko Rantalainen)</li>
+        <li>Add support for systems w/o swap (suggested by Mikko Rantalainen)</li>
         <li>...</li>
     </ol>
 

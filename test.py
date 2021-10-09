@@ -193,6 +193,8 @@ class TestInBrowser(TestBase):
         explanation = self.driver.find_element_by_id('explanation')
         self.assertTrue('OOM killer was automatically triggered' in explanation.text,
                         'Missing text "OOM killer was automatically triggered"')
+        self.assertTrue('swap space are in use' in explanation.text,
+                        'Missing text "swap space are in use"')
 
     def test_010_load_page(self):
         """Test if the page is loading"""
@@ -305,6 +307,32 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         explanation = self.driver.find_element_by_id('explanation')
         self.assertTrue('OOM killer was manually triggered' in explanation.text,
                         'Missing text "OOM killer was manually triggered"')
+
+    def test_080_swap_deactivated(self):
+        """Test w/o swap or with deactivated swap"""
+        example = OOMAnalyser.OOMDisplay.example
+        example = example.replace('Total swap = 8388604kB', 'Total swap = 0kB')
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertFalse('swap space are in use' in explanation.text,
+                         'No swap space but text "swap space are in use"')
+
+        self.click_reset()
+
+        example = OOMAnalyser.OOMDisplay.example
+        example = re.sub(r'\d+ pages in swap cac.*\n*', '', example, re.MULTILINE)
+        example = re.sub(r'Swap cache stats.*\n*', '', example)
+        example = re.sub(r'Free swap.*\n*', '', example)
+        example = re.sub(r'Total swap.*\n*', '', example)
+
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertFalse('swap space are in use' in explanation.text,
+                         'No swap space but text "swap space are in use"')
 
 
 class TestPython(TestBase):

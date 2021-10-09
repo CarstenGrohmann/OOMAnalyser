@@ -467,6 +467,13 @@ class OOMResult:
     @type: str
     """
 
+    swap_active = False
+    """
+    Swap space active or inactive
+    
+    @type: bool
+    """
+
 
 class OOMAnalyser:
     """Analyse an OOM object and calculate additional values"""
@@ -531,7 +538,7 @@ class OOMAnalyser:
             r'^Free swap  = (?P<swap_free_kb>\d+)kB'
             r'(?:\n)'
             r'^Total swap = (?P<swap_total_kb>\d+)kB',
-            True,
+            False,
         ),
         'Page information': (
             r'^(?P<ram_pages>\d+) pages RAM'
@@ -697,7 +704,7 @@ class OOMAnalyser:
                 self.oom_result.details.update(match.groupdict())
             elif is_mandatory:
                 error('Failed to extract information from OOM text. The regular expression "{}" (pattern "{}") '
-                      'does not find anything. This will cause subsequent errors.'.format(k, pattern))
+                      'does not find anything. This can lead to errors later on.'.format(k, pattern))
         # __pragma__ ('nojsiter')
 
         if self.oom_result.details['trigger_proc_order'] == "-1":
@@ -891,6 +898,14 @@ class OOMAnalyser:
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
+        try:
+            self.oom_result.swap_active = self.oom_result.details['swap_total_kb'] > 0
+        except KeyError:
+            self.oom_result.swap_active = False
+
+        if not self.oom_result.swap_active:
+            return
+
         self.oom_result.details['swap_cache_kb'] = self.oom_result.details['swap_cache_pages'] * self.oom_result.details['page_size_kb']
         del self.oom_result.details['swap_cache_pages']
 
@@ -909,7 +924,11 @@ class OOMAnalyser:
 
         # calculate remaining explanation values
         self.oom_result.details['system_total_ram_kb'] = self.oom_result.details['ram_pages'] * self.oom_result.details['page_size_kb']
-        self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb'] + self.oom_result.details['swap_total_kb']
+        if self.oom_result.swap_active:
+            self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb'] + \
+                                                                 self.oom_result.details['swap_total_kb']
+        else:
+            self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb']
         total_rss_pages = 0
         for pid in self.oom_result.details['_ps'].keys():
             total_rss_pages += self.oom_result.details['_ps'][pid]['rss_pages']
@@ -1534,15 +1553,22 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         # generate process table
         self.update_process_table()
 
-        # generate swap usage diagram
-        svg_swap = self.svg_generate_bar_chart(
-            self.svg_colors_swap,
-            ('Swap Used', self.oom_result.details['swap_used_kb']),
-            ('Swap Free', self.oom_result.details['swap_free_kb']),
-            ('Swap Cached', self.oom_result.details['swap_cache_kb']),
-        )
-        elem_svg_swap = document.getElementById('svg_swap')
-        elem_svg_swap.appendChild(svg_swap)
+        # show/hide swap space
+        if self.oom_result.swap_active:
+            # generate swap usage diagram
+            svg_swap = self.svg_generate_bar_chart(
+                self.svg_colors_swap,
+                ('Swap Used', self.oom_result.details['swap_used_kb']),
+                ('Swap Free', self.oom_result.details['swap_free_kb']),
+                ('Swap Cached', self.oom_result.details['swap_cache_kb']),
+            )
+            elem_svg_swap = document.getElementById('svg_swap')
+            elem_svg_swap.appendChild(svg_swap)
+            show_elements('.js-swap-active--show')
+            hide_elements('.js-swap-inactive--show')
+        else:
+            hide_elements('.js-swap-active--show')
+            show_elements('.js-swap-inactive--show')
 
         # generate RAM usage diagram
         svg_ram = self.svg_generate_bar_chart(
