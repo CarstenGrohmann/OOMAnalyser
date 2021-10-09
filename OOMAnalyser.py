@@ -153,6 +153,111 @@ class BaseKernelConfig:
     name = 'Base configuration for all kernels'
     """Name/description of this kernel configuration"""
 
+    EXTRACT_PATTERN = {
+        'invoked oom-killer': (
+            r'^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: '
+            r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
+            r'(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?'
+            r'order=(?P<trigger_proc_order>-?\d+), '
+            r'oom_score_adj=(?P<trigger_proc_oomscore>\d+)',
+            True,
+        ),
+        'Trigger process and kernel version': (
+            r'^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) '
+            r'Comm: .* (Not tainted|Tainted:.*) '
+            r'(?P<kernel_version>\d[\w.-]+) #\d',
+            True,
+        ),
+
+        # split caused by a limited number of iterations during converting PY regex into JS regex
+        'Mem-Info (part 1)': (
+            r'^Mem-Info:.*'
+            r'(?:\n)'
+
+            # first line (starting w/o a space)
+            r'^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) '
+            r'isolated_anon:(?P<isolated_anon_pages>\d+)'
+            r'(?:\n)'
+
+            # remaining lines (w/ leading space)
+            r'^ active_file:(?P<active_file_pages>\d+) inactive_file:(?P<inactive_file_pages>\d+) '
+            r'isolated_file:(?P<isolated_file_pages>\d+)'
+            r'(?:\n)'
+
+            r'^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+) '
+            r'unstable:(?P<unstable_pages>\d+)',
+            True,
+        ),
+        'Mem-Info (part 2)': (
+            r'^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)'
+            r'(?:\n)'
+            r'^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+) '
+            r'bounce:(?P<bounce_pages>\d+)'
+            r'(?:\n)'
+            r'^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)',
+            True,
+        ),
+        'Memory node information': (
+            r'(^Node \d+ (DMA|Normal|hugepages).*(:?\n))+',
+            False,
+        ),
+        'Page cache': (
+            r'^(?P<pagecache_total_pages>\d+) total pagecache pages.*$',
+            True,
+        ),
+        'Swap usage information': (
+            r'^(?P<swap_cache_pages>\d+) pages in swap cache'
+            r'(?:\n)'
+            r'^Swap cache stats: add \d+, delete \d+, find \d+\/\d+'
+            r'(?:\n)'
+            r'^Free swap  = (?P<swap_free_kb>\d+)kB'
+            r'(?:\n)'
+            r'^Total swap = (?P<swap_total_kb>\d+)kB',
+            False,
+        ),
+        'Page information': (
+            r'^(?P<ram_pages>\d+) pages RAM'
+            r'('
+            r'(?:\n)'
+            r'^(?P<highmem_pages>\d+) pages HighMem/MovableOnly'
+            r')?'
+            r'(?:\n)'
+            r'^(?P<reserved_pages>\d+) pages reserved'
+            r'('
+            r'(?:\n)'
+            r'^(?P<cma_pages>\d+) pages cma reserved'
+            r')?'
+            r'('
+            r'(?:\n)'
+            r'^(?P<pagetablecache_pages>\d+) pages in pagetable cache'
+            r')?'
+            r'('
+            r'(?:\n)'
+            r'^(?P<hwpoisoned_pages>\d+) pages hwpoisoned'
+            r')?',
+            True,
+        ),
+        'Process killed by OOM': (
+            r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) '
+            r'score (?P<killed_proc_score>\d+) or sacrifice child',
+            True,
+        ),
+        'Details of process killed by OOM': (
+            r'^Killed process \d+ \(.*\)'
+            r'(, UID \d+,)?'
+            r' total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
+            r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*',
+            True,
+        ),
+    }
+    """
+    RE pattern to extract information from OOM.
+    
+    The first item is the RE pattern and the second is whether it is mandatory to find this pattern.
+    
+    :type: dict(tuple(str, bool))
+    """
+
     GFP_FLAGS = {
         'GFP_ATOMIC':           {'value': '__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM'},
         'GFP_KERNEL':           {'value': '__GFP_RECLAIM | __GFP_IO | __GFP_FS'},
@@ -211,6 +316,11 @@ class BaseKernelConfig:
     ps_table_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
                       'oom_score_adj']
     """Elements of the process table"""
+
+    REC_PROCESS_LINE = re.compile(
+        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
+        r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
+    """Match content of process table"""
 
     rec_version4kconfig = re.compile('.+')
     """RE to match kernel version to kernel configuration"""
@@ -478,115 +588,6 @@ class OOMResult:
 class OOMAnalyser:
     """Analyse an OOM object and calculate additional values"""
 
-    EXTRACT_PATTERN = {
-        'invoked oom-killer': (
-            r'^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: '
-            r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
-            r'(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?'
-            r'order=(?P<trigger_proc_order>-?\d+), '
-            r'oom_score_adj=(?P<trigger_proc_oomscore>\d+)',
-            True,
-        ),
-        'Trigger process and kernel version': (
-            r'^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) '
-            r'Comm: .* (Not tainted|Tainted:.*) '
-            r'(?P<kernel_version>\d[\w.-]+) #\d',
-            True,
-        ),
-
-        # split caused by a limited number of iterations during converting PY regex into JS regex
-        'Mem-Info (part 1)': (
-            r'^Mem-Info:.*'
-            r'(?:\n)'
-
-            # first line (starting w/o a space)
-            r'^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) '
-            r'isolated_anon:(?P<isolated_anon_pages>\d+)'
-            r'(?:\n)'
-
-            # remaining lines (w/ leading space)
-            r'^ active_file:(?P<active_file_pages>\d+) inactive_file:(?P<inactive_file_pages>\d+) '
-            r'isolated_file:(?P<isolated_file_pages>\d+)'
-            r'(?:\n)'
-
-            r'^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+) '
-            r'unstable:(?P<unstable_pages>\d+)',
-            True,
-        ),
-        'Mem-Info (part 2)': (
-            r'^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)'
-            r'(?:\n)'
-            r'^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+) '
-            r'bounce:(?P<bounce_pages>\d+)'
-            r'(?:\n)'
-            r'^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)',
-            True,
-        ),
-        'Memory node information': (
-             r'(^Node \d+ (DMA|Normal|hugepages).*(:?\n))+',
-            False,
-        ),
-        'Page cache': (
-            r'^(?P<pagecache_total_pages>\d+) total pagecache pages.*$',
-            True,
-        ),
-        'Swap usage information': (
-            r'^(?P<swap_cache_pages>\d+) pages in swap cache'
-            r'(?:\n)'
-            r'^Swap cache stats: add \d+, delete \d+, find \d+\/\d+'
-            r'(?:\n)'
-            r'^Free swap  = (?P<swap_free_kb>\d+)kB'
-            r'(?:\n)'
-            r'^Total swap = (?P<swap_total_kb>\d+)kB',
-            False,
-        ),
-        'Page information': (
-            r'^(?P<ram_pages>\d+) pages RAM'
-            r'('
-            r'(?:\n)'
-            r'^(?P<highmem_pages>\d+) pages HighMem/MovableOnly'
-            r')?'
-            r'(?:\n)'
-            r'^(?P<reserved_pages>\d+) pages reserved'
-            r'('
-            r'(?:\n)'
-            r'^(?P<cma_pages>\d+) pages cma reserved'
-            r')?'
-            r'('
-            r'(?:\n)'
-            r'^(?P<pagetablecache_pages>\d+) pages in pagetable cache'
-            r')?'
-            r'('
-            r'(?:\n)'
-            r'^(?P<hwpoisoned_pages>\d+) pages hwpoisoned'
-            r')?',
-            True,
-        ),
-        'Process killed by OOM': (
-            r'^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) '
-            r'score (?P<killed_proc_score>\d+) or sacrifice child',
-            True,
-        ),
-        'Details of process killed by OOM': (
-            r'^Killed process \d+ \(.*\)'
-            r'(, UID \d+,)?'
-            r' total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
-            r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*',
-            True,
-        ),
-    }
-    """
-    RE pattern to extract information from OOM.
-    
-    The first item is the RE pattern and the second is whether it is mandatory to find this pattern.
-    
-    :type: dict(tuple(str, bool))
-    """
-
-    REC_PROCESS_LINE = re.compile(
-        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
-        r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
-
     oom_entity = None
     """
     State of this OOM (unknown, incomplete, ...)
@@ -594,7 +595,7 @@ class OOMAnalyser:
     :type: OOMEntityState
     """
 
-    oom_result = None
+    oom_result = OOMResult()
     """
     Store details of OOM analysis
     
@@ -696,8 +697,8 @@ class OOMAnalyser:
 
         self.oom_result.details = {}
         # __pragma__ ('jsiter')
-        for k in self.EXTRACT_PATTERN:
-            pattern, is_mandatory = self.EXTRACT_PATTERN[k]
+        for k in self.oom_result.kconfig.EXTRACT_PATTERN:
+            pattern, is_mandatory = self.oom_result.kconfig.EXTRACT_PATTERN[k]
             rec = re.compile(pattern, re.MULTILINE)
             match = rec.search(self.oom_entity.text)
             if match:
@@ -731,7 +732,7 @@ class OOMAnalyser:
                 break
             if line.startswith('[ pid ]'):
                 continue
-            match = self.REC_PROCESS_LINE.match(line)
+            match = self.oom_result.kconfig.REC_PROCESS_LINE.match(line)
             if match:
                 details = match.groupdict()
                 details['notes'] = ''

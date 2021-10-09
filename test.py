@@ -340,7 +340,7 @@ class TestPython(TestBase):
     def test_001_trigger_proc_space(self):
         """Test RE to find name of trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example)
-        pattern = OOMAnalyser.OOMAnalyser.EXTRACT_PATTERN['invoked oom-killer'][0]
+        pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN['invoked oom-killer'][0]
         rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(first)
         self.assertTrue(match, "Error: re.search('invoked oom-killer') failed for simple process name")
@@ -352,7 +352,7 @@ class TestPython(TestBase):
     def test_002_killed_proc_space(self):
         """Test RE to find name of killed process"""
         last = self.get_last_line(OOMAnalyser.OOMDisplay.example)
-        pattern = OOMAnalyser.OOMAnalyser.EXTRACT_PATTERN['Process killed by OOM'][0]
+        pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN['Process killed by OOM'][0]
         rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(last)
         self.assertTrue(match, "Error: re.search('Process killed by OOM') failed for simple process name")
