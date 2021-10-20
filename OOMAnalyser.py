@@ -1572,28 +1572,30 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
             show_elements('.js-swap-inactive--show')
 
         # generate RAM usage diagram
-        svg_ram = self.svg_generate_bar_chart(
-            self.svg_colors_mem,
-            ('Active mem', self.oom_result.details['active_anon_pages']),
-            ('Inactive mem', self.oom_result.details['inactive_anon_pages']),
-            ('Isolated mem', self.oom_result.details['isolated_anon_pages']),
-            ('Active PC', self.oom_result.details['active_file_pages']),
-            ('Inactive PC', self.oom_result.details['inactive_file_pages']),
-            ('Isolated PC', self.oom_result.details['isolated_file_pages']),
-            ('Unevictable', self.oom_result.details['unevictable_pages']),
-            ('Dirty', self.oom_result.details['dirty_pages']),
-            ('Writeback', self.oom_result.details['writeback_pages']),
-            ('Unstable', self.oom_result.details['unstable_pages']),
-            ('Slab reclaimable', self.oom_result.details['slab_reclaimable_pages']),
-            ('Slab unreclaimable', self.oom_result.details['slab_unreclaimable_pages']),
-            ('Mapped', self.oom_result.details['mapped_pages']),
-            ('Shared', self.oom_result.details['shmem_pages']),
-            ('Pagetable', self.oom_result.details['pagetables_pages']),
-            ('Bounce', self.oom_result.details['bounce_pages']),
-            ('Free', self.oom_result.details['free_pages']),
-            ('Free PCP', self.oom_result.details['free_pcp_pages']),
-            ('Free CMA', self.oom_result.details['free_cma_pages']),
+        ram_title_attr = (
+            ('Active mem',         'active_anon_pages'),
+            ('Inactive mem',       'inactive_anon_pages'),
+            ('Isolated mem',       'isolated_anon_pages'),
+            ('Active PC',          'active_file_pages'),
+            ('Inactive PC',        'inactive_file_pages'),
+            ('Isolated PC',        'isolated_file_pages'),
+            ('Unevictable',        'unevictable_pages'),
+            ('Dirty',              'dirty_pages'),
+            ('Writeback',          'writeback_pages'),
+            ('Unstable',           'unstable_pages'),
+            ('Slab reclaimable',   'slab_reclaimable_pages'),
+            ('Slab unreclaimable', 'slab_unreclaimable_pages'),
+            ('Mapped',             'mapped_pages'),
+            ('Shared',             'shmem_pages'),
+            ('Pagetable',          'pagetables_pages'),
+            ('Bounce',             'bounce_pages'),
+            ('Free',               'free_pages'),
+            ('Free PCP',           'free_pcp_pages'),
+            ('Free CMA',           'free_cma_pages'),
         )
+        chart_elements = [(title, self.oom_result.details[value]) for title, value in ram_title_attr
+                          if value in self.oom_result.details]
+        svg_ram = self.svg_generate_bar_chart(self.svg_colors_mem, *chart_elements)
         elem_svg_ram = document.getElementById('svg_ram')
         elem_svg_ram.appendChild(svg_ram)
 
