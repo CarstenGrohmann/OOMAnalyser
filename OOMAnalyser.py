@@ -153,7 +153,17 @@ class BaseKernelConfig:
     name = 'Base configuration for all kernels'
     """Name/description of this kernel configuration"""
 
-    EXTRACT_PATTERN = {
+    EXTRACT_PATTERN = None
+    """
+    Instance specific dictionary of RE pattern to analyse a OOM block for a specific kernel version
+    
+    This dict will be filled from EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY during class constructor is executed.
+    
+    :type: None|Dict
+    :see: EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY
+    """
+
+    EXTRACT_PATTERN_BASE = {
         'invoked oom-killer': (
             r'^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: '
             r'gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, '
@@ -255,7 +265,18 @@ class BaseKernelConfig:
     
     The first item is the RE pattern and the second is whether it is mandatory to find this pattern.
     
+    This dictionary will be copied to EXTRACT_PATTERN during class constructor is executed. 
+    
     :type: dict(tuple(str, bool))
+    :see: EXTRACT_PATTERN
+    """
+
+    EXTRACT_PATTERN_OVERLAY = {}
+    """
+    To extend / overwrite parts of EXTRACT_PATTERN in kernel configuration.
+    
+    :type: dict(tuple(str, bool))
+    :see: EXTRACT_PATTERN
     """
 
     GFP_FLAGS = {
@@ -325,22 +346,137 @@ class BaseKernelConfig:
     rec_version4kconfig = re.compile('.+')
     """RE to match kernel version to kernel configuration"""
 
-    rec_oom_begin = re.compile('invoked oom-killer:', re.MULTILINE)
+    rec_oom_begin = re.compile(r'invoked oom-killer:', re.MULTILINE)
     """RE to match the first line of an OOM block"""
 
-    rec_oom_end = re.compile('^Killed process \d+', re.MULTILINE)
+    rec_oom_end = re.compile(r'^Killed process \d+', re.MULTILINE)
     """RE to match the last line of an OOM block"""
+
+    def __init__(self):
+        super().__init__()
+
+        if self.EXTRACT_PATTERN is None:
+            # Create a copy to prevent modifications on the class dictionary
+            # TODO replace with self.EXTRACT_PATTERN = self.EXTRACT_PATTERN.copy() after
+            #      https://github.com/QQuick/Transcrypt/issues/716 "dict does not have a copy method" is fixed
+            self.EXTRACT_PATTERN = {}
+            self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_BASE)
+
+        if self.EXTRACT_PATTERN_OVERLAY:
+            self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY)
+
+
+class KernelConfig_4_6(BaseKernelConfig):
+    # Support changes:
+    #  * "mm, oom_reaper: report success/failure" (bc448e897b6d24aae32701763b8a1fe15d29fa26)
+
+    name = 'Configuration for Linux kernel 4.6 or later'
+    rec_version4kconfig = re.compile(r'^4\.([6-9]\.|[12][0-9]\.).+')
+
+    # The "oom_reaper" line is optionally
+    rec_oom_end = re.compile(r'^((Out of memory.*|Memory cgroup out of memory): Killed process \d+|oom_reaper:)',
+                             re.MULTILINE)
+
+    def __init__(self):
+        super().__init__()
+
+
+class KernelConfig_4_9(KernelConfig_4_6):
+    # Support changes:
+    # * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
+
+    name = 'Configuration for Linux kernel 4.9 or later'
+    rec_version4kconfig = re.compile(r'^4\.([9]\.|[12][0-9]\.).+')
+
+    EXTRACT_PATTERN_OVERLAY_49 = {
+        'Details of process killed by OOM': (
+            r'^(Out of memory.*|Memory cgroup out of memory): Killed process \d+ \(.*\)'
+            r'(, UID \d+,)?'
+            r' total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
+            r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*',
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_49)
+
+
+class KernelConfig_5_0(KernelConfig_4_9):
+    # Support changes:
+    #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
+
+    name = 'Configuration for Linux kernel 5.0 or later'
+    rec_version4kconfig = re.compile(r'^[5-9]\..+')
+
+    EXTRACT_PATTERN_OVERLAY_50 = {
+        # third last line - not integrated yet
+        # oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/,task=sed,pid=29481,uid=12345
+
+        'Process killed by OOM': (
+            r'^Out of memory: Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) '
+            r'total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, '
+            r'file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, '
+            r'UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>\d+)',
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_50)
+
+
+class KernelConfig_5_8(KernelConfig_5_0):
+    # Support changes:
+    #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
+
+    name = 'Configuration for Linux kernel 5.8 or later'
+
+    rec_version4kconfig = re.compile(r'^(5\.[8-9]\.|5\.[1-9][0-9]\.|[6-9]\.).+')
+
+    EXTRACT_PATTERN_OVERLAY_58 = {
+        'Mem-Info (part 1)': (
+            r'^Mem-Info:.*'
+            r'(?:\n)'
+
+            # first line (starting w/o a space)
+            r'^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) '
+            r'isolated_anon:(?P<isolated_anon_pages>\d+)'
+            r'(?:\n)'
+        
+            # remaining lines (w/ leading space)
+            r'^ active_file:(?P<active_file_pages>\d+) inactive_file:(?P<inactive_file_pages>\d+) '
+            r'isolated_file:(?P<isolated_file_pages>\d+)'
+            r'(?:\n)'
+        
+            r'^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+)',
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_58)
 
 
 class KernelConfigRhel7(BaseKernelConfig):
     """RHEL7 / CentOS7 specific configuration"""
 
-    name = 'RHEL7 / CentOS7 specific kernel configuration'
+    name = 'Configuration for RHEL7 / CentOS7 specific Linux kernel (3.10)'
 
-    rec_version4kconfig = re.compile('^3\..+')
+    rec_version4kconfig = re.compile(r'^3\..+')
+
+    def __init__(self):
+        super().__init__()
 
 
 AllKernelConfigs = [
+    KernelConfig_5_8(),
+    KernelConfig_5_0(),
+    KernelConfig_4_9(),
+    KernelConfig_4_6(),
     KernelConfigRhel7(),
     BaseKernelConfig(),
 ]
@@ -426,6 +562,7 @@ class OOMEntity:
         """Remove all lines before and after OOM message block"""
         cleaned_lines = []
         in_oom_lines = False
+        killed_process = False
 
         for line in oom_lines:
             # first line of the oom message block
@@ -435,9 +572,21 @@ class OOMEntity:
             if in_oom_lines:
                 cleaned_lines.append(line)
 
-            # next line will not be part of the oom anymore
+            # OOM blocks ends with the second last only or both lines
+            #   Out of memory: Killed process ...
+            #   oom_reaper: reaped process ...
             if 'Killed process' in line:
-                break
+                killed_process = True
+                continue
+
+            # next line after "Killed process \d+ ..."
+            if killed_process:
+                if 'oom_reaper' in line:
+                    break
+                else:
+                    # remove this line
+                    del cleaned_lines[-1]
+                    break
 
         return cleaned_lines
 
@@ -666,8 +815,8 @@ class OOMAnalyser:
 
         if not self.oom_result.kconfig.rec_oom_end.search(self.oom_entity.text):
             self.state = OOMEntityState.started
-            self.oom_result.error_msg = 'The inserted OOM is incomplete! The initial pattern was found ' \
-                               'but not the final. The result may be incomplete!'
+            self.oom_result.error_msg = 'The inserted OOM is incomplete! The initial pattern was found but not the '\
+                                        'final.'
             return False
 
         self.state = OOMEntityState.complete
@@ -1026,7 +1175,7 @@ class OOMDisplay:
     @rtype: OOMResult
     """
 
-    example = u'''\
+    example_rhel7 = u'''\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
 sed cpuset=/ mems_allowed=0-1
 CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
@@ -1167,6 +1316,78 @@ Total swap = 8388604kB
 [29752] 12345 29752     7522      296      19        0             0 rotatelogs
 Out of memory: Kill process 6576 (mysqld) score 651 or sacrifice child
 Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
+'''
+
+    example_ubuntu2110 = u'''\
+kworker/0:2 invoked oom-killer: gfp_mask=0xcc0(GFP_KERNEL), order=-1, oom_score_adj=0
+CPU: 0 PID: 735 Comm: kworker/0:2 Not tainted 5.13.0-19-generic #19-Ubuntu
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS ArchLinux 1.14.0-1 04/01/2014
+Workqueue: events moom_callback
+Call Trace:
+ show_stack+0x52/0x58
+ dump_stack+0x7d/0x9c
+ dump_header+0x4f/0x1f9
+ oom_kill_process.cold+0xb/0x10
+ out_of_memory.part.0+0xce/0x270
+ out_of_memory+0x41/0x80
+ moom_callback+0x7a/0xb0
+ process_one_work+0x220/0x3c0
+ worker_thread+0x53/0x420
+ kthread+0x11f/0x140
+ ? process_one_work+0x3c0/0x3c0
+ ? set_kthread_struct+0x50/0x50
+ ret_from_fork+0x22/0x30
+Mem-Info:
+active_anon:221 inactive_anon:14331 isolated_anon:0
+ active_file:18099 inactive_file:22324 isolated_file:0
+ unevictable:4785 dirty:633 writeback:0
+ slab_reclaimable:6027 slab_unreclaimable:6546
+ mapped:15338 shmem:231 pagetables:412 bounce:0
+ free:427891 free_pcp:153 free_cma:0
+Node 0 active_anon:884kB inactive_anon:57324kB active_file:72396kB inactive_file:89296kB unevictable:19140kB isolated(anon):0kB isolated(file):0kB mapped:61352kB dirty:2532kB writeback:0kB shmem:924kB shmem_thp: 0kB shmem_pmdmapped: 0kB anon_thp: 0kB writeback_tmp:0kB kernel_stack:1856kB pagetables:1648kB all_unreclaimable? no
+Node 0 DMA free:15036kB min:352kB low:440kB high:528kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15992kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+lowmem_reserve[]: 0 1893 1893 1893 1893
+Node 0 DMA32 free:1696528kB min:44700kB low:55872kB high:67044kB reserved_highatomic:0KB active_anon:884kB inactive_anon:57324kB active_file:72396kB inactive_file:89296kB unevictable:19140kB writepending:2532kB present:2080640kB managed:2010036kB mlocked:19140kB bounce:0kB free_pcp:612kB local_pcp:612kB free_cma:0kB
+lowmem_reserve[]: 0 0 0 0 0
+Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB (U) 0*64kB 1*128kB (U) 0*256kB 1*512kB (U) 0*1024kB 1*2048kB (M) 3*4096kB (M) = 15036kB
+Node 0 DMA32: 0*4kB 4*8kB (UM) 25*16kB (UME) 151*32kB (UM) 56*64kB (UM) 21*128kB (ME) 36*256kB (UME) 47*512kB (UM) 41*1024kB (UM) 32*2048kB (UM) 377*4096kB (UM) = 1696528kB
+Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
+42845 total pagecache pages
+0 pages in swap cache
+Swap cache stats: add 0, delete 0, find 0/0
+Free swap  = 0kB
+Total swap = 0kB
+524158 pages RAM
+0 pages HighMem/MovableOnly
+17809 pages reserved
+0 pages hwpoisoned
+Tasks state (memory values in pages):
+[  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
+[    323]     0   323     9458     2766    77824        0          -250 systemd-journal
+[    356]     0   356     5886     1346    69632        0         -1000 systemd-udevd
+[    507]     0   507    70208     4646    98304        0         -1000 multipathd
+[    542]   101   542    21915     1391    69632        0             0 systemd-timesyn
+[    587]   102   587     4635     1882    73728        0             0 systemd-network
+[    589]   103   589     5875     2951    86016        0             0 systemd-resolve
+[    602]     0   602     1720      322    53248        0             0 cron
+[    603]   104   603     2159     1168    53248        0          -900 dbus-daemon
+[    608]     0   608     7543     4677    94208        0             0 networkd-dispat
+[    609]   107   609    55313     1248    73728        0             0 rsyslogd
+[    611]     0   611   311571     8248   221184        0          -900 snapd
+[    613]     0   613     3404     1668    65536        0             0 systemd-logind
+[    615]     0   615    98223     3142   126976        0             0 udisksd
+[    620]     0   620     1443      278    45056        0             0 agetty
+[    623]     0   623     1947     1147    57344        0             0 login
+[    650]     0   650     3283     1683    65536        0         -1000 sshd
+[    651]     0   651    27005     5232   106496        0             0 unattended-upgr
+[    661]     0   661    58546     1812    90112        0             0 polkitd
+[    856]  1000   856     3789     2157    73728        0             0 systemd
+[    857]  1000   857    25433      835    86016        0             0 (sd-pam)
+[    862]  1000   862     2208     1373    53248        0             0 bash
+[    876]  1000   876     2870     1356    57344        0             0 sudo
+[    877]     0   877     1899     1052    53248        0             0 bash
+oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/system.slice/unattended-upgrades.service,task=unattended-upgr,pid=651,uid=0
+Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:8380kB, file-rss:12548kB, shmem-rss:0kB, UID:0 pgtables:104kB oom_score_adj:0
 '''
 
     sorted_column = None
@@ -1481,8 +1702,11 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
 
         return svg
 
-    def copy_example_to_form(self):
-        document.getElementById('textarea_oom').value = self.example
+    def copy_example_rhel7_to_form(self):
+        document.getElementById('textarea_oom').value = self.example_rhel7
+
+    def copy_example_ubuntu_to_form(self):
+        document.getElementById('textarea_oom').value = self.example_ubuntu2110
 
     def reset_form(self):
         document.getElementById('textarea_oom').value = ""
@@ -1533,9 +1757,6 @@ Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:
         """
         Show all extracted details as well as additionally generated information
         """
-        if DEBUG:
-            print(self.oom_result.details)
-
         hide_element('input')
         show_element('analysis')
         if self.oom_result.oom_type == OOMEntityType.manual:

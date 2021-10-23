@@ -52,10 +52,15 @@ class TestBase(unittest.TestCase):
     def get_lines(self, text, count):
         """
         Return the number of lines specified by count from given text
+
         @type text: str
         @type count: int
         """
-        lines = text.splitlines()[:count]
+        lines = text.splitlines()
+        if count < 0:
+            lines.reverse()
+            count = count * -1
+        lines = lines[:count]
         res = '\n'.join(lines)
         return res
 
@@ -167,8 +172,8 @@ class TestInBrowser(TestBase):
 
         self.click_analyse()
 
-    def check_results(self):
-        """Check the results of the analysis of the default example"""
+    def check_results_rhel7(self):
+        """Check the results of the analysis of the RHEL7 example"""
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
@@ -193,8 +198,34 @@ class TestInBrowser(TestBase):
         explanation = self.driver.find_element_by_id('explanation')
         self.assertTrue('OOM killer was automatically triggered' in explanation.text,
                         'Missing text "OOM killer was automatically triggered"')
+
+        self.check_swap_active()
+
+    def check_results_ubuntu2110(self):
+        """Check the results of the analysis of the Ubuntu example"""
+        dirty_pages = self.driver.find_element_by_class_name('dirty_pages')
+        self.assertEqual(dirty_pages.text, '633 pages', 'Unexpected number of dirty pages')
+
+        ram_pages = self.driver.find_element_by_class_name('ram_pages')
+        self.assertEqual(ram_pages.text, '524158 pages', 'Unexpected number of RAM pages')
+
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertTrue('OOM killer was manually triggered' in explanation.text,
+                        'Missing text "OOM killer was manually triggered"')
+
+        self.check_swap_inactive()
+
+    def check_swap_inactive(self):
+        explanation = self.driver.find_element_by_id('explanation')
+        self.assertTrue('physical memory and no swap space' in explanation.text,
+                        'Missing text "physical memory and no swap space"')
+        self.assertFalse('swap space are in use' in explanation.text,
+                         'No swap space but text "swap space are in use"')
+
+    def check_swap_active(self):
+        explanation = self.driver.find_element_by_id('explanation')
         self.assertTrue('swap space are in use' in explanation.text,
-                        'Missing text "swap space are in use"')
+                        'Swap space active but no text "swap space are in use"')
 
     def test_010_load_page(self):
         """Test if the page is loading"""
@@ -205,11 +236,11 @@ class TestInBrowser(TestBase):
         elem = self.driver.find_element_by_id("version")
         self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
 
-    def test_030_insert_and_analyse_example(self):
-        """Test loading and analysing example"""
+    def test_030_insert_and_analyse_rhel7_example(self):
+        """Test loading and analysing RHEL7 example"""
         textarea = self.driver.find_element_by_id('textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
-        insert_example = self.driver.find_element_by_xpath('//button[text()="Insert example"]')
+        insert_example = self.driver.find_element_by_xpath('//button[contains(text(), "RHEL7" )]')
         insert_example.click()
         self.assertNotEqual(textarea.get_attribute('value'), '', 'Missing OOM text in textarea')
 
@@ -217,9 +248,23 @@ class TestInBrowser(TestBase):
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
-        self.check_results()
+        self.check_results_rhel7()
 
-    def test_031_empty_textarea(self):
+    def test_031_insert_and_analyse_ubuntu_example(self):
+        """Test loading and analysing Ubuntu 21.10 example"""
+        textarea = self.driver.find_element_by_id('textarea_oom')
+        self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
+        insert_example = self.driver.find_element_by_xpath('//button[contains(text(), "Ubuntu" )]')
+        insert_example.click()
+        self.assertNotEqual(textarea.get_attribute('value'), '', 'Missing OOM text in textarea')
+
+        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
+
+        self.click_analyse()
+        self.check_results_ubuntu2110()
+
+    def test_032_empty_textarea(self):
         """Test "Analyse" with empty textarea"""
         textarea = self.driver.find_element_by_id('textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
@@ -234,7 +279,7 @@ class TestInBrowser(TestBase):
         self.assertEqual(self.get_error_text(), "ERROR: Empty OOM text. Please insert an OOM message block.")
         self.click_reset()
 
-    def test_032_begin_but_no_end(self):
+    def test_033_begin_but_no_end(self):
         """Test incomplete OOM text - just the beginning"""
         example = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -243,10 +288,10 @@ CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
         self.analyse_oom(example)
         self.assertEqual(self.get_error_text(), "ERROR: The inserted OOM is incomplete! The initial pattern was "
-                                                "found but not the final. The result may be incomplete!")
+                                                "found but not the final.")
         self.click_reset()
 
-    def test_033_no_begin_but_end(self):
+    def test_034_no_begin_but_end(self):
         """Test incomplete OOM text - just the end"""
         example = """\
 Out of memory: Kill process 6576 (java) score 651 or sacrifice child
@@ -258,7 +303,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_040_trigger_proc_space(self):
         """Test trigger process name contains a space"""
-        example = OOMAnalyser.OOMDisplay.example
+        example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace('sed', 'VM Monitoring Task')
 
         self.analyse_oom(example)
@@ -268,7 +313,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_050_kill_proc_space(self):
         """Test killed process name contains a space"""
-        example = OOMAnalyser.OOMDisplay.example
+        example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace('mysqld', 'VM Monitoring Task')
 
         self.analyse_oom(example)
@@ -278,8 +323,8 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_060_removal_of_leading_but_useless_columns(self):
         """Test removal of leading but useless columns"""
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example)
-        self.check_results()
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
+        self.check_results_rhel7()
         self.click_reset()
         for prefix in ["[11686.888109] ",
                        "Apr 01 14:13:32 mysrv: ",
@@ -289,17 +334,17 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
                        "kernel:",
                        "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
                        ]:
-            lines = OOMAnalyser.OOMDisplay.example.split('\n')
+            lines = OOMAnalyser.OOMDisplay.example_rhel7.split('\n')
             lines = ["{}{}".format(prefix, line) for line in lines]
             oom_text = "\n".join(lines)
             self.analyse_oom(oom_text)
 
-            self.check_results()
+            self.check_results_rhel7()
             self.click_reset()
 
     def test_070_manually_triggered_OOM(self):
         """Test for manually triggered OOM"""
-        example = OOMAnalyser.OOMDisplay.example
+        example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace('order=0', 'order=-1')
         self.analyse_oom(example)
         self.assert_on_warn_error()
@@ -310,18 +355,15 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_080_swap_deactivated(self):
         """Test w/o swap or with deactivated swap"""
-        example = OOMAnalyser.OOMDisplay.example
+        example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace('Total swap = 8388604kB', 'Total swap = 0kB')
         self.analyse_oom(example)
         self.assert_on_warn_error()
 
-        explanation = self.driver.find_element_by_id('explanation')
-        self.assertFalse('swap space are in use' in explanation.text,
-                         'No swap space but text "swap space are in use"')
-
+        self.check_swap_inactive()
         self.click_reset()
 
-        example = OOMAnalyser.OOMDisplay.example
+        example = OOMAnalyser.OOMDisplay.example_rhel7
         example = re.sub(r'\d+ pages in swap cac.*\n*', '', example, re.MULTILINE)
         example = re.sub(r'Swap cache stats.*\n*', '', example)
         example = re.sub(r'Free swap.*\n*', '', example)
@@ -329,17 +371,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         self.analyse_oom(example)
         self.assert_on_warn_error()
-
-        explanation = self.driver.find_element_by_id('explanation')
-        self.assertFalse('swap space are in use' in explanation.text,
-                         'No swap space but text "swap space are in use"')
+        self.check_swap_inactive()
 
 
 class TestPython(TestBase):
 
     def test_001_trigger_proc_space(self):
         """Test RE to find name of trigger process"""
-        first = self.get_first_line(OOMAnalyser.OOMDisplay.example)
+        first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN['invoked oom-killer'][0]
         rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(first)
@@ -351,19 +390,19 @@ class TestPython(TestBase):
 
     def test_002_killed_proc_space(self):
         """Test RE to find name of killed process"""
-        last = self.get_last_line(OOMAnalyser.OOMDisplay.example)
+        text = self.get_lines(OOMAnalyser.OOMDisplay.example_rhel7, -2)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN['Process killed by OOM'][0]
         rec = re.compile(pattern, re.MULTILINE)
-        match = rec.search(last)
+        match = rec.search(text)
         self.assertTrue(match, "Error: re.search('Process killed by OOM') failed for simple process name")
 
-        last = last.replace('sed', 'VM Monitoring Task')
-        match = rec.search(last)
+        text = text.replace('sed', 'VM Monitoring Task')
+        match = rec.search(text)
         self.assertTrue(match, "Error: re.search('Process killed by OOM') failed for process name with space")
 
     def test_003_OOMEntity_number_of_columns_to_strip(self):
         """Test stripping useless / leading columns"""
-        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         for pos, line in [
             (1, '[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1'),
             (5, 'Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1'),
@@ -375,7 +414,7 @@ class TestPython(TestBase):
 
     def test_004_extract_block_from_next_pos(self):
         """Test extracting a single block (all lines till the next line with a colon)"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         text = analyser._extract_block_from_next_pos('Hardware name:')
         expected = '''\
@@ -388,7 +427,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 
     def test_005_extract_kernel_version(self):
         """Test extracting kernel version"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example)
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         for text, kversion in [
             ('CPU: 0 PID: 19163 Comm: kworker/0:0 Tainted: G           OE     5.4.0-80-lowlatency #90~18.04.1-Ubuntu', '5.4.0-80-lowlatency'),
@@ -398,6 +437,30 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             success = analyser._identify_kernel_version()
             self.assertTrue(analyser._identify_kernel_version(), analyser.oom_result.error_msg)
             self.assertEqual(analyser.oom_result.kversion, kversion)
+
+    def test_006_choosing_kernel_config(self):
+        """Test choosing the right kernel configuration"""
+        for kcfg, kversion in [
+            (OOMAnalyser.KernelConfig_5_8(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 5.13.0-514 #1'),
+            (OOMAnalyser.KernelConfig_5_8(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 5.8.0-514 #1'),
+            (OOMAnalyser.KernelConfig_4_6(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 4.6.0-514 #1'),
+            (OOMAnalyser.KernelConfigRhel7(), 'CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-1062.9.1.el7.x86_64 #1'),
+            (OOMAnalyser.KernelConfig_5_0(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1'),
+            (OOMAnalyser.KernelConfig_5_8(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1'),
+            (OOMAnalyser.KernelConfig_5_8(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 6.12.0 #1'),
+            (OOMAnalyser.BaseKernelConfig(),  'CPU: 4 PID: 29481 Comm: sed Not tainted 2.33.0 #1'),
+        ]:
+            oom = OOMAnalyser.OOMEntity(kversion)
+            analyser = OOMAnalyser.OOMAnalyser(oom)
+            analyser._identify_kernel_version()
+            analyser._choose_kernel_config()
+            result = analyser.oom_result.kconfig
+            self.assertEqual(
+                type(result), type(kcfg),
+                'Mismatch between expected kernel config "%s" and chosen config "%s" for kernel version "%s"' % (
+                    type(kcfg), type(result), kversion
+                )
+            )
 
 
 if __name__ == "__main__":
