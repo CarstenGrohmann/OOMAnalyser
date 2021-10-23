@@ -1107,7 +1107,7 @@ class OOMAnalyser:
             dist = 'RHEL 5/CentOS 5'
         elif 'ARCH' in kernel_version:
             dist = 'Arch Linux'
-        elif '_generic' in kernel_version:
+        elif '-generic' in kernel_version:
             dist = 'Ubuntu'
         self.oom_result.details['dist'] = dist
 
