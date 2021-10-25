@@ -1151,16 +1151,10 @@ class OOMAnalyser:
             error(self.oom_result.error_msg)
             return False
 
-        # 4. extract values
         self._extract_from_oom_text()
-
-        # 5. calculate details
         self._calc_from_oom_details()
-
-        # 6. store results
         self.oom_result.oom_text = self.oom_entity.text
 
-        # 7. return results
         return True
 
 
