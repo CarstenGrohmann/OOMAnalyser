@@ -1772,6 +1772,13 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 continue
             self._set_item(item)
 
+        # Hide "OOM Score" if not available
+        # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
+        if 'killed_proc_score' in self.oom_result.details:
+            show_elements('.js-killed-proc-score--show')
+        else:
+            hide_elements('.js-killed-proc-score--show')
+
         # generate process table
         self.update_process_table()
 

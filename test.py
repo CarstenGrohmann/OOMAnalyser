@@ -213,6 +213,9 @@ class TestInBrowser(TestBase):
         self.assertTrue('OOM killer was manually triggered' in explanation.text,
                         'Missing text "OOM killer was manually triggered"')
 
+        self.assertFalse('with an OOM score of' in explanation.text,
+                        'No OOM score but text "with an OOM score of"')
+
         self.check_swap_inactive()
 
     def check_swap_inactive(self):
