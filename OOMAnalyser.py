@@ -524,7 +524,8 @@ class OOMEntity:
 
         oom_lines = self._remove_non_oom_lines(oom_lines)
         oom_lines = self._remove_kernel_colon(oom_lines)
-        oom_lines = self._strip_needless_columns(oom_lines)
+        cols_to_strip = self._number_of_columns_to_strip(oom_lines[self._get_CPU_index(oom_lines)])
+        oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
 
         self.lines = oom_lines
@@ -535,7 +536,19 @@ class OOMEntity:
         else:
             self.state = OOMEntityState.started
 
-    def _number_of_columns_to_strip(self, first_line):
+    def _get_CPU_index(self, lines):
+        """
+        Return the index of the first line with "CPU: "
+
+        Depending on the OOM version the "CPU: " pattern is in second or third oom line.
+        """
+        for i in range(len(lines)):
+            if 'CPU: ' in lines[i]:
+                return i
+
+        return 0
+
+    def _number_of_columns_to_strip(self, line):
         """
         Determinate number of columns left to the OOM message to strip.
 
@@ -543,7 +556,7 @@ class OOMEntity:
         strip later.
         """
         to_strip = 0
-        columns = first_line.split(" ")
+        columns = line.split(" ")
 
         # Examples:
         # [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
@@ -551,7 +564,7 @@ class OOMEntity:
         # Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         try:
             # strip all excl. "CPU:"
-            if 'CPU:' in first_line:
+            if 'CPU:' in line:
                 to_strip = columns.index("CPU:")
         except ValueError:
             pass
@@ -619,7 +632,7 @@ class OOMEntity:
         oom_lines = [i.replace('kernel:', '') for i in oom_lines]
         return oom_lines
 
-    def _strip_needless_columns(self, oom_lines):
+    def _strip_needless_columns(self, oom_lines, cols_to_strip=0):
         """
         Remove needless columns at the start of every line.
 
@@ -627,8 +640,6 @@ class OOMEntity:
         syslog priority/facility.
         """
         stripped_lines = []
-        cols_to_strip = self._number_of_columns_to_strip(oom_lines[2])
-
         for line in oom_lines:
             # remove empty lines
             if not line.strip():
