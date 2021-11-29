@@ -304,6 +304,37 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self.assertEqual(self.get_error_text(), "ERROR: Failed to extract kernel version from OOM text")
         self.click_reset()
 
+    def test_035_leading_journalctl_input(self):
+        """Test loading input from journalctl """
+        # prepare example
+        example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split('\n')
+        res = []
+
+        # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
+        for line in example_lines:
+            if '#012' in line:
+                res.extend(line.split('#012'))
+            else:
+                res.append(line)
+        example_lines = res
+        res = []
+
+        # add date/time prefix except for "Mem-Info:" block
+        pattern = r'^ (active_file|unevictable|slab_reclaimable|mapped|free):.+$'
+        rec = re.compile(pattern)
+        for line in example_lines:
+            match = rec.search(line)
+            if match:
+                line = "                                             {}".format(line)
+            else:
+                line = "Apr 01 14:13:32 mysrv <kern.warning> kernel: {}".format(line)
+            res.append(line)
+        example = "\n".join(res)
+
+        self.analyse_oom(example)
+        self.check_results_rhel7()
+        self.click_reset()
+
     def test_040_trigger_proc_space(self):
         """Test trigger process name contains a space"""
         example = OOMAnalyser.OOMDisplay.example_rhel7

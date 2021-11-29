@@ -525,6 +525,7 @@ class OOMEntity:
         oom_lines = self._remove_non_oom_lines(oom_lines)
         oom_lines = self._remove_kernel_colon(oom_lines)
         cols_to_strip = self._number_of_columns_to_strip(oom_lines[self._get_CPU_index(oom_lines)])
+        oom_lines = self._journalctl_add_leading_columns_to_meminfo(oom_lines, cols_to_strip)
         oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
 
@@ -535,6 +536,34 @@ class OOMEntity:
             self.state = OOMEntityState.complete
         else:
             self.state = OOMEntityState.started
+
+    def _journalctl_add_leading_columns_to_meminfo(self, oom_lines, cols_to_add):
+        """
+        Add leading columns to handle line breaks in journalctl output correctly.
+
+        The output of the "Mem-Info:" block contains line breaks. journalctl breaks these lines accordingly, but
+        inserts at the beginning spaces instead of date and time. As a result, removing the needless columns no longer
+        works correctly.
+
+        This function adds columns back in the affected rows so that the removal works cleanly over all rows.
+
+        @see: _rsyslog_unescape_lf()
+        """
+        pattern = r'^\s+ (active_file|unevictable|slab_reclaimable|mapped|free):.+$'
+        rec = re.compile(pattern)
+
+        add_cols = ""
+        for i in range(cols_to_add):
+            add_cols += "Col{} ".format(i)
+
+        expanded_lines = []
+        for line in oom_lines:
+            match = rec.search(line)
+            if match:
+                line = "{} {}".format(add_cols, line.strip())
+            expanded_lines.append(line)
+
+        return expanded_lines
 
     def _get_CPU_index(self, lines):
         """
@@ -605,12 +634,17 @@ class OOMEntity:
 
     def _rsyslog_unescape_lf(self, oom_lines):
         """
-        Rsyslog replaces line breaks with their octal representation #012.
+        Split lines at '#012' (octal representation of LF).
+
+        The output of the "Mem-Info:" block contains line breaks. Rsyslog replaces these line breaks with their octal
+        representation #012. This breaks the removal of needless columns as well as the detection of the OOM values.
+
+        Splitting the lines (again) solves this issue.
 
         This feature can be controlled inside the rsyslog configuration with the directives
         $EscapeControlCharactersOnReceive, $Escape8BitCharactersOnReceive and $ControlCharactersEscapePrefix.
 
-        The replacement is only in second line (active_anon:....) of the Mem-Info block.
+        @see: _journalctl_add_leading_columns_to_meminfo()
         """
         lines = []
 
