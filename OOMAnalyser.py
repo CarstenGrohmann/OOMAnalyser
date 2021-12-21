@@ -16,7 +16,9 @@ VERSION = "0.5.0 (devel)"
 # __pragma__ ('skip')
 # MOC objects to satisfy statical checker and imports in unit tests
 js_undefined = 0
-class classList():
+
+
+class classList:
 
     def add(self, *args, **kwargs):
         pass
@@ -25,26 +27,37 @@ class classList():
         pass
 
 
-class document():
+class document:
 
     def querySelectorAll(self, *args, **kwargs):
-        return [element()]
+        return [Node()]
 
     def getElementById(self, *arg, **kwargs):
-        return element()
+        return Node()
 
     def createElementNS(self, *arg, **kwargs):
-        return element()
+        return Node()
 
     def createElement(self, *args, **kwargs):
-        return element()
+        return Node()
 
 
-class element():
+class Node:
 
-    firstChild = []
     classList = classList()
     offsetWidth = 0
+    textContent = ""
+
+    def __init__(self, nr_children=1):
+        self.nr_children = nr_children
+
+    @property
+    def firstChild(self):
+        if self.nr_children:
+            self.nr_children -= 1
+            return Node(self.nr_children)
+        else:
+            return None
 
     def removeChild(self, *args, **kwargs):
         return
