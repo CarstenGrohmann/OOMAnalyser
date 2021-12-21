@@ -73,6 +73,37 @@
             /* empty - used to show sections for manually triggered OOMs */
         }
 
+        .js-pstable_sort_col0 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col1 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col2 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col3 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col4 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col5 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col6 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col7 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col8 {
+            /* empty - used to sort process table */
+        }
+        .js-pstable_sort_col9 {
+            /* empty - used to sort process table */
+        }
+
         .js-swap-active--show {
             /* empty - used to show if the swap space is activated */
         }
@@ -143,6 +174,9 @@
         }
         .pstable__row-oom-score-adj--width {
             width: 16ch;
+        }
+        .pstable__row-notes--width {
+            width: 20ch;
         }
         .pstable__row-sort--width {
             padding-left: unset;
@@ -749,51 +783,51 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
             <td></td>
             <td class="terminal " colspan="2">
                 <table class="pstable__table--noborder">
-                    <thead>
+                    <thead id="pstable_header">
                         <tr>
-                            <td class="pstable__row-numeric--width">pid
+                            <td class="pstable__row-numeric--width"><span>pid</span>
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_pid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('pid')"></a>
+                                   id="js-pstable_sort_col0" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(0)"></a>
                             </td>
                             <td class="pstable__row-numeric--width">uid
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_uid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('uid')"></a>
+                                   id="js-pstable_sort_col1" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(1)"></a>
                             </td>
                             <td class="pstable__row-numeric--width">tgid
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_tgid" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('tgid')"></a>
+                                   id="js-pstable_sort_col2" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(2)"></a>
                             </td>
                             <td class="pstable__row-pages--width">total_vm
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_total_vm_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('total_vm_pages')"></a>
+                                   id="js-pstable_sort_col3" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(3)"></a>
                             </td>
                             <td class="pstable__row-pages--width">rss
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_rss_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('rss_pages')"></a>
+                                   id="js-pstable_sort_col4" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(4)"></a>
                             </td>
                             <td class="pstable__row-pages--width">nr_ptes
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_nr_ptes_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('nr_ptes_pages')"></a>
+                                   id="js-pstable_sort_col5" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(5)"></a>
                             </td>
                             <td class="pstable__row-pages--width">swapents
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_swapents_pages" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('swapents_pages')"></a>
+                                   id="js-pstable_sort_col6" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(6)"></a>
                             </td>
                             <td class="pstable__row-oom-score-adj--width">oom_score_adj
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_oom_score_adj" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('oom_score_adj')"></a>
+                                   id="js-pstable_sort_col7" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(7)"></a>
                             </td>
-                            <td>name
+                            <td class="pstable__row-notes--width">name
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_name" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('name')"></a>
+                                   id="js-pstable_sort_col8" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(8)"></a>
                             </td>
-                            <td>notes
+                            <td class="pstable__row-notes--width">notes
                                 <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="pstable_sort_notes" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable('notes')"></a>
+                                   id="js-pstable_sort_col9" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(9)"></a>
                             </td>
                         </tr>
                     </thead>
-                    <tbody id="process_table">
+                    <tbody id="pstable_content">
                     </tbody>
                 </table>
             </td>
@@ -898,6 +932,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
         <li>Add support for systems w/o swap (suggested by Mikko Rantalainen)</li>
         <li>Add support for newer kernels (suggested by Mikko Rantalainen)</li>
         <li>Add support for journalctl output (suggested by Mikko Rantalainen)</li>
+        <li>Add support for newer process table format</li>
         <li>...</li>
     </ol>
 

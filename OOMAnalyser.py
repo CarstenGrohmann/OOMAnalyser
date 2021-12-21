@@ -347,14 +347,30 @@ class BaseKernelConfig:
           (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
     """
 
-    ps_table_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
-                      'oom_score_adj']
+    pstable_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'nr_ptes_pages', 'swapents_pages',
+                      'oom_score_adj', 'name', 'notes']
     """Elements of the process table"""
+
+    pstable_html = ['PID', 'UID', 'TGID', 'Total VM', 'RSS', 'Page Table Entries', 'Swap Entries', 'OOM Adjustment',
+                    'Name', 'Notes']
+    """
+    Headings of the process table columns
+    """
+
+    pstable_non_ints = ['pid', 'name', 'notes']
+    """Columns that are not converted to an integer"""
 
     REC_PROCESS_LINE = re.compile(
         r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
         r'(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
     """Match content of process table"""
+
+    pstable_start = '[ pid ]'
+    """
+    Pattern to find the start of the process table
+    
+    :type: str
+    """
 
     rec_version4kconfig = re.compile('.+')
     """RE to match kernel version to kernel configuration"""
@@ -416,7 +432,32 @@ class KernelConfig_4_9(KernelConfig_4_6):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_49)
 
 
-class KernelConfig_5_0(KernelConfig_4_9):
+class KernelConfig_4_15(KernelConfig_4_9):
+    # Support changes:
+    # * mm: consolidate page table accounting (af5b0f6a09e42c9f4fa87735f2a366748767b686)
+
+    # nr_ptes -> pgtables_bytes
+    # pr_info("[ pid ]   uid  tgid total_vm      rss nr_ptes nr_pmds nr_puds swapents oom_score_adj name\n");
+    # pr_info("[ pid ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
+    REC_PROCESS_LINE = re.compile(
+        r'^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+'
+        r'(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*')
+
+    pstable_items = ['pid', 'uid', 'tgid', 'total_vm_pages', 'rss_pages', 'pgtables_bytes', 'swapents_pages',
+                      'oom_score_adj', 'name', 'notes']
+
+    pstable_html = ['PID', 'UID', 'TGID', 'Total VM', 'RSS', 'Page Table Bytes', 'Swap Entries Pages',
+                    'OOM Adjustment', 'Name', 'Notes']
+
+
+class KernelConfig_4_19(KernelConfig_4_15):
+    # Support changes:
+    # * mm, oom: describe task memory unit, larger PID pad (c3b78b11efbb2865433abf9d22c004ffe4a73f5c)
+
+    pstable_start = '[  pid  ]'
+
+
+class KernelConfig_5_0(KernelConfig_4_19):
     # Support changes:
     #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
 
@@ -488,6 +529,8 @@ class KernelConfigRhel7(BaseKernelConfig):
 AllKernelConfigs = [
     KernelConfig_5_8(),
     KernelConfig_5_0(),
+    KernelConfig_4_15(),
+    KernelConfig_4_19(),
     KernelConfig_4_9(),
     KernelConfig_4_6(),
     KernelConfigRhel7(),
@@ -931,21 +974,24 @@ class OOMAnalyser:
             call_trace += "{}\n".format(line.strip())
         self.oom_result.details['call_trace'] = call_trace
 
-        # extract process table
-        self.oom_result.details['_ps'] = {}
-        self.oom_entity.find_text('[ pid ]')
+        self._extract_pstable()
+
+    def _extract_pstable(self):
+        """Extract process table"""
+        self.oom_result.details['_pstable'] = {}
+        self.oom_entity.find_text(self.oom_result.kconfig.pstable_start)
         for line in self.oom_entity:
             if not line.startswith('['):
                 break
-            if line.startswith('[ pid ]'):
+            if line.startswith(self.oom_result.kconfig.pstable_start):
                 continue
             match = self.oom_result.kconfig.REC_PROCESS_LINE.match(line)
             if match:
                 details = match.groupdict()
                 details['notes'] = ''
                 pid = details.pop('pid')
-                self.oom_result.details['_ps'][pid] = {}
-                self.oom_result.details['_ps'][pid].update(details)
+                self.oom_result.details['_pstable'][pid] = {}
+                self.oom_result.details['_pstable'][pid].update(details)
 
     def _hex2flags(self, hexvalue, flag_definition):
         """\
@@ -1025,7 +1071,7 @@ class OOMAnalyser:
             if self.oom_result.details[item] is None:
                 self.oom_result.details[item] = '<not found>'
                 continue
-            if item.endswith('_kb') or item.endswith('_pages') or item.endswith('_pid') or \
+            if item.endswith('_bytes') or item.endswith('_kb') or item.endswith('_pages') or item.endswith('_pid') or \
                     item in ['killed_proc_score', 'trigger_proc_order', 'trigger_proc_oomscore']:
                 try:
                     self.oom_result.details[item] = int(self.oom_result.details[item])
@@ -1034,9 +1080,9 @@ class OOMAnalyser:
 
         # __pragma__ ('nojsiter')
 
-    def _convert_numeric_process_values_to_integer(self):
+    def _convert_pstable_values_to_integer(self):
         """Convert numeric values in process table to integer values"""
-        ps = self.oom_result.details['_ps']
+        ps = self.oom_result.details['_pstable']
         ps_index = []
         # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
         #      sets item in "for item in ['uid',..." to 0 instead of 'uid'
@@ -1044,13 +1090,17 @@ class OOMAnalyser:
         for pid_str in ps.keys():
             converted = {}
             process = ps[pid_str]
-            for item in self.oom_result.kconfig.ps_table_items:
-                if item == 'pid':
+            for item in self.oom_result.kconfig.pstable_items:
+                if item in self.oom_result.kconfig.pstable_non_ints:
                     continue
                 try:
                     converted[item] = int(process[item])
                 except:
-                    error('Converting process parameter "{}={}" to integer failed'.format(item, process[item]))
+                    if item not in process:
+                        pitem = '<not in process table>'
+                    else:
+                        pitem = process[item]
+                    error('Converting process parameter "{}={}" to integer failed'.format(item, pitem))
 
             converted['name'] = process['name']
             converted['notes'] = process['notes']
@@ -1060,7 +1110,7 @@ class OOMAnalyser:
             ps_index.append(pid_int)
 
         ps_index.sort(key=int)
-        self.oom_result.details['_ps_index'] = ps_index
+        self.oom_result.details['_pstable_index'] = ps_index
 
     def _calc_pstable_values(self):
         """Set additional notes to processes listed in the process table"""
@@ -1068,12 +1118,12 @@ class OOMAnalyser:
         kpid = self.oom_result.details['killed_proc_pid']
 
         # sometimes the trigger process isn't part of the process table
-        if tpid in self.oom_result.details['_ps']:
-            self.oom_result.details['_ps'][tpid]['notes'] = 'trigger process'
+        if tpid in self.oom_result.details['_pstable']:
+            self.oom_result.details['_pstable'][tpid]['notes'] = 'trigger process'
 
         # assume the killed process may also not part of the process table
-        if kpid in self.oom_result.details['_ps']:
-            self.oom_result.details['_ps'][kpid]['notes'] = 'killed process'
+        if kpid in self.oom_result.details['_pstable']:
+            self.oom_result.details['_pstable'][kpid]['notes'] = 'killed process'
 
     def _calc_trigger_process_values(self):
         """Calculate all values related with the trigger process"""
@@ -1138,8 +1188,8 @@ class OOMAnalyser:
         else:
             self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb']
         total_rss_pages = 0
-        for pid in self.oom_result.details['_ps'].keys():
-            total_rss_pages += self.oom_result.details['_ps'][pid]['rss_pages']
+        for pid in self.oom_result.details['_pstable'].keys():
+            total_rss_pages += self.oom_result.details['_pstable'][pid]['rss_pages']
         self.oom_result.details['system_total_ram_used_kb'] = total_rss_pages * self.oom_result.details['page_size_kb']
 
         self.oom_result.details['system_total_used_percent'] = int(100 *
@@ -1176,7 +1226,7 @@ class OOMAnalyser:
         @see: self.details
         """
         self._convert_numeric_results_to_integer()
-        self._convert_numeric_process_values_to_integer()
+        self._convert_pstable_values_to_integer()
         self._calc_pstable_values()
 
         self._determinate_platform_and_distribution()
@@ -1442,8 +1492,12 @@ oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,glob
 Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:8380kB, file-rss:12548kB, shmem-rss:0kB, UID:0 pgtables:104kB oom_score_adj:0
 '''
 
-    sorted_column = None
-    """Processes will sort by values in this column"""
+    sorted_column_number = None
+    """
+    Processes will sort by values in this column
+    
+    @type: int 
+    """
 
     sort_order = None
     """Sort order for process values"""
@@ -1534,6 +1588,12 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 else:
                     content = "{} pages".format(content)
 
+            if item.endswith('_bytes') and isinstance(content, int):
+                if content == 1:
+                    content = "{} Byte".format(content)
+                else:
+                    content = "{} Bytes".format(content)
+
             if item.endswith('_kb') and isinstance(content, int):
                 if content == 1:
                     content = "{} kByte".format(content)
@@ -1568,21 +1628,41 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         toc_content.innerHTML = new_toc
 
-    def update_process_table(self):
+    def pstable_fill_HTML(self):
         """
-        Re-create the process table with additional information
+        Create the process table with additional information
         """
-        new_table = ''
-        table_content = document.getElementById('process_table')
+        # update table heading
+        for i, element in enumerate(document.querySelectorAll('#pstable_header > tr > td')):
+            element.classList.remove('pstable__row-pages--width', 'pstable__row-numeric--width',
+                                     'pstable__row-oom-score-adj--width')
 
-        for pid in self.oom_result.details['_ps_index']:
+            key = self.oom_result.kconfig.pstable_items[i]
+            if key in ['notes', 'names']:
+                klass = 'pstable__row-notes--width'
+            elif key == 'oom_score_adj':
+                klass = 'pstable__row-oom-score-adj--width'
+            elif key.endswith('_bytes') or key.endswith('_kb') or key.endswith('_pages'):
+                klass = 'pstable__row-pages--width'
+            else:
+                klass = "pstable__row-numeric--width"
+            element.firstChild.textContent = self.oom_result.kconfig.pstable_html[i]
+            element.classList.add(klass)
+
+        # create new table
+        new_table = ''
+        table_content = document.getElementById('pstable_content')
+        for pid in self.oom_result.details['_pstable_index']:
             if pid == self.oom_result.details['trigger_proc_pid']:
                 css_class = 'class="js-pstable__triggerproc--bgcolor"'
             elif pid == self.oom_result.details['killed_proc_pid']:
                 css_class = 'class="js-pstable__killedproc--bgcolor"'
             else:
                 css_class = ''
-            process = self.oom_result.details['_ps'][pid]
+            process = self.oom_result.details['_pstable'][pid]
+            fmt_list = [process[i] for i in self.oom_result.kconfig.pstable_items if not i == 'pid']
+            fmt_list.insert(0, css_class)
+            fmt_list.insert(1, pid)
             line = """
             <tr {}>
                 <td>{}</td>
@@ -1596,32 +1676,22 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 <td>{}</td>
                 <td>{}</td>
             </tr>
-            """.format(css_class, pid, process['uid'], process['tgid'], process['total_vm_pages'], process['rss_pages'],
-                       process['nr_ptes_pages'], process['swapents_pages'], process['oom_score_adj'], process['name'],
-                       process['notes'])
+            """.format(*fmt_list)
             new_table += line
 
         table_content.innerHTML = new_table
 
-        self.set_sort_triangle()
-
-    def set_sort_triangle(self):
+    def pstable_set_sort_triangle(self):
         """Set the sorting symbols for all columns in the process table"""
-        # TODO Check operator overloading
-        #      Operator overloading (Pragma opov) does not work in this context.
-        #      self.oom_result.kconfig.ps_table_items + ['notes'] will compile to a string
-        #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
-        #      array
-        ps_table_and_notes = self.oom_result.kconfig.ps_table_items[:]
-        ps_table_and_notes.append('notes')
-        for column_name in ps_table_and_notes:
-            element_id = "pstable_sort_{}".format(column_name)
+        for column_name in self.oom_result.kconfig.pstable_items:
+            column_number = self.oom_result.kconfig.pstable_items.index(column_name)
+            element_id = "js-pstable_sort_col{}".format(column_number)
             element = document.getElementById(element_id)
             if not element:
                 internal_error('Missing id "{}" in process table.'.format(element_id))
                 continue
 
-            if column_name == self.sorted_column:
+            if column_number == self.sorted_column_number:
                 if self.sort_order == 'descending':
                     element.innerHTML = self.svg_array_down
                 else:
@@ -1645,21 +1715,30 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         while element.firstChild:
             element.removeChild(element.firstChild)
 
-        # clear process table
-        element = document.getElementById('process_table')
-        while element.firstChild:
-            element.removeChild(element.firstChild)
-
-        # reset sort triangles
-        self.sorted_column = None
-        self.sort_order = None
-        self.set_sort_triangle()
-
         # remove svg charts
         for element_id in ('svg_swap', 'svg_ram'):
             element = document.getElementById(element_id)
             while element.firstChild:
                 element.removeChild(element.firstChild)
+
+        self._clear_pstable()
+
+    def _clear_pstable(self):
+        """Clear process table"""
+        element = document.getElementById('pstable_content')
+        while element.firstChild:
+            element.removeChild(element.firstChild)
+
+        # reset sort triangles
+        self.sorted_column_number = None
+        self.sort_order = None
+        self.pstable_set_sort_triangle()
+
+        # reset table heading
+        for i, element in enumerate(document.querySelectorAll('#pstable_header > tr > td')):
+            element.classList.remove('pstable__row-pages--width', 'pstable__row-numeric--width',
+                                     'pstable__row-oom-score-adj--width')
+            element.firstChild.textContent = "col {}".format(i + 1)
 
     def svg_create_element(self, height, width, css_class):
         """Return an empty SVG element"""
@@ -1832,7 +1911,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements('.js-killed-proc-score--show')
 
         # generate process table
-        self.update_process_table()
+        self.pstable_fill_HTML()
+        self.pstable_set_sort_triangle()
 
         # show/hide swap space
         if self.oom_result.swap_active:
@@ -1883,23 +1963,28 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         element.textContent = self.oom_result.oom_text
         self.toggle_oom(show=False)
 
-    def sort_pstable(self, column_name):
-        """Sort process table by the values in the given column"""
+    def sort_pstable(self, column_number):
+        """
+        Sort process table by values
+
+        :param int column_number: Number of column to sort
+        """
         # TODO Check operator overloading
         #      Operator overloading (Pragma opov) does not work in this context.
-        #      self.oom_result.kconfig.ps_table_items + ['notes'] will compile to a string
+        #      self.oom_result.kconfig.pstable_items + ['notes'] will compile to a string
         #      "pid,uid,tgid,total_vm_pages,rss_pages,nr_ptes_pages,swapents_pages,oom_score_adjNotes" and not to an
         #      array
-        ps_table_and_notes = self.oom_result.kconfig.ps_table_items[:]
+        ps_table_and_notes = self.oom_result.kconfig.pstable_items[:]
         ps_table_and_notes.append('notes')
+        column_name = ps_table_and_notes[column_number]
         if column_name not in ps_table_and_notes:
             internal_error('Can not sort process table with an unknown column name "{}"'.format(column_name))
             return
 
         # reset sort order if the column has changes
-        if column_name != self.sorted_column:
+        if column_number != self.sorted_column_number:
             self.sort_order = None
-        self.sorted_column = column_name
+        self.sorted_column_number = column_number
 
         if not self.sort_order or self.sort_order == 'descending':
             self.sort_order = 'ascending'
@@ -1908,19 +1993,17 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.sort_order = 'descending'
             self.sort_psindex_by_column(column_name, True)
 
-        self.sorted_column = column_name
-
-        self.update_process_table()
+        self.pstable_fill_HTML()
+        self.pstable_set_sort_triangle()
 
     def sort_psindex_by_column(self, column_name, reverse=False):
         """
-        Sort the pid list '_ps_index' based on the values in the process dict '_ps'.
+        Sort the pid list '_pstable_index' based on the values in the process dict '_pstable'.
 
         Is uses bubble sort with all disadvantages but just a few lines of code
         """
-
-        ps = self.oom_result.details['_ps']
-        ps_index = self.oom_result.details['_ps_index']
+        ps = self.oom_result.details['_pstable']
+        ps_index = self.oom_result.details['_pstable_index']
 
         def getvalue(column, pos):
             if column == 'pid':
@@ -1928,7 +2011,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             else:
                 value = ps[ps_index[pos]][column]
             # JS sorts alphanumeric by default, convert values explicit to integers to sort numerically
-            if column not in ['name', 'notes'] and value is not js_undefined:
+            if column not in self.oom_result.kconfig.pstable_non_ints and value is not js_undefined:
                 value = int(value)
             return value
 

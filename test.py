@@ -199,6 +199,9 @@ class TestInBrowser(TestBase):
         self.assertTrue('OOM killer was automatically triggered' in explanation.text,
                         'Missing text "OOM killer was automatically triggered"')
 
+        head = self.driver.find_element_by_id('pstable_header')
+        self.assertTrue('Page Table Entries' in head.text, 'Missing column head line "Page Table Entries"')
+
         self.check_swap_active()
 
     def check_results_ubuntu2110(self):
@@ -215,6 +218,9 @@ class TestInBrowser(TestBase):
 
         self.assertFalse('with an OOM score of' in explanation.text,
                         'No OOM score but text "with an OOM score of"')
+
+        head = self.driver.find_element_by_id('pstable_header')
+        self.assertTrue('Page Table Bytes' in head.text, 'Missing column head line "Page Table Bytes"')
 
         self.check_swap_inactive()
 
