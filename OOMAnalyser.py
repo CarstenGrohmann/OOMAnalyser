@@ -1774,7 +1774,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """Generate a SVG bar chart"""
         bar_height = 100
         label_height = 80
-        length_factor = 4
+        length_factor = 5
         overall_height = bar_height + label_height
         overall_width = 100 * length_factor
         css_class = 'js-mem-usage__svg'
@@ -1814,6 +1814,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             text = document.createElementNS(self.svg_namespace, 'text')
             text.setAttribute('x', '30')
             text.setAttribute('y', '18')
+            text.setAttribute('stroke-width', 0)
             text.textContent = title
 
             label_group.appendChild(color_rect)
