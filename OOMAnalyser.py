@@ -562,7 +562,7 @@ class OOMEntity:
 
     def __init__(self, text):
         # use Unix LF only
-        text = text.replace('\r\n', '\r')
+        text = text.replace('\r\n', '\n')
         text = text.strip()
         oom_lines = text.split('\n')
 
