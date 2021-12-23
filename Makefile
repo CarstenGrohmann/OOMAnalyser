@@ -18,6 +18,15 @@ HTML_FILE         = $(BASE_DIR)/OOMAnalyser.html
 JS_OUT_FILE       = $(BASE_DIR)/OOMAnalyser.js
 JS_TEMP_FILE      = $(TARGET_DIR)/OOMAnalyser.js
 PY_SOURCE         = $(BASE_DIR)/OOMAnalyser.py
+TEST_FILE         = $(BASE_DIR)/test.py
+
+VERSION           = 0.5.0
+RELEASE_DIR       = $(BASE_DIR)/release
+RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE ) Makefile requirements.txt LICENSE.txt \
+                    README.md
+RELEASE_INST_DIR  = $(RELEASE_DIR)/OOMAnalyser-$(VERSION)
+RELEASE_TARGZ     = OOMAnalyser-$(VERSION).tar.gz
+RELEASE_ZIP       = OOMAnalyser-$(VERSION).zip
 
 ROLLUP_BIN        = rollup
 ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=${JS_OUT_FILE}
@@ -48,6 +57,7 @@ clean:
 	@find $(BASE_DIR) -depth -type f -name "*.orig" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*~" -exec rm -f {} \;
 	@$(RM) --force --recursive .wdm
+	@$(RM) --force --recursive ${RELEASE_DIR}
 	@$(RM) --force --recursive ${TARGET_DIR}
 
 #+ Remove all automatically generated and Git repository data
@@ -90,4 +100,14 @@ websrv: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 #+ Run Selenium based web tests
 test: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	DISPLAY=:1 xvfb-run python ./test.py
+	DISPLAY=:1 xvfb-run python $(TEST_FILE)
+
+#+ Build release packages
+release: ${JS_OUT_FILE}
+	echo $(VERSION)
+	mkdir -p $(RELEASE_INST_DIR) && \
+	cp -p $(RELEASE_FILES) $(RELEASE_INST_DIR) && \
+	cd $(RELEASE_DIR) && \
+	tar cvzf $(RELEASE_TARGZ) OOMAnalyser-$(VERSION) && \
+	zip -vr $(RELEASE_ZIP) OOMAnalyser-$(VERSION) && \
+	mv $(RELEASE_TARGZ) $(RELEASE_ZIP) ..

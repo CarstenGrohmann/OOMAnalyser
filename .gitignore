@@ -15,3 +15,8 @@ env/
 # Generated (compiled) JavaScript code
 __target__/
 OOMAnalyser.js
+
+# Release files
+release/
+OOMAnalyser*.zip
+OOMAnalyser*.tar.gz
