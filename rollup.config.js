@@ -9,6 +9,11 @@ export default {
     output: {
         file: 'OOMAnalyser.js',
         name: 'OOMAnalyser',
+        banner: '// JavaScript for OOMAnalyser\n' +
+            '//\n' +
+            '// Copyright (c) 2017-2021 Carsten Grohmann\n' +
+            '// License: MIT (see LICENSE.txt)\n' +
+            '// THIS PROGRAM COMES WITH NO WARRANTY',
         format: 'umd'
     }
 };
