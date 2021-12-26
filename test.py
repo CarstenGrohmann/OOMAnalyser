@@ -1,4 +1,4 @@
-# Unit tests for OOM Analyser
+# Unit tests for OOMAnalyser
 #
 # This software is covered by the MIT License.
 #
@@ -238,7 +238,7 @@ class TestInBrowser(TestBase):
 
     def test_010_load_page(self):
         """Test if the page is loading"""
-        assert "OOM Analyser" in self.driver.title
+        assert "OOMAnalyser" in self.driver.title
 
     def test_020_load_js(self):
         """Test if JS is loaded"""

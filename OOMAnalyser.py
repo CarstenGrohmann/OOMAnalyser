@@ -1,6 +1,6 @@
 # -*- coding: Latin-1 -*-
 #
-# Linux OOM Analyser
+# Linux OOMAnalyser
 #
 # Copyright (c) 2017-2021 Carsten Grohmann
 # License: MIT - THIS PROGRAM COMES WITH NO WARRANTY
