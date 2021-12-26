@@ -22,14 +22,14 @@ TEST_FILE         = $(BASE_DIR)/test.py
 
 VERSION           = 0.5.0
 RELEASE_DIR       = $(BASE_DIR)/release
-RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE ) Makefile requirements.txt LICENSE.txt \
-                    README.md
+RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE ) rollup.config.js Makefile requirements.txt \
+				    LICENSE.txt  README.md
 RELEASE_INST_DIR  = $(RELEASE_DIR)/OOMAnalyser-$(VERSION)
 RELEASE_TARGZ     = OOMAnalyser-$(VERSION).tar.gz
 RELEASE_ZIP       = OOMAnalyser-$(VERSION).zip
 
 ROLLUP_BIN        = rollup
-ROLLUP_OPTS       = --format=umd --name OOMAnalyser --file=${JS_OUT_FILE}
+ROLLUP_OPTS       = --config rollup.config.js
 
 TRANSCRYPT_BIN    = transcrypt
 TRANSCRYPT_OPTS   = --build --map --nomin --sform --esv 6
@@ -88,7 +88,7 @@ ${JS_TEMP_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${PY_SOURCE}
 
 ${JS_OUT_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_TEMP_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	$(ROLLUP_BIN) $(ROLLUP_OPTS) -- ${JS_TEMP_FILE}
+	$(ROLLUP_BIN) $(ROLLUP_OPTS)
 
 #+ Compile Python to JavaScript
 build: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
