@@ -2,8 +2,9 @@
 #
 # Linux OOMAnalyser
 #
-# Copyright (c) 2017-2021 Carsten Grohmann
-# License: MIT - THIS PROGRAM COMES WITH NO WARRANTY
+# Copyright (c) 2017-2022 Carsten Grohmann
+# License: MIT (see LICENSE.txt)
+# THIS PROGRAM COMES WITH NO WARRANTY
 
 import re
 

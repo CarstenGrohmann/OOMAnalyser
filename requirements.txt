@@ -1,3 +1,9 @@
+# Requirements to setup virtual environment for OOMAnalyser
+#
+# Copyright (c) 2017-2022 Carsten Grohmann
+# License: MIT (see LICENSE.txt)
+# THIS PROGRAM COMES WITH NO WARRANTY
+
 Transcrypt == 3.7.16
 selenium
 webdriver-manager

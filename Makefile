@@ -1,6 +1,6 @@
 # Makefile for OOMAnalyser
 #
-# Copyright (c) 2017-2021 Carsten Grohmann
+# Copyright (c) 2017-2022 Carsten Grohmann
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 
