@@ -12,6 +12,8 @@ import threading
 import unittest
 from selenium import webdriver
 from selenium.common.exceptions import *
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import warnings
 
@@ -84,7 +86,8 @@ class TestInBrowser(TestBase):
         # store driver locally
         os.environ['WDM_LOCAL'] = '1'
 
-        self.driver = webdriver.Chrome(ChromeDriverManager().install())
+        s=Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=s)
         self.driver.get("http://127.0.0.1:8000/OOMAnalyser.html")
 
     def tearDown(self):
@@ -93,9 +96,9 @@ class TestInBrowser(TestBase):
         self.httpd.server_close()
 
     def assert_on_warn(self):
-        notify_box = self.driver.find_element_by_id('notify_box')
+        notify_box = self.driver.find_element(By.ID, 'notify_box')
         try:
-            warning = notify_box.find_element_by_class_name('js-notify_box__msg--warning')
+            warning = notify_box.find_element(By.CLASS_NAME, 'js-notify_box__msg--warning')
         except NoSuchElementException:
             pass
         else:
@@ -117,7 +120,7 @@ class TestInBrowser(TestBase):
         self.assert_on_error()
 
     def click_analyse(self):
-        analyse = self.driver.find_element_by_xpath('//button[text()="Analyse"]')
+        analyse = self.driver.find_element(By.XPATH, '//button[text()="Analyse"]')
         analyse.click()
 
     def get_error_text(self):
@@ -126,19 +129,19 @@ class TestInBrowser(TestBase):
 
         :@rtype: str
         """
-        notify_box = self.driver.find_element_by_id('notify_box')
+        notify_box = self.driver.find_element(By.ID, 'notify_box')
         try:
-            notify_box.find_element_by_class_name('js-notify_box__msg--error')
+            notify_box.find_element(By.CLASS_NAME, 'js-notify_box__msg--error')
         except NoSuchElementException:
             return ""
         return notify_box.text
 
     def click_reset(self):
-        reset = self.driver.find_element_by_xpath('//button[text()="Reset"]')
+        reset = self.driver.find_element(By.XPATH, '//button[text()="Reset"]')
         if reset.is_displayed():
             reset.click()
         else:
-            new_analysis = self.driver.find_element_by_xpath('//a[contains(text(), "Step 1 - Enter your OOM message")]')
+            new_analysis = self.driver.find_element(By.XPATH, '//a[contains(text(), "Step 1 - Enter your OOM message")]')
             new_analysis.click()
         self.assert_on_warn_error()
 
@@ -148,13 +151,13 @@ class TestInBrowser(TestBase):
 
         :param str text: OOM text to analyse
         """
-        textarea = self.driver.find_element_by_id('textarea_oom')
+        textarea = self.driver.find_element(By.ID, 'textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
         textarea.send_keys(text)
 
         self.assertNotEqual(textarea.get_attribute('value'), '', 'Missing OOM text in textarea')
 
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
@@ -162,64 +165,64 @@ class TestInBrowser(TestBase):
     def check_results_rhel7(self):
         """Check the results of the analysis of the RHEL7 example"""
         self.assert_on_warn_error()
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
-        trigger_proc_name = self.driver.find_element_by_class_name('trigger_proc_name')
+        trigger_proc_name = self.driver.find_element(By.CLASS_NAME, 'trigger_proc_name')
         self.assertEqual(trigger_proc_name.text, 'sed', 'Unexpected trigger process name')
-        trigger_proc_pid = self.driver.find_element_by_class_name('trigger_proc_pid')
+        trigger_proc_pid = self.driver.find_element(By.CLASS_NAME, 'trigger_proc_pid')
         self.assertEqual(trigger_proc_pid.text, '29481', 'Unexpected trigger process pid')
 
-        killed_proc_score = self.driver.find_element_by_class_name('killed_proc_score')
+        killed_proc_score = self.driver.find_element(By.CLASS_NAME, 'killed_proc_score')
         self.assertEqual(killed_proc_score.text, '651', 'Unexpected OOM score of killed process')
 
-        swap_cache_kb = self.driver.find_element_by_class_name('swap_cache_kb')
+        swap_cache_kb = self.driver.find_element(By.CLASS_NAME, 'swap_cache_kb')
         self.assertEqual(swap_cache_kb.text, '45368 kBytes')
-        swap_used_kb = self.driver.find_element_by_class_name('swap_used_kb')
+        swap_used_kb = self.driver.find_element(By.CLASS_NAME, 'swap_used_kb')
         self.assertEqual(swap_used_kb.text, '8343236 kBytes')
-        swap_free_kb = self.driver.find_element_by_class_name('swap_free_kb')
+        swap_free_kb = self.driver.find_element(By.CLASS_NAME, 'swap_free_kb')
         self.assertEqual(swap_free_kb.text, '0 kBytes')
-        swap_total_kb = self.driver.find_element_by_class_name('swap_total_kb')
+        swap_total_kb = self.driver.find_element(By.CLASS_NAME, 'swap_total_kb')
         self.assertEqual(swap_total_kb.text, '8388604 kBytes')
 
-        explanation = self.driver.find_element_by_id('explanation')
+        explanation = self.driver.find_element(By.ID, 'explanation')
         self.assertTrue('OOM killer was automatically triggered' in explanation.text,
                         'Missing text "OOM killer was automatically triggered"')
 
-        head = self.driver.find_element_by_id('pstable_header')
+        head = self.driver.find_element(By.ID, 'pstable_header')
         self.assertTrue('Page Table Entries' in head.text, 'Missing column head line "Page Table Entries"')
 
         self.check_swap_active()
 
     def check_results_ubuntu2110(self):
         """Check the results of the analysis of the Ubuntu example"""
-        dirty_pages = self.driver.find_element_by_class_name('dirty_pages')
+        dirty_pages = self.driver.find_element(By.CLASS_NAME, 'dirty_pages')
         self.assertEqual(dirty_pages.text, '633 pages', 'Unexpected number of dirty pages')
 
-        ram_pages = self.driver.find_element_by_class_name('ram_pages')
+        ram_pages = self.driver.find_element(By.CLASS_NAME, 'ram_pages')
         self.assertEqual(ram_pages.text, '524158 pages', 'Unexpected number of RAM pages')
 
-        explanation = self.driver.find_element_by_id('explanation')
+        explanation = self.driver.find_element(By.ID, 'explanation')
         self.assertTrue('OOM killer was manually triggered' in explanation.text,
                         'Missing text "OOM killer was manually triggered"')
 
         self.assertFalse('with an OOM score of' in explanation.text,
-                        'No OOM score but text "with an OOM score of"')
+                         'No OOM score but text "with an OOM score of"')
 
-        head = self.driver.find_element_by_id('pstable_header')
+        head = self.driver.find_element(By.ID, 'pstable_header')
         self.assertTrue('Page Table Bytes' in head.text, 'Missing column head line "Page Table Bytes"')
 
         self.check_swap_inactive()
 
     def check_swap_inactive(self):
-        explanation = self.driver.find_element_by_id('explanation')
+        explanation = self.driver.find_element(By.ID, 'explanation')
         self.assertTrue('physical memory and no swap space' in explanation.text,
                         'Missing text "physical memory and no swap space"')
         self.assertFalse('swap space are in use' in explanation.text,
                          'No swap space but text "swap space are in use"')
 
     def check_swap_active(self):
-        explanation = self.driver.find_element_by_id('explanation')
+        explanation = self.driver.find_element(By.ID, 'explanation')
         self.assertTrue('swap space are in use' in explanation.text,
                         'Swap space active but no text "swap space are in use"')
 
@@ -229,18 +232,18 @@ class TestInBrowser(TestBase):
 
     def test_020_load_js(self):
         """Test if JS is loaded"""
-        elem = self.driver.find_element_by_id("version")
+        elem = self.driver.find_element(By.ID, "version")
         self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
 
     def test_030_insert_and_analyse_rhel7_example(self):
         """Test loading and analysing RHEL7 example"""
-        textarea = self.driver.find_element_by_id('textarea_oom')
+        textarea = self.driver.find_element(By.ID, 'textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
-        insert_example = self.driver.find_element_by_xpath('//button[contains(text(), "RHEL7" )]')
+        insert_example = self.driver.find_element(By.XPATH, '//button[contains(text(), "RHEL7" )]')
         insert_example.click()
         self.assertNotEqual(textarea.get_attribute('value'), '', 'Missing OOM text in textarea')
 
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
@@ -248,13 +251,13 @@ class TestInBrowser(TestBase):
 
     def test_031_insert_and_analyse_ubuntu_example(self):
         """Test loading and analysing Ubuntu 21.10 example"""
-        textarea = self.driver.find_element_by_id('textarea_oom')
+        textarea = self.driver.find_element(By.ID, 'textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
-        insert_example = self.driver.find_element_by_xpath('//button[contains(text(), "Ubuntu" )]')
+        insert_example = self.driver.find_element(By.XPATH, '//button[contains(text(), "Ubuntu" )]')
         insert_example.click()
         self.assertNotEqual(textarea.get_attribute('value'), '', 'Missing OOM text in textarea')
 
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
@@ -262,13 +265,13 @@ class TestInBrowser(TestBase):
 
     def test_032_empty_textarea(self):
         """Test "Analyse" with empty textarea"""
-        textarea = self.driver.find_element_by_id('textarea_oom')
+        textarea = self.driver.find_element(By.ID, 'textarea_oom')
         self.assertEqual(textarea.get_attribute('value'), '', 'Empty textarea expected')
         # textarea.send_keys(text)
 
         self.assertEqual(textarea.get_attribute('value'), '', 'Expected empty text area, but text found')
 
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertFalse(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be not displayed")
 
         self.click_analyse()
@@ -335,7 +338,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         self.analyse_oom(example)
         self.assert_on_warn_error()
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
     def test_050_kill_proc_space(self):
@@ -345,7 +348,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         self.analyse_oom(example)
         self.assert_on_warn_error()
-        h3_summary = self.driver.find_element_by_xpath('//h3[text()="Summary"]')
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertTrue(h3_summary.is_displayed(), "Analysis details incl. <h3>Summary</h3> should be displayed")
 
     def test_060_removal_of_leading_but_useless_columns(self):
@@ -376,7 +379,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self.analyse_oom(example)
         self.assert_on_warn_error()
 
-        explanation = self.driver.find_element_by_id('explanation')
+        explanation = self.driver.find_element(By.ID, 'explanation')
         self.assertTrue('OOM killer was manually triggered' in explanation.text,
                         'Missing text "OOM killer was manually triggered"')
 
