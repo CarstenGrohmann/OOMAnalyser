@@ -5,7 +5,7 @@
 # Copyright (c) 2017-2022 Carsten Grohmann
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
-
+import math
 import re
 
 DEBUG = False
@@ -64,6 +64,9 @@ class Node:
         return
 
     def appendChild(self, *args, **kwargs):
+        return
+
+    def setAttribute(self, *args, **kwargs):
         return
 # __pragma__ ('noskip')
 
@@ -1078,7 +1081,6 @@ class OOMAnalyser:
                     self.oom_result.details[item] = int(self.oom_result.details[item])
                 except:
                     error('Converting item "{}={}" to integer failed'.format(item, self.oom_result.details[item]))
-
         # __pragma__ ('nojsiter')
 
     def _convert_pstable_values_to_integer(self):
@@ -1265,6 +1267,281 @@ class OOMAnalyser:
         self.oom_result.oom_text = self.oom_entity.text
 
         return True
+
+
+class SVGChart:
+    """
+    Creates a horizontal stacked bar chart with a legend underneath.
+    
+    The entries of the legend are arranged from left to right and from top to bottom.  
+    """
+
+    cfg = dict(
+        chart_height=150,
+        chart_width=600,
+        label_height=80,
+        legend_entry_width=160,
+        legend_margin=7,
+        title_height=20,
+        title_margin=10,
+        css_class='js-mem-usage__svg',     # CSS class for SVG diagram
+    )
+    """Basic chart configuration"""
+
+    # generated with Colorgorical http://vrl.cs.brown.edu/color
+    colors = [
+        '#aee39a',
+        '#344b46',
+        '#1ceaf9',
+        '#5d99aa',
+        '#32e195',
+        '#b02949',
+        '#deae9e',
+        '#805257',
+        '#add51f',
+        '#544793',
+        '#a794d3',
+        '#e057e1',
+        '#769b5a',
+        '#76f014',
+        '#621da6',
+        '#ffce54',
+        '#d64405',
+        '#bb8801',
+        '#096013',
+        '#ff0087'
+    ]
+    """20 different colors for memory usage diagrams"""
+
+    max_entries_per_row = 3
+    """Maximum chart legend entries per row"""
+
+    namespace = 'http://www.w3.org/2000/svg'
+
+    def __init__(self):
+        super().__init__()
+        self.cfg['bar_topleft_x'] = 0
+        self.cfg['bar_topleft_y'] = self.cfg['title_height'] + self.cfg['title_margin']
+        self.cfg['bar_bottomleft_x'] = self.cfg['bar_topleft_x']
+        self.cfg['bar_bottomleft_y'] = self.cfg['bar_topleft_y'] + self.cfg['chart_height']
+
+        self.cfg['bar_bottomright_x'] = self.cfg['bar_topleft_x'] + self.cfg['chart_width']
+        self.cfg['bar_bottomright_y'] = self.cfg['bar_topleft_y'] + self.cfg['chart_height']
+
+        self.cfg['legend_topleft_x'] = self.cfg['bar_topleft_x']
+        self.cfg['legend_topleft_y'] = self.cfg['bar_topleft_y'] + self.cfg['legend_margin']
+        self.cfg['legend_width'] = self.cfg['legend_entry_width'] + self.cfg['legend_margin'] + \
+                                   self.cfg['legend_entry_width']
+
+        self.cfg['diagram_height'] = self.cfg['chart_height'] + self.cfg['title_margin'] + self.cfg['title_height']
+        self.cfg['diagram_width'] = self.cfg['chart_width']
+
+        self.cfg['title_bottommiddle_y'] = self.cfg['title_height']
+        self.cfg['title_bottommiddle_x'] = self.cfg['diagram_width'] // 2
+
+    # __pragma__ ('kwargs')
+    def create_element(self, tag, **kwargs):
+        """
+        Create an SVG element of the given tag.
+
+        @note: Underscores in the argument names will be replaced by minus
+        @param str tag: Type of element to be created
+        @rtype: Node
+        """
+        element = document.createElementNS(self.namespace, tag)
+        # __pragma__ ('jsiter')
+        for k in kwargs:
+            k2 = k.replace('_', '-')
+            element.setAttribute(k2, kwargs[k])
+        # __pragma__ ('nojsiter')
+        return element
+    # __pragma__ ('nokwargs')
+
+    # __pragma__ ('kwargs')
+    def create_element_text(self, text, **kwargs):
+        """
+        Create an SVG text element
+
+        @note: Underscores in the argument names will be replaced by minus
+        @param str text: Text
+        @rtype: Node
+        """
+        element = self.create_element('text', **kwargs)
+        element.textContent = text
+        return element
+    # __pragma__ ('nokwargs')
+
+    def create_element_svg(self, height, width, css_class=None):
+        """Return a SVG element"""
+        svg = self.create_element('svg', version='1.1', height=height, width=width,
+                                  viewBox='0 0 {} {}'.format(width, height))
+        if css_class:
+            svg.setAttribute('class', css_class)
+        return svg
+
+    def create_rectangle(self, x, y, width, height, color=None, title=None):
+        """
+        Return a rect-element in a group container
+
+        If a title is given, the container also contains a <title> element.
+        """
+        g = self.create_element('g')
+        rect = self.create_element('rect', x=x, y=y, width=width, height=height)
+        if color:
+            rect.setAttribute('fill', color)
+        if title:
+            t = self.create_element('title')
+            t.textContent = title
+            g.appendChild(t)
+        g.appendChild(rect)
+        return g
+
+    def create_legend_entry(self, color, desc, pos):
+        """
+        Create a legend entry for the given position. Both elements of the entry are grouped within a g-element.
+
+        @param str color: Colour of the entry
+        @param str desc: Description
+        @param int pos: Continuous position
+        @rtype: Node
+        """
+        label_group = self.create_element('g', id=desc)
+        color_rect = self.create_rectangle(0, 0, 20, 20, color)
+        label_group.appendChild(color_rect)
+
+        desc_element = self.create_element_text(desc, x='30', y='18')
+        desc_element.textContent = desc
+        label_group.appendChild(desc_element)
+
+        # move group to right position
+        x, y = self.legend_calc_xy(pos)
+        label_group.setAttribute('transform', 'translate({}, {})'.format(x, y))
+
+        return label_group
+
+    def legend_max_row(self, pos):
+        """
+        Returns the maximum number of rows in the legend
+
+        @param int pos: Continuous position
+        """
+        max_row = math.ceil(pos / self.max_entries_per_row)
+        return max_row
+
+    def legend_max_col(self, pos):
+        """
+        Returns the maximum number of columns in the legend
+
+        @param int pos: Continuous position
+        @rtype: int
+        """
+        if pos < self.max_entries_per_row:
+            return pos
+        return self.max_entries_per_row
+
+    def legend_calc_x(self, column):
+        """
+        Calculate the X-axis using the given column
+
+        @type column: int
+        @rtype: int
+        """
+        x = self.cfg['bar_bottomleft_x'] + self.cfg['legend_margin']
+        x += column * (self.cfg['legend_margin'] + self.cfg['legend_entry_width'])
+        return x
+
+    def legend_calc_y(self, row):
+        """
+        Calculate the Y-axis using the given row
+
+        @type row: int
+        @rtype: int
+        """
+        y = self.cfg['bar_bottomleft_y'] + self.cfg['legend_margin']
+        y += row * 40
+        return y
+
+    def legend_calc_xy(self, pos):
+        """
+        Calculate the X-axis and Y-axis
+
+        @param int pos: Continuous position
+        @rtype: int, int
+        """
+        if not pos:
+            col = 0
+            row = 0
+        else:
+            col = pos % self.max_entries_per_row
+            row = math.floor(pos / self.max_entries_per_row)
+
+        x = self.cfg['bar_bottomleft_x'] + self.cfg['legend_margin']
+        y = self.cfg['bar_bottomleft_y'] + self.cfg['legend_margin']
+        x += col * (self.cfg['legend_margin'] + self.cfg['legend_entry_width'])
+        y += row * 40
+
+        return x, y
+
+    def generate_bar_area(self, elements):
+        """
+        Generate colord stacked bars. All entries are group within a g-element.
+
+        @rtype: Node
+        """
+        bar_group = self.create_element('g', id='bar_group', stroke='black', stroke_width=2)
+        current_x = 0
+        total_length = sum([length for unused, length in elements])
+
+        for i, two in enumerate(elements):
+            name, length = two
+            color = self.colors[i % len(self.colors)]
+            rect_len = int(length / total_length * self.cfg['chart_width'])
+            if rect_len == 0:
+                rect_len = 1
+            rect = self.create_rectangle(current_x, self.cfg['bar_topleft_y'], rect_len, self.cfg['chart_height'],
+                                         color, name)
+            current_x += rect_len
+            bar_group.appendChild(rect)
+
+        return bar_group
+
+    def generate_legend(self, elements):
+        """
+        Generate a legend for all elements. All entries are group within a g-element.
+
+        @rtype: Node
+        """
+        legend_group = self.create_element('g', id='legend_group')
+        for i, two in enumerate(elements):
+            element_name = two[0]
+            color = self.colors[i % len(self.colors)]
+            label_group = self.create_legend_entry(color, element_name, i)
+            legend_group.appendChild(label_group)
+
+        # re-calculate chart height after all legend entries added
+        self.cfg['diagram_height'] = self.legend_calc_y(self.legend_max_row(len(elements)))
+
+        return legend_group
+
+    def generate_chart(self, title, *elements):
+        """
+        Return a SVG bar chart for all elements
+
+        @param str title: Chart title
+        @param elements: List of tuple with name and length of the entry (not normalized)
+        @rtype: Node
+        """
+        filtered_elements = [(name, length) for name, length in elements if length > 0]
+        bar_group = self.generate_bar_area(filtered_elements)
+        legend_group = self.generate_legend(filtered_elements)
+        svg = self.create_element_svg(self.cfg['diagram_height'], self.cfg['diagram_width'], self.cfg['css_class'])
+        chart_title = self.create_element_text(title, font_size=self.cfg['title_height'], font_weight="bold",
+                                               stroke_width='0', text_anchor='middle',
+                                               x=self.cfg['title_bottommiddle_x'], y=self.cfg['title_bottommiddle_y'])
+        svg.appendChild(chart_title)
+        svg.appendChild(bar_group)
+        svg.appendChild(legend_group)
+        return svg
 
 
 class OOMDisplay:
@@ -1503,41 +1780,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     sort_order = None
     """Sort order for process values"""
 
-    svg_namespace = 'http://www.w3.org/2000/svg'
-
-    # generated with Colorgorical http://vrl.cs.brown.edu/color
-    svg_colors_mem = [
-        '#aee39a',
-        '#344b46',
-        '#1ceaf9',
-        '#5d99aa',
-        '#32e195',
-        '#b02949',
-        '#deae9e',
-        '#805257',
-        '#add51f',
-        '#544793',
-        '#a794d3',
-        '#e057e1',
-        '#769b5a',
-        '#76f014',
-        '#621da6',
-        '#ffce54',
-        '#d64405',
-        '#bb8801',
-        '#096013',
-        '#ff0087'
-    ]
-    """20 different colors for memory usage diagram"""
-
-    # generated with ColorBrewer (v2.0) https://colorbrewer2.org/?type=diverging&scheme=PuOr&n=3
-    svg_colors_swap = [
-        '#f1a340',
-        '#f7f7f7',
-        '#998ec3'
-    ]
-    """3 different colors for swap usage diagram"""
-
     svg_array_updown = """
 <svg width="8" height="11">
   <use xlink:href="#svg_array_updown" />
@@ -1741,100 +1983,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                                      'pstable__row-oom-score-adj--width')
             element.firstChild.textContent = "col {}".format(i + 1)
 
-    def svg_create_element(self, height, width, css_class):
-        """Return an empty SVG element"""
-        svg = document.createElementNS(self.svg_namespace, 'svg')
-        svg.setAttribute('version', '1.1')
-        svg.setAttribute('height', height)
-        svg.setAttribute('width', width)
-        svg.setAttribute('viewBox', '0 0 {} {}'.format(width, height))
-        svg.setAttribute('class', css_class)
-        return svg
-
-    def svg_create_rect(self, x=0, y=0, width=0, height=0, color=None, title=None):
-        g = document.createElementNS(self.svg_namespace, 'g')
-        rect = document.createElementNS(self.svg_namespace, 'rect')
-        if x:
-            rect.setAttribute('x', x)
-        if y:
-            rect.setAttribute('y', y)
-        if width:
-            rect.setAttribute('width', width)
-        if height:
-            rect.setAttribute('height', height)
-        if color:
-            rect.setAttribute('fill', color)
-        if title:
-            t = document.createElementNS(self.svg_namespace, 'title')
-            t.textContent = title
-            g.appendChild(t)
-        g.appendChild(rect)
-        return g
-
-    def svg_generate_bar_chart(self, color_list, *elements):
-        """Generate a SVG bar chart"""
-        bar_height = 100
-        label_height = 80
-        length_factor = 5
-        overall_height = bar_height + label_height
-        overall_width = 100 * length_factor
-        css_class = 'js-mem-usage__svg'
-
-        svg = self.svg_create_element(overall_height, overall_width, css_class)
-
-        sum_all_elements = sum([length for unused, length in elements])
-
-        current_pos = 0
-        bar_group = document.createElementNS(self.svg_namespace, 'g')
-        bar_group.setAttribute('id', 'bar_group')
-        bar_group.setAttribute('stroke', 'black')
-        bar_group.setAttribute('stroke-width', 2)
-
-        nr_processed_elements = 0
-        for title, length in elements:
-            # length is None/undefined is the regular expression doesn't find any values
-            if not length:
-                continue
-
-            rect_len = int(100 * length / sum_all_elements) * length_factor
-
-            if not rect_len:
-                continue
-
-            color = color_list[nr_processed_elements % len(color_list)]
-
-            rect = self.svg_create_rect(current_pos, 0, rect_len, bar_height, color, title)
-            bar_group.appendChild(rect)
-
-            label_group = document.createElementNS(self.svg_namespace, 'g')
-            label_group.setAttribute('id', title)
-            color_rect = self.svg_create_rect(0, 0, 20, 20, color)
-            color_rect.setAttribute('stroke', 'black')
-            color_rect.setAttribute('stroke-width', 2)
-
-            text = document.createElementNS(self.svg_namespace, 'text')
-            text.setAttribute('x', '30')
-            text.setAttribute('y', '18')
-            text.setAttribute('stroke-width', 0)
-            text.textContent = title
-
-            label_group.appendChild(color_rect)
-            label_group.appendChild(text)
-
-            # TODO replace hardcoded values
-            x = 5 + 125 * (nr_processed_elements // 2)
-            y = bar_height + 10 + (nr_processed_elements % 2) * 40
-            label_group.setAttribute('transform', 'translate({}, {})'.format(x, y))
-
-            bar_group.appendChild(label_group)
-
-            current_pos += rect_len
-            nr_processed_elements += 1
-
-        svg.appendChild(bar_group)
-
-        return svg
-
     def copy_example_rhel7_to_form(self):
         document.getElementById('textarea_oom').value = self.example_rhel7
 
@@ -1919,12 +2067,11 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # show/hide swap space
         if self.oom_result.swap_active:
             # generate swap usage diagram
-            svg_swap = self.svg_generate_bar_chart(
-                self.svg_colors_swap,
-                ('Swap Used', self.oom_result.details['swap_used_kb']),
-                ('Swap Free', self.oom_result.details['swap_free_kb']),
-                ('Swap Cached', self.oom_result.details['swap_cache_kb']),
-            )
+            svg = SVGChart()
+            svg_swap = svg.generate_chart('Swap Summary',
+                                          ('Swap Used', self.oom_result.details['swap_used_kb']),
+                                          ('Swap Free', self.oom_result.details['swap_free_kb']),
+                                          ('Swap Cached', self.oom_result.details['swap_cache_kb']))
             elem_svg_swap = document.getElementById('svg_swap')
             elem_svg_swap.appendChild(svg_swap)
             show_elements('.js-swap-active--show')
@@ -1957,7 +2104,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         )
         chart_elements = [(title, self.oom_result.details[value]) for title, value in ram_title_attr
                           if value in self.oom_result.details]
-        svg_ram = self.svg_generate_bar_chart(self.svg_colors_mem, *chart_elements)
+        svg = SVGChart()
+        svg_ram = svg.generate_chart('RAM Summary', *chart_elements)
         elem_svg_ram = document.getElementById('svg_ram')
         elem_svg_ram.appendChild(svg_ram)
 
