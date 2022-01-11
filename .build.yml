@@ -30,7 +30,7 @@ tasks:
       cd OOMAnalyser
       make build
       ls -l OOMAnalyser.html OOMAnalyser.js
-  - webtest: |
+  - test: |
       cd OOMAnalyser
       make test
 triggers:
