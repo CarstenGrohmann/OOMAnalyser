@@ -30,16 +30,38 @@ class classList:
 
 class document:
 
-    def querySelectorAll(self, *args, **kwargs):
+    def querySelectorAll(self, *args,):
         return [Node()]
 
-    def getElementById(self, *arg, **kwargs):
+    @staticmethod
+    def getElementById(_id):
+        """
+        Returns a object representing the element whose id property matches
+
+        @type _id: str
+        @rtype: Node
+        """
         return Node()
 
-    def createElementNS(self, *arg, **kwargs):
+    @staticmethod
+    def createElementNS(namespaceURI, qualifiedName, *arg):
+        """
+        Creates an element with the specified namespace URI and qualified name.
+
+        @param str namespaceURI:  Namespace URI to associate with the element
+        @param str qualifiedName: Type of element to be created
+        @rtype: Node
+        """
         return Node()
 
-    def createElement(self, *args, **kwargs):
+    @staticmethod
+    def createElement(tagName, *args):
+        """
+        Creates the HTML element specified by tagName.
+
+        @param str tagName: Type of element to be created
+        @rtype: Node
+        """
         return Node()
 
 
