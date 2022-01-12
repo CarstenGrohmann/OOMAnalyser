@@ -127,7 +127,7 @@ class TestInBrowser(TestBase):
         """
         Return text from error notification box or an empty string if no error message exists
 
-        :@rtype: str
+        @rtype: str
         """
         notify_box = self.driver.find_element(By.ID, 'notify_box')
         try:
