@@ -57,8 +57,7 @@ clean:
 	@find $(BASE_DIR) -depth -type f -name "*.orig" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*~" -exec rm -f {} \;
 	@$(RM) --force --recursive .wdm
-	@$(RM) --force --recursive ${RELEASE_DIR}
-	@$(RM) --force --recursive ${TARGET_DIR}
+	@$(RM) --force --recursive ${RELEASE_DIR} ${TARGET_DIR} ${RELEASE_TARGZ} ${RELEASE_ZIP}
 
 #+ Remove all automatically generated and Git repository data
 distclean: clean venv-clean
