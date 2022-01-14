@@ -20,7 +20,8 @@ JS_TEMP_FILE      = $(TARGET_DIR)/OOMAnalyser.js
 PY_SOURCE         = $(BASE_DIR)/OOMAnalyser.py
 TEST_FILE         = $(BASE_DIR)/test.py
 
-VERSION           = 0.6.0 (devel)
+# e.g. 0.6.0 or 0.6.0_devel
+VERSION           = 0.6.0_devel
 RELEASE_DIR       = $(BASE_DIR)/release
 RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE) rollup.config.js Makefile requirements.txt \
 				    LICENSE.txt  README.md
@@ -89,6 +90,14 @@ ${JS_OUT_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_TEMP_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	$(ROLLUP_BIN) $(ROLLUP_OPTS)
 
+${RELEASE_TARGZ} ${RELEASE_ZIP}:
+	mkdir -p $(RELEASE_INST_DIR) && \
+	cp -p $(RELEASE_FILES) $(RELEASE_INST_DIR) && \
+	cd $(RELEASE_DIR) && \
+	tar cvzf $(RELEASE_TARGZ) OOMAnalyser-$(VERSION) && \
+	zip -vr $(RELEASE_ZIP) OOMAnalyser-$(VERSION) && \
+	mv $(RELEASE_TARGZ) $(RELEASE_ZIP) ..
+
 #+ Compile Python to JavaScript
 build: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 
@@ -102,11 +111,4 @@ test: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	DISPLAY=:1 xvfb-run python $(TEST_FILE)
 
 #+ Build release packages
-release: ${JS_OUT_FILE}
-	echo $(VERSION)
-	mkdir -p $(RELEASE_INST_DIR) && \
-	cp -p $(RELEASE_FILES) $(RELEASE_INST_DIR) && \
-	cd $(RELEASE_DIR) && \
-	tar cvzf $(RELEASE_TARGZ) OOMAnalyser-$(VERSION) && \
-	zip -vr $(RELEASE_ZIP) OOMAnalyser-$(VERSION) && \
-	mv $(RELEASE_TARGZ) $(RELEASE_ZIP) ..
+release: ${JS_OUT_FILE} ${RELEASE_TARGZ} ${RELEASE_ZIP}
