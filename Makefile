@@ -20,7 +20,7 @@ JS_TEMP_FILE      = $(TARGET_DIR)/OOMAnalyser.js
 PY_SOURCE         = $(BASE_DIR)/OOMAnalyser.py
 TEST_FILE         = $(BASE_DIR)/test.py
 
-VERSION           = 0.5.0
+VERSION           = 0.6.0 (devel)
 RELEASE_DIR       = $(BASE_DIR)/release
 RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE) rollup.config.js Makefile requirements.txt \
 				    LICENSE.txt  README.md
