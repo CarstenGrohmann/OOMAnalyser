@@ -25,7 +25,7 @@ without an Internet connection.
 
 ### Installation steps
 
- 1. Open https://www.carstengrohmann.de/oom/ in a browser 
+ 1. Open [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) in a browser 
  2. Browse down to the paragraph "Local Installation" at the end of the document
  3. Download the HTML file and the JavaScript file to the main directory
  4. Open the file `OOMAnalyser.html` in your favourite browser
@@ -43,21 +43,18 @@ without an Internet connection.
 ### Prepare the build environment
 
  * Clone the repository:
-```
-# git clone https://git.sr.ht/~carstengrohmann/OOMAnalyser
-```
 
- * Setup the Python virtual environment:
+        # git clone https://git.sr.ht/~carstengrohmann/OOMAnalyser
+
+ * Set up the Python virtual environment:
  
-```
-# virtualenv env
-# . env/bin/activate
-# env/bin/pip install -Ur requirements.txt
-
-or
-
-# make venv
-```
+        # virtualenv env
+        # . env/bin/activate
+        # env/bin/pip install -Ur requirements.txt
+        
+        or
+        
+        # make venv
 
 ### Build OOMAnalyser
 
@@ -77,13 +74,11 @@ or
 
  * Start Python built-in web server:
 
-```
-# python3 -m http.server 8080 --bind 127.0.0.1
-
- or
-
-# make websrv
-```
+        # python3 -m http.server 8080 --bind 127.0.0.1
+        
+        or
+        
+        # make websrv
 
  * Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
 
@@ -106,27 +101,25 @@ for current open bugs. New bugs can be reported there also.
 
 This project is licensed under the MIT license.
 
-```
-Copyright (c) 2017-2022 Carsten Grohmann,  mail <add at here> carstengrohmann.de
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+> Copyright (c) 2017-2022 Carsten Grohmann,  mail <add at here> carstengrohmann.de
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of
+> this software and associated documentation files (the "Software"), to deal in
+> the Software without restriction, including without limitation the rights to
+> use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+> of the Software, and to permit persons to whom the Software is furnished to do
+> so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
 
 Enjoy!
 Carsten Grohmann
