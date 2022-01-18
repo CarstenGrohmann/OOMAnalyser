@@ -83,6 +83,40 @@ or
  * Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
 
 
+## Publish a new release
+### Naming
+
+* `NEW_VERSION` - Version string of the new version e.g. `0.5.0`
+* `NEW_GIT_VERSION` - Git version string of the new version e.g. `v0.5.0`
+
+### Steps
+ 1. Commit all open changes
+ 2. Updating the documentation in `README.md` and `OOMAnalyser.html` and commit changes
+
+        # git commit -m "Update documentation"
+
+ 3. Update version number in `OOMAnalyser.py` and `Makefile`
+
+        # git commit -m "Bump version number to <NEW_VERSION>"
+
+ 4. Create a new annotated git tag with shortened changelog
+
+        # git tag -a <NEW_GIT_VERSION>
+
+ 5. Push changes into public repositories
+
+        # git push 
+        # git push origin --tags
+
+ 6. Create release packages in zip and tar.gz format
+
+        # make release
+
+ 7. Create release on SourceHut & GitHub
+
+ 8. Start a new development cycle by setting new version numbers
+ 
+
 ## Resources
 
  * [Transcrypt](https://www.transcrypt.org/)
