@@ -189,6 +189,16 @@ class TestInBrowser(TestBase):
         self.assertTrue('OOM killer was automatically triggered' in explanation.text,
                         'Missing text "OOM killer was automatically triggered"')
 
+        explanation = self.driver.find_element(By.ID, 'explanation')
+        self.assertTrue("system has 33519336 kBytes physical memory and 8388604 kBytes swap space." in explanation.text,
+                        "Physical and swap memory in summary not found")
+        self.assertTrue("That's 41907940 kBytes total." in explanation.text,
+                        "Total memory in summary not found")
+        self.assertTrue("94% (31705788 kBytes out of 33519336 kBytes) physical memory" in explanation.text,
+                        "Used physical memory in summary not found")
+        self.assertTrue("99% (8343236 kBytes out of 8388604 kBytes) swap space" in explanation.text,
+                        "Used swap space in summary not found")
+
         head = self.driver.find_element(By.ID, 'pstable_header')
         self.assertTrue('Page Table Entries' in head.text, 'Missing column head line "Page Table Entries"')
 
@@ -208,6 +218,12 @@ class TestInBrowser(TestBase):
 
         self.assertFalse('with an OOM score of' in explanation.text,
                          'No OOM score but text "with an OOM score of"')
+
+        explanation = self.driver.find_element(By.ID, 'explanation')
+        self.assertTrue("system has 2096632 kBytes physical memory and no swap space" in explanation.text,
+                        "Physical and swap memory in summary not found")
+        self.assertTrue("9% (209520 kBytes out of 2096632 kBytes) physical memory" in explanation.text,
+                        "Used physical memory in summary not found")
 
         head = self.driver.find_element(By.ID, 'pstable_header')
         self.assertTrue('Page Table Bytes' in head.text, 'Missing column head line "Page Table Bytes"')

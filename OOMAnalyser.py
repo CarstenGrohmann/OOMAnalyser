@@ -1196,22 +1196,23 @@ class OOMAnalyser:
         self.oom_result.details['swap_used_kb'] = self.oom_result.details['swap_total_kb'] - self.oom_result.details['swap_free_kb'] - \
                                                   self.oom_result.details['swap_cache_kb']
         self.oom_result.details['system_swap_used_percent'] = int(100 *
-                                                                  self.oom_result.details['swap_total_kb'] /
-                                                                  self.oom_result.details['swap_used_kb'])
+                                                                  self.oom_result.details['swap_used_kb'] /
+                                                                  self.oom_result.details['swap_total_kb'])
 
     def _calc_system_values(self):
         """Calculate system memory"""
 
-        # educated guess
-        self.oom_result.details['page_size_kb'] = 4
-
         # calculate remaining explanation values
-        self.oom_result.details['system_total_ram_kb'] = self.oom_result.details['ram_pages'] * self.oom_result.details['page_size_kb']
+        self.oom_result.details['system_total_ram_kb'] = self.oom_result.details['ram_pages'] * \
+                                                         self.oom_result.details['page_size_kb']
         if self.oom_result.swap_active:
             self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb'] + \
                                                                  self.oom_result.details['swap_total_kb']
         else:
             self.oom_result.details['system_total_ramswap_kb'] = self.oom_result.details['system_total_ram_kb']
+
+        # TODO: Used RSS calculation based on process table is probably incorrect, because it don't differentiates
+        #       between processes and threads
         total_rss_pages = 0
         for pid in self.oom_result.details['_pstable'].keys():
             total_rss_pages += self.oom_result.details['_pstable'][pid]['rss_pages']
@@ -1244,6 +1245,9 @@ class OOMAnalyser:
             dist = 'Ubuntu'
         self.oom_result.details['dist'] = dist
 
+        # educated guess
+        self.oom_result.details['page_size_kb'] = 4
+
     def _calc_from_oom_details(self):
         """
         Calculate values from already extracted details
@@ -1255,10 +1259,10 @@ class OOMAnalyser:
         self._calc_pstable_values()
 
         self._determinate_platform_and_distribution()
+        self._calc_swap_values()
         self._calc_system_values()
         self._calc_trigger_process_values()
         self._calc_killed_process_values()
-        self._calc_swap_values()
 
     def analyse(self):
         """
