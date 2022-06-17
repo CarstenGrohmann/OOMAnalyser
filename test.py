@@ -172,6 +172,11 @@ class TestInBrowser(TestBase):
         self.assertEqual(trigger_proc_name.text, 'sed', 'Unexpected trigger process name')
         trigger_proc_pid = self.driver.find_element(By.CLASS_NAME, 'trigger_proc_pid')
         self.assertEqual(trigger_proc_pid.text, '29481', 'Unexpected trigger process pid')
+        trigger_proc_gfp_mask = self.driver.find_element(By.CLASS_NAME, 'trigger_proc_gfp_mask')
+        self.assertEqual(trigger_proc_gfp_mask.text,
+                         '0x201da (GFP_KERNEL | GFP_USER | GFP_HIGHUSER | '
+                         'GFP_HIGHUSER_MOVABLE | __GFP_RECLAIMABLE | __GFP_COLD)',
+                         'Unexpected GFP Mask')
 
         killed_proc_score = self.driver.find_element(By.CLASS_NAME, 'killed_proc_score')
         self.assertEqual(killed_proc_score.text, '651', 'Unexpected OOM score of killed process')
@@ -206,6 +211,9 @@ class TestInBrowser(TestBase):
 
     def check_results_ubuntu2110(self):
         """Check the results of the analysis of the Ubuntu example"""
+        trigger_proc_gfp_mask = self.driver.find_element(By.CLASS_NAME, 'trigger_proc_gfp_mask')
+        self.assertEqual(trigger_proc_gfp_mask.text, '0xcc0 (GFP_KERNEL)', 'Unexpected GFP Mask')
+
         dirty_pages = self.driver.find_element(By.CLASS_NAME, 'dirty_pages')
         self.assertEqual(dirty_pages.text, '633 pages', 'Unexpected number of dirty pages')
 
