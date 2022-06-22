@@ -1,0 +1,16 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        language_version: python3.7
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      -   id: check-shebang-scripts-are-executable
+      -   id: check-toml
+      -   id: check-yaml
+      -   id: detect-private-key
+      -   id: end-of-file-fixer
+      -   id: mixed-line-ending
+      -   id: trailing-whitespace
