@@ -1023,6 +1023,26 @@ class OOMAnalyser:
             block += "{}\n".format(line)
         return block
 
+    def _extract_gpf_mask(self):
+        """Extract the GFP (Get Free Pages) mask"""
+        if self.oom_result.details["trigger_proc_gfp_flags"] is not None:
+            flags = self.oom_result.details["trigger_proc_gfp_flags"]
+            del self.oom_result.details["trigger_proc_gfp_flags"]
+        else:
+            flags, unknown = self._hex2flags(
+                self.oom_result.details["trigger_proc_gfp_mask"],
+                self.oom_result.kconfig.GFP_FLAGS,
+            )
+            if unknown:
+                flags.append("0x{0:x}".format(unknown))
+            flags = " | ".join(flags)
+
+        self.oom_result.details["trigger_proc_gfp_mask"] = "{} ({})".format(
+            self.oom_result.details["trigger_proc_gfp_mask"], flags
+        )
+        # already fully processed and no own element to display -> delete otherwise an error msg will be shown
+        del self.oom_result.details["trigger_proc_gfp_flags"]
+
     def _extract_from_oom_text(self):
         """Extract details from OOM message text"""
 
@@ -1062,6 +1082,7 @@ class OOMAnalyser:
         self.oom_result.details["call_trace"] = call_trace
 
         self._extract_pstable()
+        self._extract_gpf_mask()
 
     def _extract_pstable(self):
         """Extract process table"""
@@ -1234,26 +1255,6 @@ class OOMAnalyser:
             self.oom_result.details["trigger_proc_requested_memory_pages"]
             * self.oom_result.details["page_size_kb"]
         )
-        # process gfp_mask
-        if (
-            self.oom_result.details["trigger_proc_gfp_flags"] != "<not found>"
-        ):  # None has been is converted to '<not found>'
-            flags = self.oom_result.details["trigger_proc_gfp_flags"]
-            del self.oom_result.details["trigger_proc_gfp_flags"]
-        else:
-            flags, unknown = self._hex2flags(
-                self.oom_result.details["trigger_proc_gfp_mask"],
-                self.oom_result.kconfig.GFP_FLAGS,
-            )
-            if unknown:
-                flags.append("0x{0:x}".format(unknown))
-            flags = " | ".join(flags)
-
-        self.oom_result.details["trigger_proc_gfp_mask"] = "{} ({})".format(
-            self.oom_result.details["trigger_proc_gfp_mask"], flags
-        )
-        # already fully processed and no own element to display -> delete otherwise an error msg will be shown
-        del self.oom_result.details["trigger_proc_gfp_flags"]
 
     def _calc_killed_process_values(self):
         """Calculate all values related with the killed process"""
