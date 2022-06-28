@@ -1316,11 +1316,14 @@ class OOMAnalyser:
                 "system_total_ramswap_kb"
             ] = self.oom_result.details["system_total_ram_kb"]
 
-        # TODO: Used RSS calculation based on process table is probably incorrect, because it don't differentiates
-        #       between processes and threads
+        # TODO: Current RSS calculation based on process table is probably incorrect,
+        #       because it don't differentiates between processes and threads
         total_rss_pages = 0
         for pid in self.oom_result.details["_pstable"].keys():
-            total_rss_pages += self.oom_result.details["_pstable"][pid]["rss_pages"]
+            # convert to int to satisfy Python for unit tests
+            total_rss_pages += int(
+                self.oom_result.details["_pstable"][pid]["rss_pages"]
+            )
         self.oom_result.details["system_total_ram_used_kb"] = (
             total_rss_pages * self.oom_result.details["page_size_kb"]
         )
