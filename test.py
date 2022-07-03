@@ -189,10 +189,18 @@ class TestInBrowser(TestBase):
         trigger_proc_gfp_mask = self.driver.find_element(
             By.CLASS_NAME, "trigger_proc_gfp_mask"
         )
+        # 0x201da:
+        #  __GFP_HIGHMEM         2       0x02
+        #  __GFP_MOVABLE         8       0x08
+        #  __GFP_RECLAIMABLE    16       0x10
+        #  __GFP_IO             64       0x40
+        #  __GFP_FS            128       0x80
+        #  __GFP_COLD          256      0x100
+        #  __GFP_HARDWALL   131072    0x20000
+        #                             0x201da
         self.assertEqual(
             trigger_proc_gfp_mask.text,
-            "0x201da (GFP_KERNEL | GFP_USER | GFP_HIGHUSER | "
-            "GFP_HIGHUSER_MOVABLE | __GFP_RECLAIMABLE | __GFP_COLD)",
+            "0x201da (__GFP_HIGHMEM | __GFP_MOVABLE | __GFP_RECLAIMABLE | __GFP_IO | __GFP_FS | __GFP_COLD | __GFP_HARDWALL)",
             "Unexpected GFP Mask",
         )
 

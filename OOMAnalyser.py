@@ -1113,7 +1113,7 @@ class OOMAnalyser:
         # __pragma__ ('jsiter')
         for flag in flag_definition:
             value = self._flag2decimal(flag, flag_definition)
-            if remaining & value:
+            if (remaining & value) == value:
                 # delete flag by "and" with a reverted mask
                 remaining &= ~value
                 converted_flags.append(flag)
@@ -1134,7 +1134,7 @@ class OOMAnalyser:
             return value
 
         tokenlist = iter(re.split("([|&])", value))
-        operator = None
+        operator = "|"  # set to process first flag
         negate_rvalue = False
         lvalue = 0
         while True:
