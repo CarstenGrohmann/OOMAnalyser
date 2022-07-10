@@ -427,8 +427,11 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <tr>
             <td>Memory allocation flags<br>(gfp_mask)</td>
             <td class="trigger_proc_gfp_mask text--align-right"></td>
-            <td>These flags are used to control the kernel internal memory allocation<br>
-                GFP stands for <code>__get_free_pages()</code>.</td>
+            <td>These flags are also called GFP (get free pages) flags. They control the kernel-internal memory
+                allocation.<br>
+                Some OOM variants include the individual flags in addition to the hexadecimal representation. The flags
+                are calculated if they are not specified.
+            </td>
         </tr>
         <tr>
             <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
@@ -936,6 +939,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <ol>
         <li>Fix memory calculation in summary section</li>
         <li>Fix calculation of GFP flags</li>
+        <li>Rework handling of GFP flags</li>
         <li>...</li>
     </ol>
 

@@ -189,18 +189,20 @@ class TestInBrowser(TestBase):
         trigger_proc_gfp_mask = self.driver.find_element(
             By.CLASS_NAME, "trigger_proc_gfp_mask"
         )
-        # 0x201da:
-        #  __GFP_HIGHMEM         2       0x02
-        #  __GFP_MOVABLE         8       0x08
-        #  __GFP_RECLAIMABLE    16       0x10
-        #  __GFP_IO             64       0x40
-        #  __GFP_FS            128       0x80
-        #  __GFP_COLD          256      0x100
-        #  __GFP_HARDWALL   131072    0x20000
-        #                             0x201da
+        # 0x201da will split into
+        #  GFP_HIGHUSER_MOVABLE   0x200da
+        #                         (__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE)
+        #    __GFP_WAIT              0x10
+        #    __GFP_IO                0x40
+        #    __GFP_FS                0x80
+        #    __GFP_HARDWALL       0x20000
+        #    __GFP_HIGHMEM           0x02
+        #    __GFP_MOVABLE           0x08
+        #  __GFP_COLD               0x100
+        #                    sum: 0x201da
         self.assertEqual(
             trigger_proc_gfp_mask.text,
-            "0x201da (__GFP_HIGHMEM | __GFP_MOVABLE | __GFP_RECLAIMABLE | __GFP_IO | __GFP_FS | __GFP_COLD | __GFP_HARDWALL)",
+            "0x201da (GFP_HIGHUSER_MOVABLE | __GFP_COLD)",
             "Unexpected GFP Mask",
         )
 
@@ -257,6 +259,14 @@ class TestInBrowser(TestBase):
         trigger_proc_gfp_mask = self.driver.find_element(
             By.CLASS_NAME, "trigger_proc_gfp_mask"
         )
+        # 0xcc0 will split into
+        #  GFP_KERNEL             (__GFP_RECLAIM | __GFP_IO | __GFP_FS)
+        #    __GFP_RECLAIM        (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM)
+        #        ___GFP_DIRECT_RECLAIM   0x400
+        #        ___GFP_KSWAPD_RECLAIM   0x800
+        #    __GFP_IO                    0x40
+        #    __GFP_FS                    0x80
+        #                  sum:          0xCC0
         self.assertEqual(
             trigger_proc_gfp_mask.text, "0xcc0 (GFP_KERNEL)", "Unexpected GFP Mask"
         )
@@ -653,19 +663,19 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 4.6.0-514 #1",
             ),
             (
-                OOMAnalyser.KernelConfigRhel7(),
+                OOMAnalyser.KernelConfig_3_10_EL7(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
             ),
             (
-                OOMAnalyser.KernelConfig_5_0(),
+                OOMAnalyser.KernelConfig_5_1(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1",
             ),
             (
-                OOMAnalyser.KernelConfig_5_8(),
+                OOMAnalyser.KernelConfig_5_18(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1",
             ),
             (
-                OOMAnalyser.KernelConfig_5_8(),
+                OOMAnalyser.KernelConfig_5_18(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
             ),
             (
@@ -683,6 +693,142 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 type(kcfg),
                 'Mismatch between expected kernel config "%s" and chosen config "%s" for kernel version "%s"'
                 % (type(kcfg), type(result), kversion),
+            )
+
+    def test_007_gfp_processing(self):
+        """Test processing GFP flags"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (3, 10, ".el7."),
+            "Wrong KernelConfig release",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_WAIT", 0x10),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
+            ("GFP_KERNEL", 0xD0),  # __GFP_WAIT | __GFP_IO | __GFP_FS
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x5000000",  # 0x1000000 + 0x4000000
+                ["__GFP_WRITE"],
+                0x4000000,
+            ),
+            ("0x201da", ["GFP_HIGHUSER_MOVABLE", "__GFP_COLD"], 0),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_ubuntu2110)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (5, 8, ""),
+            "Wrong KernelConfig release",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
+            (
+                "GFP_KERNEL",
+                0xCC0,
+            ),  # (__GFP_RECLAIM (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM) | __GFP_IO | __GFP_FS)
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x4001000",  # 0x1000 + 0x4000000
+                ["__GFP_WRITE"],
+                0x4000000,
+            ),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+    def test_008_kversion_check(self):
+        """Test check for minimum kernel version"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+
+        for kversion, min_version, expected_result in (
+            ("5.19-rc6", (5, 16, ""), True),
+            ("5.19-rc6", (5, 19, ""), True),
+            ("5.19-rc6", (5, 20, ""), False),
+            ("5.18.6-arch1-1", (5, 18, ""), True),
+            ("5.18.6-arch1-1", (5, 1, ""), True),
+            ("5.18.6-arch1-1", (5, 19, ""), False),
+            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 14, ""), False),
+            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, ""), True),
+            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, "-aws"), True),
+            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, "not_in_version"), False),
+            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 12, ""), True),
+            ("4.14.288", (5, 0, ""), False),
+            ("4.14.288", (4, 14, ""), True),
+            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 11, ""), False),
+            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ".el7."), True),
+            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ""), True),
+            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 9, ""), True),
+        ):
+            self.assertEqual(
+                analyser._check_kversion_greater_equal(kversion, min_version),
+                expected_result,
+                'Failed to compare kernel version "%s" with minimum version "%s"'
+                % (kversion, min_version),
             )
 
 

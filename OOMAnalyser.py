@@ -377,6 +377,18 @@ class BaseKernelConfig:
           (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
     """
 
+    gfp_reverse_lookup = []
+    """
+    Sorted list of flags used to do a reverse lookup.
+    
+    This list doesn't contain all flags. It contains the "useful flags" (GFP_*) as
+    well as "modifier flags" (__GFP_*). "Plain flags" (___GFP_*) are not part of
+    this list.
+    
+    @type: List(str)
+    @see: _gfp_create_reverse_lookup() 
+    """
+
     pstable_items = [
         "pid",
         "uid",
@@ -444,6 +456,103 @@ class BaseKernelConfig:
 
         if self.EXTRACT_PATTERN_OVERLAY:
             self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY)
+
+        self._gfp_calc_all_values()
+        self.gfp_reverse_lookup = self._gfp_create_reverse_lookup()
+
+    def _gfp_calc_all_values(self):
+        """
+        Calculate decimal values for all GFP flags and store in in GFP_FLAGS[<flag>]["_value"]
+        """
+        # __pragma__ ('jsiter')
+        for flag in self.GFP_FLAGS:
+            value = self._gfp_flag2decimal(flag)
+            self.GFP_FLAGS[flag]["_value"] = value
+        # __pragma__ ('nojsiter')
+
+    def _gfp_flag2decimal(self, flag):
+        """\
+        Convert a single flag into a decimal value.
+
+        The flags can be concatenated with "|" or "~" and negated with "~". The
+        flags will be processed from left to right. Parentheses are not supported.
+        """
+        if flag not in self.GFP_FLAGS:
+            error("No definition for flag {} found".format(flag))
+            return 0
+
+        value = self.GFP_FLAGS[flag]["value"]
+        if isinstance(value, int):
+            return value
+
+        tokenlist = iter(re.split("([|&])", value))
+        operator = "|"  # set to process first flag
+        negate_rvalue = False
+        lvalue = 0
+        while True:
+            try:
+                token = next(tokenlist)
+            except StopIteration:
+                break
+            token = token.strip()
+            if token in ["|", "&"]:
+                operator = token
+                continue
+
+            if token.startswith("~"):
+                token = token[1:]
+                negate_rvalue = True
+
+            if token.isdigit():
+                rvalue = int(token)
+            elif token.startswith("0x") and token[2:].isdigit():
+                rvalue = int(token, 16)
+            else:
+                # it's not a decimal nor a hexadecimal value - reiterate assuming it's a flag string
+                rvalue = self._gfp_flag2decimal(token)
+
+            if negate_rvalue:
+                rvalue = ~rvalue
+
+            if operator == "|":
+                lvalue |= rvalue
+            elif operator == "&":
+                lvalue &= rvalue
+
+            operator = None
+            negate_rvalue = False
+
+        return lvalue
+
+    def _gfp_create_reverse_lookup(self):
+        """
+        Create a sorted list of flags used to do a reverse lookup from value to the flag.
+
+        @rtype: List(str)
+        """
+        # __pragma__ ('jsiter')
+        useful = [
+            key
+            for key in self.GFP_FLAGS
+            if key.startswith("GFP") and self.GFP_FLAGS[key]["_value"] != 0
+        ]
+        useful = sorted(
+            useful, key=lambda key: self.GFP_FLAGS[key]["_value"], reverse=True
+        )
+        modifier = [
+            key
+            for key in self.GFP_FLAGS
+            if key.startswith("__GFP") and self.GFP_FLAGS[key]["_value"] != 0
+        ]
+        modifier = sorted(
+            modifier, key=lambda key: self.GFP_FLAGS[key]["_value"], reverse=True
+        )
+        # __pragma__ ('nojsiter')
+
+        # useful + modifier produces a string with all values concatenated
+        res = useful
+        res.extend(modifier)
+        return res
 
 
 class KernelConfig_4_6(BaseKernelConfig):
@@ -1029,9 +1138,8 @@ class OOMAnalyser:
             flags = self.oom_result.details["trigger_proc_gfp_flags"]
             del self.oom_result.details["trigger_proc_gfp_flags"]
         else:
-            flags, unknown = self._hex2flags(
+            flags, unknown = self._gfp_hex2flags(
                 self.oom_result.details["trigger_proc_gfp_mask"],
-                self.oom_result.kconfig.GFP_FLAGS,
             )
             if unknown:
                 flags.append("0x{0:x}".format(unknown))
@@ -1101,76 +1209,25 @@ class OOMAnalyser:
                 self.oom_result.details["_pstable"][pid] = {}
                 self.oom_result.details["_pstable"][pid].update(details)
 
-    def _hex2flags(self, hexvalue, flag_definition):
+    def _gfp_hex2flags(self, hexvalue):
         """\
         Convert the hexadecimal value into flags specified by definition
 
-        @return: list of flags and the decimal sum of all unknown flags
+        @return: Unsorted list of flags and the sum of all unknown flags as integer
+        @rtype: List(str), int
         """
         remaining = int(hexvalue, 16)
         converted_flags = []
 
-        # __pragma__ ('jsiter')
-        for flag in flag_definition:
-            value = self._flag2decimal(flag, flag_definition)
+        for flag in self.oom_result.kconfig.gfp_reverse_lookup:
+            value = self.oom_result.kconfig.GFP_FLAGS[flag]["_value"]
             if (remaining & value) == value:
                 # delete flag by "and" with a reverted mask
                 remaining &= ~value
                 converted_flags.append(flag)
-        # __pragma__ ('nojsiter')
 
+        converted_flags.sort()
         return converted_flags, remaining
-
-    def _flag2decimal(self, flag, flag_definition):
-        """\
-        Convert a single flag into a decimal value
-        """
-        if flag not in flag_definition:
-            error("No definition for flag {} found".format(flag))
-            return 0
-
-        value = flag_definition[flag]["value"]
-        if isinstance(value, int):
-            return value
-
-        tokenlist = iter(re.split("([|&])", value))
-        operator = "|"  # set to process first flag
-        negate_rvalue = False
-        lvalue = 0
-        while True:
-            try:
-                token = next(tokenlist)
-            except StopIteration:
-                break
-            token = token.strip()
-            if token in ["|", "&"]:
-                operator = token
-                continue
-
-            if token.startswith("~"):
-                token = token[1:]
-                negate_rvalue = True
-
-            if token.isdigit():
-                rvalue = int(token)
-            elif token.startswith("0x") and token[2:].isdigit():
-                rvalue = int(token, 16)
-            else:
-                # it's not a decimal nor a hexadecimal value - reiterate assuming it's a flag string
-                rvalue = self._flag2decimal(token, flag_definition)
-
-            if negate_rvalue:
-                rvalue = ~rvalue
-
-            if operator == "|":
-                lvalue |= rvalue
-            elif operator == "&":
-                lvalue &= rvalue
-
-            operator = None
-            negate_rvalue = False
-
-        return lvalue
 
     def _convert_numeric_results_to_integer(self):
         """Convert all *_pages and *_kb to integer"""
