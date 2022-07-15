@@ -1034,6 +1034,11 @@ class OOMAnalyser:
     :type: OOMResult
     """
 
+    REC_KERNEL_VERSION = re.compile(
+        r"CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z ]+) (?P<kernel_version>\d[\w.-]+) #.+"
+    )
+    """RE to match the OOM line with kernel version"""
+
     def __init__(self, oom):
         self.oom_entity = oom
         self.oom_result = OOMResult()
@@ -1044,9 +1049,7 @@ class OOMAnalyser:
 
         @rtype: bool
         """
-        pattern = r"CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z ]+) (?P<kernel_version>\d[\w.-]+) #.+"
-        rec = re.compile(pattern, re.MULTILINE)
-        match = rec.search(self.oom_entity.text)
+        match = self.REC_KERNEL_VERSION.search(self.oom_entity.text)
         if not match:
             self.oom_result.error_msg = "Failed to extract kernel version from OOM text"
             return False
