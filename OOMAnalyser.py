@@ -435,8 +435,18 @@ class BaseKernelConfig:
     :type: str
     """
 
-    rec_version4kconfig = re.compile(".+")
-    """RE to match kernel version to kernel configuration"""
+    release = (3, 10, "")
+    """
+    Kernel release with this configuration
+    
+    The tuple contains major and minor version as well as a suffix like "-aws" or ".el7."
+    
+    The patch level isn't part of this version tuple, because I don't assume any changes in GFP flags within a patch
+    release. 
+    
+    @see: OOMAnalyser._choose_kernel_config() 
+    @type: (int, int, str)
+    """
 
     rec_oom_begin = re.compile(r"invoked oom-killer:", re.MULTILINE)
     """RE to match the first line of an OOM block"""
@@ -560,7 +570,7 @@ class KernelConfig_4_6(BaseKernelConfig):
     #  * "mm, oom_reaper: report success/failure" (bc448e897b6d24aae32701763b8a1fe15d29fa26)
 
     name = "Configuration for Linux kernel 4.6 or later"
-    rec_version4kconfig = re.compile(r"^4\.([6-9]\.|[12][0-9]\.).+")
+    release = (4, 6, "")
 
     # The "oom_reaper" line is optionally
     rec_oom_end = re.compile(
@@ -577,7 +587,7 @@ class KernelConfig_4_9(KernelConfig_4_6):
     # * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
 
     name = "Configuration for Linux kernel 4.9 or later"
-    rec_version4kconfig = re.compile(r"^4\.([9]\.|[12][0-9]\.).+")
+    release = (4, 9, "")
 
     EXTRACT_PATTERN_OVERLAY_49 = {
         "Details of process killed by OOM": (
@@ -645,7 +655,7 @@ class KernelConfig_5_0(KernelConfig_4_19):
     #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
 
     name = "Configuration for Linux kernel 5.0 or later"
-    rec_version4kconfig = re.compile(r"^[5-9]\..+")
+    release = (5, 0, "")
 
     EXTRACT_PATTERN_OVERLAY_50 = {
         # third last line - not integrated yet
@@ -669,8 +679,7 @@ class KernelConfig_5_8(KernelConfig_5_0):
     #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
 
     name = "Configuration for Linux kernel 5.8 or later"
-
-    rec_version4kconfig = re.compile(r"^(5\.[8-9]\.|5\.[1-9][0-9]\.|[6-9]\.).+")
+    release = (5, 8, "")
 
     EXTRACT_PATTERN_OVERLAY_58 = {
         "Mem-Info (part 1)": (
@@ -697,8 +706,7 @@ class KernelConfigRhel7(BaseKernelConfig):
     """RHEL7 / CentOS7 specific configuration"""
 
     name = "Configuration for RHEL7 / CentOS7 specific Linux kernel (3.10)"
-
-    rec_version4kconfig = re.compile(r"^3\..+")
+    release = (3, 10, "")
 
     def __init__(self):
         super().__init__()
@@ -717,9 +725,9 @@ AllKernelConfigs = [
 """
 Instances of all available kernel configurations.
 
-The last entry in this list is the base configuration as a fallback.
+Manually sorted from newest to oldest and from general to specific.
 
-@type: List(BaseKernelConfig)
+The last entry in this list is the base configuration as a fallback.
 """
 
 
@@ -748,7 +756,7 @@ class OOMEntity:
         self.lines = oom_lines
         self.text = text
 
-        # don't do anything if the text is empty or does not contains the leading OOM message
+        # don't do anything if the text is empty or does not contain the leading OOM message
         if not text:
             self.state = OOMEntityState.empty
             return
@@ -1056,15 +1064,66 @@ class OOMAnalyser:
         self.oom_result.kversion = match.group("kernel_version")
         return True
 
+    rec_split_kversion = re.compile(
+        r"(?P<kernel_version>"
+        r"(?P<major>\d+)\.(?P<minor>\d+)"  # major . minor
+        r"(\.\d+)?"  # optional: patch level
+        r"(-[\w.-]+)?"  # optional: -rc6, -arch-1, -19-generic
+        r")"
+    )
+    """
+    RE for splitting the kernel version into parts
+    
+    Examples:
+     - 5.19-rc6
+     - 4.14.288
+     - 5.18.6-arch1-1
+     - 5.13.0-19-generic #19-Ubuntu
+     - 5.13.0-1028-aws #31~20.04.1-Ubuntu
+     - 3.10.0-514.6.1.el7.x86_64 #1
+    """
+
+    def _check_kversion_greater_equal(self, kversion, min_version):
+        """
+        Returns True if the kernel version is greater or equal to the minimum version
+
+        @param str kversion: Kernel version
+        @param (int, int, str) min_version: Minimum version
+        @rtype: bool
+        """
+        major = min_version[0]
+        minor = min_version[1]
+        suffix = min_version[2]
+
+        match = self.rec_split_kversion.match(kversion)
+
+        if not match:
+            self.oom_result.error_msg = (
+                'Failed to extract version details from version string "%s"' % kversion
+            )
+            return False
+
+        if not (
+            major <= int(match.group("major")) and minor <= int(match.group("minor"))
+        ):
+            return False
+
+        if bool(suffix) and (suffix not in kversion):
+            return False
+
+        return True
+
     def _choose_kernel_config(self):
         """
-        Select proper kernel configuration
+        Choose the first matching kernel configuration from AllKernelConfigs
 
+        @see: _check_kversion_greater_equal(), AllKernelConfigs
         @rtype: bool
         """
         for kcfg in AllKernelConfigs:
-            match = kcfg.rec_version4kconfig.match(self.oom_result.kversion)
-            if match:
+            if self._check_kversion_greater_equal(
+                self.oom_result.kversion, kcfg.release
+            ):
                 self.oom_result.kconfig = kcfg
                 break
 
@@ -1075,6 +1134,7 @@ class OOMAnalyser:
                 )
             )
             self.oom_result.kconfig = BaseKernelConfig()
+        # FIXME: Return value is always True, but OOMAnalyser.analyse() has a useless check
         return True
 
     def _check_for_empty_oom(self):
