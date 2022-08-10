@@ -19,9 +19,8 @@ The current online version is available at [https://www.carstengrohmann.de/oom/]
 
 ## Installation
 
-Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, a
-HTML file and a JavaScript file. Both can be stored locally to use OOMAnalyser
-without an Internet connection.
+Installing OOMAnalyser is quite easy since OOMAnalyser consists only of two files, an HTML file and a JavaScript file.
+Both can be stored locally to use OOMAnalyser without an Internet connection.
 
 ### Installation steps
 
