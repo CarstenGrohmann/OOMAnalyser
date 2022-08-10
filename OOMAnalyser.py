@@ -196,7 +196,7 @@ def show_notifybox(prefix, msg):
 class BaseKernelConfig:
     """Base class for all kernel specific configuration"""
 
-    name = "Base configuration for all kernels"
+    name = "Base configuration for all kernels based on vanilla kernel 3.10"
     """Name/description of this kernel configuration"""
 
     EXTRACT_PATTERN = None
@@ -320,48 +320,86 @@ class BaseKernelConfig:
     :see: EXTRACT_PATTERN
     """
 
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
     GFP_FLAGS = {
-        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
-        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
-        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
-        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
-        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
-        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
-        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
-        "GFP_DMA": {"value": "__GFP_DMA"},
-        "GFP_DMA32": {"value": "__GFP_DMA32"},
-        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
-        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
-        "GFP_TRANSHUGE_LIGHT": {
-            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP |  __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM"
         },
-        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
-        "__GFP_DMA": {"value": 0x01},
-        "__GFP_HIGHMEM": {"value": 0x02},
-        "__GFP_DMA32": {"value": 0x04},
-        "__GFP_MOVABLE": {"value": 0x08},
-        "__GFP_RECLAIMABLE": {"value": 0x10},
-        "__GFP_HIGH": {"value": 0x20},
-        "__GFP_IO": {"value": 0x40},
-        "__GFP_FS": {"value": 0x80},
-        "__GFP_COLD": {"value": 0x100},
-        "__GFP_NOWARN": {"value": 0x200},
-        "__GFP_RETRY_MAYFAIL": {"value": 0x400},
-        "__GFP_NOFAIL": {"value": 0x800},
-        "__GFP_NORETRY": {"value": 0x1000},
-        "__GFP_MEMALLOC": {"value": 0x2000},
-        "__GFP_COMP": {"value": 0x4000},
-        "__GFP_ZERO": {"value": 0x8000},
-        "__GFP_NOMEMALLOC": {"value": 0x10000},
-        "__GFP_HARDWALL": {"value": 0x20000},
-        "__GFP_THISNODE": {"value": 0x40000},
-        "__GFP_ATOMIC": {"value": 0x80000},
-        "__GFP_ACCOUNT": {"value": 0x100000},
-        "__GFP_DIRECT_RECLAIM": {"value": 0x400000},
-        "__GFP_WRITE": {"value": 0x800000},
-        "__GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
-        "__GFP_NOLOCKDEP": {"value": 0x2000000},
-        "__GFP_RECLAIM": {"value": "__GFP_DIRECT_RECLAIM|__GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE"
+        },
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KMEMCG": {"value": "___GFP_KMEMCG"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_KMEMCG": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
     }
     """
     Definition of GFP flags
@@ -372,9 +410,6 @@ class BaseKernelConfig:
     Source: include/linux/gpf.h
 
     @note : This list os probably a mixture of different kernel versions - be carefully
-
-    @todo: Implement kernel specific versions because this flags are not constant
-          (see https://github.com/torvalds/linux/commit/e67d4ca79aaf9d13a00d229b1b1c96b86828e8ba#diff-020720d0699e3ae1afb6fcd815ca8500)
     """
 
     gfp_reverse_lookup = []
@@ -565,12 +600,711 @@ class BaseKernelConfig:
         return res
 
 
-class KernelConfig_4_6(BaseKernelConfig):
-    # Support changes:
+class KernelConfig_3_10(BaseKernelConfig):
+
+    name = "Configuration for Linux kernel 3.10 or later"
+    release = (3, 10, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM"
+        },
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE"
+        },
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KMEMCG": {"value": "___GFP_KMEMCG"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_KMEMCG": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+    }
+
+
+class KernelConfig_3_10_EL7(KernelConfig_3_10):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for RHEL 7 / CentOS 7 specific Linux kernel (3.10)"
+    release = (3, 10, ".el7.")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM"
+        },
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE"
+        },
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+    }
+
+    def __init__(self):
+        super().__init__()
+
+
+class KernelConfig_3_16(KernelConfig_3_10):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 3.16 or later"
+    release = (3, 16, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM"
+        },
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE"
+        },
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+    }
+
+
+class KernelConfig_3_19(KernelConfig_3_16):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 3.19 or later"
+    release = (3, 19, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+    }
+
+
+class KernelConfig_4_1(KernelConfig_3_19):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.1 or later"
+    release = (4, 1, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_IOFS": {"value": "__GFP_IO | __GFP_FS"},
+        "GFP_KERNEL": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_WAIT | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_WAIT"},
+        "GFP_NOWAIT": {"value": "GFP_ATOMIC & ~__GFP_HIGH"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN | __GFP_NO_KSWAPD"
+        },
+        "GFP_USER": {"value": "__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOACCOUNT": {"value": "___GFP_NOACCOUNT"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_KSWAPD": {"value": "___GFP_NO_KSWAPD"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WAIT": {"value": "___GFP_WAIT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_WAIT": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_RECLAIMABLE": {"value": 0x80000},
+        "___GFP_NOACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_NO_KSWAPD": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+    }
+
+
+class KernelConfig_4_4(KernelConfig_4_1):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.4 or later"
+    release = (4, 4, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN & ~__GFP_KSWAPD_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOACCOUNT": {"value": "___GFP_NOACCOUNT"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_NOACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_5(KernelConfig_4_4):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.5 or later"
+    release = (4, 5, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN & ~__GFP_KSWAPD_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_6(KernelConfig_4_5):
+    # Supported changes:
     #  * "mm, oom_reaper: report success/failure" (bc448e897b6d24aae32701763b8a1fe15d29fa26)
+    #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.6 or later"
     release = (4, 6, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
+    }
 
     # The "oom_reaper" line is optionally
     rec_oom_end = re.compile(
@@ -582,9 +1316,100 @@ class KernelConfig_4_6(BaseKernelConfig):
         super().__init__()
 
 
-class KernelConfig_4_9(KernelConfig_4_6):
-    # Support changes:
-    # * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
+class KernelConfig_4_8(KernelConfig_4_6):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.8 or later"
+    release = (4, 8, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_OTHER_NODE": {"value": "___GFP_OTHER_NODE"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_OTHER_NODE": {"value": 0x800000},
+        "___GFP_WRITE": {"value": 0x1000000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_9(KernelConfig_4_8):
+    # Supported changes:
+    #  * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
+    #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.9 or later"
     release = (4, 9, "")
@@ -604,9 +1429,442 @@ class KernelConfig_4_9(KernelConfig_4_6):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_49)
 
 
-class KernelConfig_4_15(KernelConfig_4_9):
-    # Support changes:
-    # * mm: consolidate page table accounting (af5b0f6a09e42c9f4fa87735f2a366748767b686)
+class KernelConfig_4_10(KernelConfig_4_9):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.10 or later"
+    release = (4, 10, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_WRITE": {"value": 0x800000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
+    }
+
+
+class KernelConfig_4_12(KernelConfig_4_10):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.12 or later"
+    release = (4, 12, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_REPEAT": {"value": "___GFP_REPEAT"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_REPEAT": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_WRITE": {"value": 0x800000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_13(KernelConfig_4_12):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.13 or later"
+    release = (4, 13, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TEMPORARY": {
+            "value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_RECLAIMABLE"
+        },
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_WRITE": {"value": 0x800000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_14(KernelConfig_4_13):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.14 or later"
+    release = (4, 14, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COLD": {"value": "___GFP_COLD"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOTRACK": {"value": "___GFP_NOTRACK"},
+        "__GFP_NOTRACK_FALSE_POSITIVE": {"value": "__GFP_NOTRACK"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_COLD": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_NOTRACK": {"value": 0x200000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_WRITE": {"value": 0x800000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_4_15(KernelConfig_4_14):
+    # Supported changes:
+    #  * mm: consolidate page table accounting (af5b0f6a09e42c9f4fa87735f2a366748767b686)
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.15 or later"
+    release = (4, 15, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400000},
+        "___GFP_WRITE": {"value": 0x800000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
 
     # nr_ptes -> pgtables_bytes
     # pr_info("[ pid ]   uid  tgid total_vm      rss nr_ptes nr_pmds nr_puds swapents oom_score_adj name\n");
@@ -643,16 +1901,103 @@ class KernelConfig_4_15(KernelConfig_4_9):
     ]
 
 
-class KernelConfig_4_19(KernelConfig_4_15):
-    # Support changes:
-    # * mm, oom: describe task memory unit, larger PID pad (c3b78b11efbb2865433abf9d22c004ffe4a73f5c)
+class KernelConfig_4_18(KernelConfig_4_15):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.18 or later"
+    release = (4, 18, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_WRITE": {"value": 0x100},
+        "___GFP_NOWARN": {"value": 0x200},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x400},
+        "___GFP_NOFAIL": {"value": 0x800},
+        "___GFP_NORETRY": {"value": 0x1000},
+        "___GFP_MEMALLOC": {"value": 0x2000},
+        "___GFP_COMP": {"value": 0x4000},
+        "___GFP_ZERO": {"value": 0x8000},
+        "___GFP_NOMEMALLOC": {"value": 0x10000},
+        "___GFP_HARDWALL": {"value": 0x20000},
+        "___GFP_ATOMIC": {"value": 0x80000},
+        "___GFP_ACCOUNT": {"value": 0x100000},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x200000},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x400000},
+        "___GFP_NOLOCKDEP": {"value": 0x800000},
+    }
+
+
+class KernelConfig_4_19(KernelConfig_4_18):
+    # Supported changes:
+    #  * mm, oom: describe task memory unit, larger PID pad (c3b78b11efbb2865433abf9d22c004ffe4a73f5c)
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 4.19 or later"
+    release = (4, 19, "")
 
     pstable_start = "[  pid  ]"
 
 
 class KernelConfig_5_0(KernelConfig_4_19):
-    # Support changes:
+    # Supported changes:
     #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
+    #  * update GFP flags
 
     name = "Configuration for Linux kernel 5.0 or later"
     release = (5, 0, "")
@@ -674,9 +2019,92 @@ class KernelConfig_5_0(KernelConfig_4_19):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_50)
 
 
-class KernelConfig_5_8(KernelConfig_5_0):
-    # Support changes:
+class KernelConfig_5_1(KernelConfig_5_0):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 5.1 or later"
+    release = (5, 1, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {"value": "GFP_HIGHUSER | __GFP_MOVABLE"},
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_ZERO": {"value": 0x100},
+        "___GFP_ATOMIC": {"value": 0x200},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x800},
+        "___GFP_WRITE": {"value": 0x1000},
+        "___GFP_NOWARN": {"value": 0x2000},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x4000},
+        "___GFP_NOFAIL": {"value": 0x8000},
+        "___GFP_NORETRY": {"value": 0x10000},
+        "___GFP_MEMALLOC": {"value": 0x20000},
+        "___GFP_COMP": {"value": 0x40000},
+        "___GFP_NOMEMALLOC": {"value": 0x80000},
+        "___GFP_HARDWALL": {"value": 0x100000},
+        "___GFP_ACCOUNT": {"value": 0x400000},
+        "___GFP_NOLOCKDEP": {"value": 0x800000},
+    }
+
+
+class KernelConfig_5_8(KernelConfig_5_1):
+    # Supported changes:
     #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
+    #  * update GFP flags
 
     name = "Configuration for Linux kernel 5.8 or later"
     release = (5, 8, "")
@@ -702,30 +2130,216 @@ class KernelConfig_5_8(KernelConfig_5_0):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_58)
 
 
-class KernelConfigRhel7(BaseKernelConfig):
-    """RHEL7 / CentOS7 specific configuration"""
+class KernelConfig_5_14(KernelConfig_5_8):
+    # Supported changes:
+    #  * update GFP flags
 
-    name = "Configuration for RHEL7 / CentOS7 specific Linux kernel (3.10)"
-    release = (3, 10, "")
+    name = "Configuration for Linux kernel 5.14 or later"
+    release = (5, 14, "")
 
-    def __init__(self):
-        super().__init__()
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN_POISON"
+        },
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_SKIP_KASAN_POISON": {"value": "___GFP_SKIP_KASAN_POISON"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        "__GFP_ZEROTAGS": {"value": "___GFP_ZEROTAGS"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_ZERO": {"value": 0x100},
+        "___GFP_ATOMIC": {"value": 0x200},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x800},
+        "___GFP_WRITE": {"value": 0x1000},
+        "___GFP_NOWARN": {"value": 0x2000},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x4000},
+        "___GFP_NOFAIL": {"value": 0x8000},
+        "___GFP_NORETRY": {"value": 0x10000},
+        "___GFP_MEMALLOC": {"value": 0x20000},
+        "___GFP_COMP": {"value": 0x40000},
+        "___GFP_NOMEMALLOC": {"value": 0x80000},
+        "___GFP_HARDWALL": {"value": 0x100000},
+        "___GFP_ACCOUNT": {"value": 0x400000},
+        "___GFP_ZEROTAGS": {"value": 0x800000},
+        "___GFP_SKIP_KASAN_POISON": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_5_18(KernelConfig_5_14):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 5.18 or later"
+    release = (5, 18, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Useful GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_ATOMIC | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN_POISON"
+        },
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_ATOMIC": {"value": "___GFP_ATOMIC"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_SKIP_KASAN_POISON": {"value": "___GFP_SKIP_KASAN_POISON"},
+        "__GFP_SKIP_KASAN_UNPOISON": {"value": "___GFP_SKIP_KASAN_UNPOISON"},
+        "__GFP_SKIP_ZERO": {"value": "___GFP_SKIP_ZERO"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        "__GFP_ZEROTAGS": {"value": "___GFP_ZEROTAGS"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_ZERO": {"value": 0x100},
+        "___GFP_ATOMIC": {"value": 0x200},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x800},
+        "___GFP_WRITE": {"value": 0x1000},
+        "___GFP_NOWARN": {"value": 0x2000},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x4000},
+        "___GFP_NOFAIL": {"value": 0x8000},
+        "___GFP_NORETRY": {"value": 0x10000},
+        "___GFP_MEMALLOC": {"value": 0x20000},
+        "___GFP_COMP": {"value": 0x40000},
+        "___GFP_NOMEMALLOC": {"value": 0x80000},
+        "___GFP_HARDWALL": {"value": 0x100000},
+        "___GFP_ACCOUNT": {"value": 0x400000},
+        "___GFP_ZEROTAGS": {"value": 0x800000},
+        "___GFP_SKIP_ZERO": {"value": 0x1000000},
+        "___GFP_SKIP_KASAN_UNPOISON": {"value": 0x2000000},
+        "___GFP_SKIP_KASAN_POISON": {"value": 0x4000000},
+        "___GFP_NOLOCKDEP": {"value": 0x8000000},
+    }
 
 
 AllKernelConfigs = [
+    KernelConfig_5_18(),
+    KernelConfig_5_14(),
     KernelConfig_5_8(),
+    KernelConfig_5_1(),
     KernelConfig_5_0(),
     KernelConfig_4_15(),
     KernelConfig_4_19(),
+    KernelConfig_4_18(),
+    KernelConfig_4_15(),
+    KernelConfig_4_14(),
+    KernelConfig_4_13(),
+    KernelConfig_4_12(),
+    KernelConfig_4_10(),
     KernelConfig_4_9(),
+    KernelConfig_4_8(),
     KernelConfig_4_6(),
-    KernelConfigRhel7(),
+    KernelConfig_4_5(),
+    KernelConfig_4_4(),
+    KernelConfig_4_1(),
+    KernelConfig_3_19(),
+    KernelConfig_3_16(),
+    KernelConfig_3_10_EL7(),
+    KernelConfig_3_10(),
     BaseKernelConfig(),
 ]
 """
 Instances of all available kernel configurations.
 
-Manually sorted from newest to oldest and from general to specific.
+Manually sorted from newest to oldest and from specific to general.
 
 The last entry in this list is the base configuration as a fallback.
 """
@@ -1091,10 +2705,6 @@ class OOMAnalyser:
         @param (int, int, str) min_version: Minimum version
         @rtype: bool
         """
-        major = min_version[0]
-        minor = min_version[1]
-        suffix = min_version[2]
-
         match = self.rec_split_kversion.match(kversion)
 
         if not match:
@@ -1103,8 +2713,14 @@ class OOMAnalyser:
             )
             return False
 
-        if not (
-            major <= int(match.group("major")) and minor <= int(match.group("minor"))
+        required_major = min_version[0]
+        required_minor = min_version[1]
+        suffix = min_version[2]
+        current_major = int(match.group("major"))
+        current_minor = int(match.group("minor"))
+
+        if (required_major > current_major) or (
+            required_major == current_major and required_minor > current_minor
         ):
             return False
 
@@ -1199,7 +2815,6 @@ class OOMAnalyser:
         """Extract the GFP (Get Free Pages) mask"""
         if self.oom_result.details["trigger_proc_gfp_flags"] is not None:
             flags = self.oom_result.details["trigger_proc_gfp_flags"]
-            del self.oom_result.details["trigger_proc_gfp_flags"]
         else:
             flags, unknown = self._gfp_hex2flags(
                 self.oom_result.details["trigger_proc_gfp_mask"],
@@ -1213,6 +2828,8 @@ class OOMAnalyser:
         )
         # already fully processed and no own element to display -> delete otherwise an error msg will be shown
         del self.oom_result.details["trigger_proc_gfp_flags"]
+
+        # TODO: Add check if given trigger_proc_gfp_flags is equal with calculated flags
 
     def _extract_from_oom_text(self):
         """Extract details from OOM message text"""
