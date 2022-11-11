@@ -29,6 +29,9 @@ RELEASE_INST_DIR  = $(RELEASE_DIR)/OOMAnalyser-$(VERSION)
 RELEASE_TARGZ     = OOMAnalyser-$(VERSION).tar.gz
 RELEASE_ZIP       = OOMAnalyser-$(VERSION).zip
 
+BLACK_BIN         = black
+BLACK_OPTS        = --verbose
+
 ROLLUP_BIN        = rollup
 ROLLUP_OPTS       = --config rollup.config.js
 
@@ -49,6 +52,14 @@ HELP= @grep -B1 '^[a-zA-Z\-]*:' Makefile |\
 #+ Show this text
 help:
 	$(HELP)
+
+#+ Run source code formatter black
+black:
+	$(BLACK_BIN) $(BLACK_OPTS) $(PY_SOURCE) $(TEST_FILE)
+
+#+ Run source code formatter black in check-only mode
+black-check:
+	$(BLACK_BIN) --check $(BLACK_OPTS) $(PY_SOURCE) $(TEST_FILE)
 
 #+ Clean python compiler files and automatically generated files
 clean:
