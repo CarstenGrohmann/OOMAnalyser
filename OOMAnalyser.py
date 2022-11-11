@@ -26,6 +26,9 @@ class classList:
     def remove(self, *args, **kwargs):
         pass
 
+    def toggle(self, *args, **kwargs):
+        pass
+
 
 class document:
     def querySelectorAll(
@@ -35,9 +38,20 @@ class document:
         return [Node()]
 
     @staticmethod
+    def getElementsByClassName(names):
+        """
+        Returns an array-like object of all child elements which have all the given class name(s).
+
+        @param names: A string representing the class name(s) to match; multiple class names are separated by whitespace.
+        @type names: List(str)
+        @return: List(Node)
+        """
+        return [Node()]
+
+    @staticmethod
     def getElementById(_id):
         """
-        Returns a object representing the element whose id property matches
+        Returns an object representing the element whose id property matches
 
         @type _id: str
         @rtype: Node
@@ -69,6 +83,7 @@ class document:
 class Node:
 
     classList = classList()
+    id = None
     offsetWidth = 0
     textContent = ""
 
@@ -91,6 +106,10 @@ class Node:
 
     def setAttribute(self, *args, **kwargs):
         return
+
+    @property
+    def parentNode(self):
+        return super().__new__(self)
 
 
 # __pragma__ ('noskip')
