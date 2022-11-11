@@ -8,6 +8,7 @@ image: archlinux
 arch:  x86_64
 packages:
   - python3
+  - python-black
   - python-virtualenv
   - git
   - xorg-server-xvfb
@@ -26,6 +27,9 @@ tasks:
   - setup_venv: |
       cd OOMAnalyser
       make venv
+  - check_code_with_black: |
+      cd OOMAnalyser
+      make black-check
   - build: |
       cd OOMAnalyser
       make build
