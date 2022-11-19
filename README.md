@@ -60,7 +60,7 @@ Both can be stored locally to use OOMAnalyser without an Internet connection.
 ```
 # . env/bin/activate
 # transcrypt --build --map --nomin -e 6 OOMAnalyser.py
-# rollup --config rollup.config.js
+# rollup --config rollup.config.mjs
 
 or
 

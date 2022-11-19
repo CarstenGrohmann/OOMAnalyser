@@ -33,7 +33,7 @@ BLACK_BIN         = black
 BLACK_OPTS        = --verbose
 
 ROLLUP_BIN        = rollup
-ROLLUP_OPTS       = --config rollup.config.js
+ROLLUP_OPTS       = --config rollup.config.mjs
 
 TRANSCRYPT_BIN    = transcrypt
 TRANSCRYPT_OPTS   = --build --map --nomin --sform --esv 6
