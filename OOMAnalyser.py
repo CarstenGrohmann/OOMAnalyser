@@ -2753,7 +2753,6 @@ class OOMAnalyser:
         Choose the first matching kernel configuration from AllKernelConfigs
 
         @see: _check_kversion_greater_equal(), AllKernelConfigs
-        @rtype: bool
         """
         for kcfg in AllKernelConfigs:
             if self._check_kversion_greater_equal(
@@ -2769,8 +2768,7 @@ class OOMAnalyser:
                 )
             )
             self.oom_result.kconfig = BaseKernelConfig()
-        # FIXME: Return value is always True, but OOMAnalyser.analyse() has a useless check
-        return True
+        return
 
     def _check_for_empty_oom(self):
         """
@@ -3148,9 +3146,7 @@ class OOMAnalyser:
             error(self.oom_result.error_msg)
             return False
 
-        if not self._choose_kernel_config():
-            error(self.oom_result.error_msg)
-            return False
+        self._choose_kernel_config()
 
         if not self._check_for_complete_oom():
             error(self.oom_result.error_msg)
