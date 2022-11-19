@@ -221,9 +221,9 @@ class BaseKernelConfig:
     EXTRACT_PATTERN = None
     """
     Instance specific dictionary of RE pattern to analyse a OOM block for a specific kernel version
-    
+
     This dict will be filled from EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY during class constructor is executed.
-    
+
     :type: None|Dict
     :see: EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY
     """
@@ -322,11 +322,11 @@ class BaseKernelConfig:
     }
     """
     RE pattern to extract information from OOM.
-    
+
     The first item is the RE pattern and the second is whether it is mandatory to find this pattern.
-    
-    This dictionary will be copied to EXTRACT_PATTERN during class constructor is executed. 
-    
+
+    This dictionary will be copied to EXTRACT_PATTERN during class constructor is executed.
+
     :type: dict(tuple(str, bool))
     :see: EXTRACT_PATTERN
     """
@@ -334,7 +334,7 @@ class BaseKernelConfig:
     EXTRACT_PATTERN_OVERLAY = {}
     """
     To extend / overwrite parts of EXTRACT_PATTERN in kernel configuration.
-    
+
     :type: dict(tuple(str, bool))
     :see: EXTRACT_PATTERN
     """
@@ -434,13 +434,13 @@ class BaseKernelConfig:
     gfp_reverse_lookup = []
     """
     Sorted list of flags used to do a reverse lookup.
-    
+
     This list doesn't contain all flags. It contains the "useful flags" (GFP_*) as
     well as "modifier flags" (__GFP_*). "Plain flags" (___GFP_*) are not part of
     this list.
-    
+
     @type: List(str)
-    @see: _gfp_create_reverse_lookup() 
+    @see: _gfp_create_reverse_lookup()
     """
 
     pstable_items = [
@@ -485,20 +485,20 @@ class BaseKernelConfig:
     pstable_start = "[ pid ]"
     """
     Pattern to find the start of the process table
-    
+
     :type: str
     """
 
     release = (3, 10, "")
     """
     Kernel release with this configuration
-    
+
     The tuple contains major and minor version as well as a suffix like "-aws" or ".el7."
-    
+
     The patch level isn't part of this version tuple, because I don't assume any changes in GFP flags within a patch
-    release. 
-    
-    @see: OOMAnalyser._choose_kernel_config() 
+    release.
+
+    @see: OOMAnalyser._choose_kernel_config()
     @type: (int, int, str)
     """
 
@@ -2618,42 +2618,42 @@ class OOMResult:
     oom_entity = None
     """
     State of this OOM (unknown, incomplete, ...)
-    
+
     :type: OOMEntityState
     """
 
     oom_type = OOMEntityType.unknown
     """
     Type of this OOM (manually or automatically triggered)
-    
+
     :type: OOMEntityType
     """
 
     error_msg = ""
     """
     Error message
-    
+
     @type: str
     """
 
     kversion = None
     """
     Kernel version
-    
+
     @type: str
     """
 
     oom_text = None
     """
     OOM text
-    
+
     @type: str
     """
 
     swap_active = False
     """
     Swap space active or inactive
-    
+
     @type: bool
     """
 
@@ -2664,14 +2664,14 @@ class OOMAnalyser:
     oom_entity = None
     """
     State of this OOM (unknown, incomplete, ...)
-    
+
     :type: OOMEntityState
     """
 
     oom_result = OOMResult()
     """
     Store details of OOM analysis
-    
+
     :type: OOMResult
     """
 
@@ -2706,7 +2706,7 @@ class OOMAnalyser:
     )
     """
     RE for splitting the kernel version into parts
-    
+
     Examples:
      - 5.19-rc6
      - 4.14.288
@@ -3481,7 +3481,7 @@ class OOMDisplay:
     oom_result = OOMResult()
     """
     OOM analysis details
-    
+
     @rtype: OOMResult
     """
 
@@ -3703,8 +3703,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     sorted_column_number = None
     """
     Processes will sort by values in this column
-    
-    @type: int 
+
+    @type: int
     """
 
     sort_order = None
