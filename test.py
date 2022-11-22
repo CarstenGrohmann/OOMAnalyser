@@ -246,6 +246,18 @@ class TestInBrowser(TestBase):
             "Used swap space in summary not found",
         )
 
+        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+        self.assertEqual(
+            mem_node_info.text[:44],
+            "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB",
+            "Unexpected memory chunks",
+        )
+        self.assertEqual(
+            mem_node_info.text[-80:],
+            "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+            "Unexpected memory chunks",
+        )
+
         head = self.driver.find_element(By.ID, "pstable_header")
         self.assertTrue(
             "Page Table Entries" in head.text,
@@ -302,6 +314,18 @@ class TestInBrowser(TestBase):
             "9% (209520 kBytes out of 2096632 kBytes) physical memory"
             in explanation.text,
             "Used physical memory in summary not found",
+        )
+
+        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+        self.assertEqual(
+            mem_node_info.text[:49],
+            "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB",
+            "Unexpected memory chunks",
+        )
+        self.assertEqual(
+            mem_node_info.text[-80:],
+            "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+            "Unexpected memory chunks",
         )
 
         head = self.driver.find_element(By.ID, "pstable_header")

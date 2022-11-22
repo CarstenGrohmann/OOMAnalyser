@@ -267,8 +267,8 @@ class BaseKernelConfig:
             r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
             True,
         ),
-        "Memory node information": (
-            r"(^Node \d+ (DMA|Normal|hugepages).*(:?\n))+",
+        "Available memory chunks": (
+            r"(?P<mem_node_info>(^Node \d+ ((DMA|DMA32|Normal):|(hugepages)).+(\n|$))+)",
             False,
         ),
         "Page cache": (
