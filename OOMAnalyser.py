@@ -3803,9 +3803,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         toc_content.innerHTML = new_toc
 
-    def pstable_fill_HTML(self):
+    def _show_pstable(self):
         """
-        Create the process table with additional information
+        Create and show the process table with additional information
         """
         # update table heading
         for i, element in enumerate(
@@ -3988,51 +3988,20 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         Show all extracted details as well as additionally generated information
         """
-        hide_element("input")
-        show_element("analysis")
-        if self.oom_result.oom_type == OOMEntityType.manual:
-            hide_elements(".js-oom-automatic--show")
-            show_elements(".js-oom-manual--show")
-        else:
-            show_elements(".js-oom-automatic--show")
-            hide_elements(".js-oom-manual--show")
-
-        for item in self.oom_result.details.keys():
-            # ignore internal items
-            if item.startswith("_"):
-                continue
-            self._set_item(item)
-
-        # Hide "OOM Score" if not available
-        # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
-        if "killed_proc_score" in self.oom_result.details:
-            show_elements(".js-killed-proc-score--show")
-        else:
-            hide_elements(".js-killed-proc-score--show")
+        self._show_items()
+        self._show_swap_usage()
+        self._show_ram_usage()
 
         # generate process table
-        self.pstable_fill_HTML()
+        self._show_pstable()
         self.pstable_set_sort_triangle()
 
-        # show/hide swap space
-        if self.oom_result.swap_active:
-            # generate swap usage diagram
-            svg = SVGChart()
-            svg_swap = svg.generate_chart(
-                "Swap Summary",
-                ("Swap Used", self.oom_result.details["swap_used_kb"]),
-                ("Swap Free", self.oom_result.details["swap_free_kb"]),
-                ("Swap Cached", self.oom_result.details["swap_cache_kb"]),
-            )
-            elem_svg_swap = document.getElementById("svg_swap")
-            elem_svg_swap.appendChild(svg_swap)
-            show_elements(".js-swap-active--show")
-            hide_elements(".js-swap-inactive--show")
-        else:
-            hide_elements(".js-swap-active--show")
-            show_elements(".js-swap-inactive--show")
+        element = document.getElementById("oom")
+        element.textContent = self.oom_result.oom_text
+        self.toggle_oom(show=False)
 
-        # generate RAM usage diagram
+    def _show_ram_usage(self):
+        """Generate RAM usage diagram"""
         ram_title_attr = (
             ("Active mem", "active_anon_pages"),
             ("Inactive mem", "inactive_anon_pages"),
@@ -4064,9 +4033,48 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         elem_svg_ram = document.getElementById("svg_ram")
         elem_svg_ram.appendChild(svg_ram)
 
-        element = document.getElementById("oom")
-        element.textContent = self.oom_result.oom_text
-        self.toggle_oom(show=False)
+    def _show_swap_usage(self):
+        """Show/hide swap space and generate usage diagram"""
+        if self.oom_result.swap_active:
+            # generate swap usage diagram
+            svg = SVGChart()
+            svg_swap = svg.generate_chart(
+                "Swap Summary",
+                ("Swap Used", self.oom_result.details["swap_used_kb"]),
+                ("Swap Free", self.oom_result.details["swap_free_kb"]),
+                ("Swap Cached", self.oom_result.details["swap_cache_kb"]),
+            )
+            elem_svg_swap = document.getElementById("svg_swap")
+            elem_svg_swap.appendChild(svg_swap)
+            show_elements(".js-swap-active--show")
+            hide_elements(".js-swap-inactive--show")
+        else:
+            hide_elements(".js-swap-active--show")
+            show_elements(".js-swap-inactive--show")
+
+    def _show_items(self):
+        """Switch to output view and show most items"""
+        hide_element("input")
+        show_element("analysis")
+        if self.oom_result.oom_type == OOMEntityType.manual:
+            hide_elements(".js-oom-automatic--show")
+            show_elements(".js-oom-manual--show")
+        else:
+            show_elements(".js-oom-automatic--show")
+            hide_elements(".js-oom-manual--show")
+
+        for item in self.oom_result.details.keys():
+            # ignore internal items
+            if item.startswith("_"):
+                continue
+            self._set_item(item)
+
+        # Hide "OOM Score" if not available
+        # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
+        if "killed_proc_score" in self.oom_result.details:
+            show_elements(".js-killed-proc-score--show")
+        else:
+            hide_elements(".js-killed-proc-score--show")
 
     def sort_pstable(self, column_number):
         """
@@ -4102,7 +4110,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.sort_order = "descending"
             self.sort_psindex_by_column(column_name, True)
 
-        self.pstable_fill_HTML()
+        self._show_pstable()
         self.pstable_set_sort_triangle()
 
     def sort_psindex_by_column(self, column_name, reverse=False):
