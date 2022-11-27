@@ -855,6 +855,47 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 % (kversion, min_version),
             )
 
+    def test_009_extract_zoneinfo(self):
+        """Test extracting zone usage information"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (3, 10, ".el7."),
+            "Wrong KernelConfig release",
+        )
+        buddyinfo = analyser.oom_result.details["_buddyinfo"]
+        for zone, order, node, except_count in [
+            ("Normal", 6, 0, 0),  # order 6 - page size 256kB
+            ("Normal", 6, 1, 2),  # order 6 - page size 256kB
+            ("Normal", 6, "_total", 0 + 2),  # order 6 - page size 256kB
+            ("Normal", 0, 0, 1231),  # order 0 - page size 4kB
+            ("Normal", 0, 1, 2245),  # order 0 - page size 4kB
+            ("Normal", 0, "_total", 1231 + 2245),  # order 0 - page size 4kB
+            ("DMA", 5, 0, 1),  # order 5 - page size 128kB
+            ("DMA", 5, "_total", 1),  # order 5 - page size 128kB
+            ("DMA32", 4, 0, 157),  # order 4 - page size 64k
+            ("DMA32", 4, "_total", 157),  # order 4 - page size 64k
+        ]:
+            self.assertTrue(
+                zone in buddyinfo, "Missing details for zone %s in buddy info" % zone
+            )
+            zone_info = buddyinfo[zone]
+            self.assertTrue(
+                order in zone_info,
+                'Missing details for order "%d" in buddy info' % order,
+            )
+            order_info = zone_info[order]
+            count = order_info[node]
+            self.assertTrue(
+                count == except_count,
+                'Wrong chunk count for order %d in zone "%s" for node "%s" (got: %d, expect %d)'
+                % (order, zone, node, count, except_count),
+            )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

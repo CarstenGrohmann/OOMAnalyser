@@ -508,6 +508,13 @@ class BaseKernelConfig:
     rec_oom_end = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
+    zoneinfo_start = "Node 0 DMA: "
+    """
+    Pattern to find the start of the memory chunk information (buddyinfo)
+
+    :type: str
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -2680,6 +2687,11 @@ class OOMAnalyser:
     )
     """RE to match the OOM line with kernel version"""
 
+    REC_FREE_MEMORY_CHUNKS = re.compile(
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = \d+kB"
+    )
+    """RE to extract free memory chunks in a zone"""
+
     def __init__(self, oom):
         self.oom_entity = oom
         self.oom_result = OOMResult()
@@ -2888,6 +2900,7 @@ class OOMAnalyser:
 
         self._extract_pstable()
         self._extract_gpf_mask()
+        self._extract_buddyinfo()
 
     def _extract_pstable(self):
         """Extract process table"""
@@ -2905,6 +2918,59 @@ class OOMAnalyser:
                 pid = details.pop("pid")
                 self.oom_result.details["_pstable"][pid] = {}
                 self.oom_result.details["_pstable"][pid].update(details)
+
+    def _extract_buddyinfo(self):
+        """Extract information about free areas in all zones
+
+        The migration types "(UEM)" or similar are not evaluated. They are documented in
+        mm/page_alloc.c:show_migration_types().
+
+        This function fills:
+        * OOMResult.details["_buddyinfo"] with [<node>][<zone>][<order>] = <number of free chunks>
+        * OOMResult.details["_buddyinfo_pagesize_kb"] with the extracted page size
+        """
+        self.oom_result.details["_buddyinfo"] = {}
+        self.oom_result.details["_buddyinfo_pagesize_kb"] = None
+        buddy_info = self.oom_result.details["_buddyinfo"]
+        self.oom_entity.find_text(self.oom_result.kconfig.zoneinfo_start)
+
+        # Currently omm_entity point to the first line of the buddyinfo.
+        # The iterator protocol uses the next() call. However, this will cause the
+        # current line to be skipped.
+        # Therefore, we reset the counter by one line.
+        self.oom_entity.back()
+
+        for line in self.oom_entity:
+            match = self.REC_FREE_MEMORY_CHUNKS.match(line)
+            if not match:
+                continue
+            node = int(match.group("node"))
+            zone = match.group("zone")
+
+            if zone not in buddy_info:
+                buddy_info[zone] = {}
+            zone_details = buddy_info[zone]
+
+            order = -1  # to start with 0 after the first increment in for loop
+            for element in match.group("zone_usage").split(" "):
+                if element.startswith("("):  # skip migration types
+                    continue
+                order += 1
+                if order not in zone_details:
+                    zone_details[order] = {}
+                order_details = zone_details[order]
+                count = element.split("*")[0]
+                count.strip()
+
+                order_details[node] = int(count)
+                if "_total" not in order_details:
+                    order_details["_total"] = 0
+                order_details["_total"] += order_details[node]
+
+                if not self.oom_result.details["_buddyinfo_pagesize_kb"] and order == 0:
+                    size = element.split("*")[1]
+                    size = size[:-2]  # strip "kB"
+                    self.oom_result.details["_buddyinfo_pagesize_kb"] = int(size)
 
     def _gfp_hex2flags(self, hexvalue):
         """\
@@ -3009,6 +3075,13 @@ class OOMAnalyser:
             self.oom_result.details["trigger_proc_requested_memory_pages"]
             * self.oom_result.details["page_size_kb"]
         )
+        if "DMA32" in self.oom_result.details["trigger_proc_gfp_mask"]:
+            zone = "DMA32"
+        elif "DMA" in self.oom_result.details["trigger_proc_gfp_mask"]:
+            zone = "DMA"
+        else:
+            zone = "Normal"
+        self.oom_result.details["trigger_proc_mem_zone"] = zone
 
     def _calc_killed_process_values(self):
         """Calculate all values related with the killed process"""
