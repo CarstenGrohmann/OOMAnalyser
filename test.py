@@ -1,6 +1,6 @@
 # Unit tests for OOMAnalyser
 #
-# Copyright (c) 2021-2022 Carsten Grohmann
+# Copyright (c) 2021-2023 Carsten Grohmann
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 

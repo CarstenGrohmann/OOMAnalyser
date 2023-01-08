@@ -24,12 +24,12 @@ Both can be stored locally to use OOMAnalyser without an Internet connection.
 
 ### Installation steps
 
- 1. Open [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) in a browser 
+ 1. Open [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) in a browser
  2. Browse down to the paragraph "Local Installation" at the end of the document
  3. Download the HTML file and the JavaScript file to the main directory
  4. Open the file `OOMAnalyser.html` in your favourite browser
 
- 
+
 ## Building OOMAnalyser
 
 ### Requirements
@@ -46,13 +46,13 @@ Both can be stored locally to use OOMAnalyser without an Internet connection.
         # git clone https://git.sr.ht/~carstengrohmann/OOMAnalyser
 
  * Set up the Python virtual environment:
- 
+
         # virtualenv env
         # . env/bin/activate
         # env/bin/pip install -Ur requirements.txt
-        
+
         or
-        
+
         # make venv
 
 ### Build OOMAnalyser
@@ -74,9 +74,9 @@ or
  * Start Python built-in web server:
 
         # python3 -m http.server 8080 --bind 127.0.0.1
-        
+
         or
-        
+
         # make websrv
 
  * Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
@@ -104,7 +104,7 @@ or
 
  5. Push changes into public repositories
 
-        # git push 
+        # git push
         # git push origin --tags
 
  6. Create release packages in zip and tar.gz format
@@ -114,7 +114,7 @@ or
  7. Create release on SourceHut & GitHub
 
  8. Start a new development cycle by setting new version numbers
- 
+
 
 ## Resources
 
@@ -134,7 +134,7 @@ for current open bugs. New bugs can be reported there also.
 
 This project is licensed under the MIT license.
 
-> Copyright (c) 2017-2022 Carsten Grohmann,  mail <add at here> carstengrohmann.de
+> Copyright (c) 2017-2023 Carsten Grohmann,  mail <add at here> carstengrohmann.de
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of
 > this software and associated documentation files (the "Software"), to deal in
