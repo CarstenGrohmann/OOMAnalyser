@@ -183,28 +183,40 @@ def escape_html(unsafe):
     )
 
 
+def debug(msg):
+    """Add debug message to the notification box"""
+    add_to_notifybox("DEBUG", msg)
+
+
 def error(msg):
-    """Show the error box and add the error message"""
-    show_notifybox("ERROR", msg)
+    """Show the notification box and add the error message"""
+    add_to_notifybox("ERROR", msg)
 
 
 def internal_error(msg):
-    """Show the error box and add the internal error message"""
-    show_notifybox("INTERNAL ERROR", msg)
+    """Show the notification box and add the internal error message"""
+    add_to_notifybox("INTERNAL ERROR", msg)
 
 
 def warning(msg):
-    """Show the error box and add the warning message"""
-    show_notifybox("WARNING", msg)
+    """Show the notification box and add the warning message"""
+    add_to_notifybox("WARNING", msg)
 
 
-def show_notifybox(prefix, msg):
-    """Show escaped message in the notification box"""
-    if prefix == "WARNING":
+def add_to_notifybox(prefix, msg):
+    """
+    Escaped and add message to the notification box
+
+    If the message has a prefix "ERROR" or "WARNING" the notification box will be shown.
+    """
+    if prefix == "DEBUG":
+        css_class = "js-notify_box__msg--debug"
+    elif prefix == "WARNING":
         css_class = "js-notify_box__msg--warning"
     else:
         css_class = "js-notify_box__msg--error"
-    show_element("notify_box")
+    if prefix != "DEBUG":
+        show_element("notify_box")
     notify_box = document.getElementById("notify_box")
     notification = document.createElement("div")
     notification.classList.add(css_class)
