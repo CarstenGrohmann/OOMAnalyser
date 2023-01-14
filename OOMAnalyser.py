@@ -520,6 +520,13 @@ class BaseKernelConfig:
     rec_oom_end = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
+    watermark_start = "Node 0 DMA free:"
+    """
+    Pattern to find the start of the memory watermark information
+
+    :type: str
+     """
+
     zoneinfo_start = "Node 0 DMA: "
     """
     Pattern to find the start of the memory chunk information (buddyinfo)
@@ -2702,7 +2709,17 @@ class OOMAnalyser:
     REC_FREE_MEMORY_CHUNKS = re.compile(
         "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
     )
-    """RE to extract free memory chunks in a zone"""
+    """RE to extract free memory chunks of a memor zone"""
+
+    REC_WATERMARK = re.compile(
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
+        "free:(?P<free>\d+)kB "
+        "min:(?P<min>\d+)kB "
+        "low:(?P<low>\d+)kB "
+        "high:(?P<high>\d+)kB "
+        ".*"
+    )
+    """RE to extract watermark information in a memory zone"""
 
     def __init__(self, oom):
         self.oom_entity = oom
@@ -2913,6 +2930,7 @@ class OOMAnalyser:
         self._extract_pstable()
         self._extract_gpf_mask()
         self._extract_buddyinfo()
+        self._extract_watermarks()
 
     def _extract_pstable(self):
         """Extract process table"""
@@ -2990,6 +3008,37 @@ class OOMAnalyser:
                     size = element.split("*")[1]
                     size = size[:-2]  # strip "kB"
                     self.oom_result.details["_buddyinfo_pagesize_kb"] = int(size)
+
+    def _extract_watermarks(self):
+        """
+        Extract memory watermark information from all zones
+
+        This function fills:
+        * OOMResult.details["_watermarks"] with [<zone>][<node>][(free|min|low|high)] = <XXX>
+        """
+        self.oom_result.details["_watermarks"] = {}
+        watermark_info = self.oom_result.details["_watermarks"]
+        self.oom_entity.find_text(self.oom_result.kconfig.watermark_start)
+
+        # Currently omm_entity point to the first line of the watermark information.
+        # The iterator protocol uses the next() call. However, this will cause the
+        # current line to be skipped.
+        # Therefore, we reset the counter by one line.
+        self.oom_entity.back()
+
+        for line in self.oom_entity:
+            match = self.REC_WATERMARK.match(line)
+            if not match:
+                continue
+
+            node = int(match.group("node"))
+            zone = match.group("zone")
+            if zone not in watermark_info:
+                watermark_info[zone] = {}
+            if node not in watermark_info[zone]:
+                watermark_info[zone][node] = {}
+            for i in ["free", "min", "low", "high"]:
+                watermark_info[zone][node][i] = int(match.group(i))
 
     def _gfp_hex2flags(self, hexvalue):
         """\

@@ -896,6 +896,48 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 % (order, zone, node, count, except_count),
             )
 
+    def test_010_extract_zoneinfo(self):
+        """Test extracting watermark information"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (3, 10, ".el7."),
+            "Wrong KernelConfig release",
+        )
+        watermarks = analyser.oom_result.details["_watermarks"]
+        for zone, node, level, except_level in [
+            ("Normal", 0, "free", 36692),
+            ("Normal", 0, "min", 36784),
+            ("Normal", 1, "low", 56804),
+            ("Normal", 1, "high", 68164),
+            ("DMA", 0, "free", 15872),
+            ("DMA", 0, "high", 60),
+            ("DMA32", 0, "free", 59728),
+            ("DMA32", 0, "low", 9788),
+        ]:
+            self.assertTrue(
+                zone in watermarks,
+                "Missing details for zone %s in memory watermarks" % zone,
+            )
+            self.assertTrue(
+                node in watermarks[zone],
+                'Missing details for node "%s" in memory watermarks' % node,
+            )
+            self.assertTrue(
+                level in watermarks[zone][node],
+                'Missing details for level "%s" in memory watermarks' % level,
+            )
+            level = watermarks[zone][node][level]
+            self.assertTrue(
+                level == except_level,
+                'Wrong watermark level for node %s in zone "%s" (got: %d, expect %d)'
+                % (node, zone, level, except_level),
+            )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
