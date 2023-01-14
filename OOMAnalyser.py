@@ -2700,7 +2700,7 @@ class OOMAnalyser:
     """RE to match the OOM line with kernel version"""
 
     REC_FREE_MEMORY_CHUNKS = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = \d+kB"
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
     )
     """RE to extract free memory chunks in a zone"""
 
@@ -2938,7 +2938,8 @@ class OOMAnalyser:
         mm/page_alloc.c:show_migration_types().
 
         This function fills:
-        * OOMResult.details["_buddyinfo"] with [<node>][<zone>][<order>] = <number of free chunks>
+        * OOMResult.details["_buddyinfo"] with [<zone>][<order>][<node>] = <number of free chunks>
+        * OOMResult.details["_buddyinfo"] with [zone]["total_free_kb_per_node"][node] = int(total_free_kb_per_node)
         * OOMResult.details["_buddyinfo_pagesize_kb"] with the extracted page size
         """
         self.oom_result.details["_buddyinfo"] = {}
@@ -2961,23 +2962,29 @@ class OOMAnalyser:
 
             if zone not in buddy_info:
                 buddy_info[zone] = {}
-            zone_details = buddy_info[zone]
+
+            if "total_free_kb_per_node" not in buddy_info[zone]:
+                buddy_info[zone]["total_free_kb_per_node"] = {}
+            buddy_info[zone]["total_free_kb_per_node"][node] = int(
+                int(match.group("total_free_kb_per_node"))
+            )
 
             order = -1  # to start with 0 after the first increment in for loop
             for element in match.group("zone_usage").split(" "):
                 if element.startswith("("):  # skip migration types
                     continue
                 order += 1
-                if order not in zone_details:
-                    zone_details[order] = {}
-                order_details = zone_details[order]
+                if order not in buddy_info[zone]:
+                    buddy_info[zone][order] = {}
                 count = element.split("*")[0]
                 count.strip()
 
-                order_details[node] = int(count)
-                if "_total" not in order_details:
-                    order_details["_total"] = 0
-                order_details["_total"] += order_details[node]
+                buddy_info[zone][order][node] = int(count)
+                if "free_chunks_total" not in buddy_info[zone][order]:
+                    buddy_info[zone][order]["free_chunks_total"] = 0
+                buddy_info[zone][order]["free_chunks_total"] += buddy_info[zone][order][
+                    node
+                ]
 
                 if not self.oom_result.details["_buddyinfo_pagesize_kb"] and order == 0:
                     size = element.split("*")[1]

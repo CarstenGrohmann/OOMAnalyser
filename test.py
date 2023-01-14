@@ -871,28 +871,28 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         for zone, order, node, except_count in [
             ("Normal", 6, 0, 0),  # order 6 - page size 256kB
             ("Normal", 6, 1, 2),  # order 6 - page size 256kB
-            ("Normal", 6, "_total", 0 + 2),  # order 6 - page size 256kB
+            ("Normal", 6, "free_chunks_total", 0 + 2),  # order 6 - page size 256kB
             ("Normal", 0, 0, 1231),  # order 0 - page size 4kB
             ("Normal", 0, 1, 2245),  # order 0 - page size 4kB
-            ("Normal", 0, "_total", 1231 + 2245),  # order 0 - page size 4kB
+            ("Normal", 0, "free_chunks_total", 1231 + 2245),  # order 0 - page size 4kB
             ("DMA", 5, 0, 1),  # order 5 - page size 128kB
-            ("DMA", 5, "_total", 1),  # order 5 - page size 128kB
+            ("DMA", 5, "free_chunks_total", 1),  # order 5 - page size 128kB
             ("DMA32", 4, 0, 157),  # order 4 - page size 64k
-            ("DMA32", 4, "_total", 157),  # order 4 - page size 64k
+            ("DMA32", 4, "free_chunks_total", 157),  # order 4 - page size 64k
+            ("Normal", "total_free_kb_per_node", 0, 38260),
+            ("Normal", "total_free_kb_per_node", 1, 50836),
         ]:
             self.assertTrue(
                 zone in buddyinfo, "Missing details for zone %s in buddy info" % zone
             )
-            zone_info = buddyinfo[zone]
             self.assertTrue(
-                order in zone_info,
-                'Missing details for order "%d" in buddy info' % order,
+                order in buddyinfo[zone],
+                'Missing details for order "%s" in buddy info' % order,
             )
-            order_info = zone_info[order]
-            count = order_info[node]
+            count = buddyinfo[zone][order][node]
             self.assertTrue(
                 count == except_count,
-                'Wrong chunk count for order %d in zone "%s" for node "%s" (got: %d, expect %d)'
+                'Wrong chunk count for order %s in zone "%s" for node "%s" (got: %d, expect %d)'
                 % (order, zone, node, count, except_count),
             )
 
