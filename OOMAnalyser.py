@@ -550,6 +550,8 @@ class BaseKernelConfig:
         self._gfp_calc_all_values()
         self.gfp_reverse_lookup = self._gfp_create_reverse_lookup()
 
+        self._check_mandatory_gfp_flags()
+
     def _gfp_calc_all_values(self):
         """
         Calculate decimal values for all GFP flags and store in in GFP_FLAGS[<flag>]["_value"]
@@ -643,6 +645,25 @@ class BaseKernelConfig:
         res = useful
         res.extend(modifier)
         return res
+
+    def _check_mandatory_gfp_flags(self):
+        """
+        Check existance of mandatory flags used in
+        OOMAnalyser._calc_trigger_process_values() to calculate the memory zone
+        """
+        if "__GFP_DMA" not in self.GFP_FLAGS:
+            error(
+                "Missing definition of GFP flag __GFP_DMA for kernel {}.{}.{}".format(
+                    *self.release
+                )
+            )
+        if "__GFP_DMA32" not in self.GFP_FLAGS:
+            error(
+                "Missing definition of GFP flag __GFP_DMA for kernel {}.{}.{}".format(
+                    *self.release
+                )
+            )
+        return
 
 
 class KernelConfig_3_10(BaseKernelConfig):
@@ -2881,6 +2902,9 @@ class OOMAnalyser:
                 flags.append("0x{0:x}".format(unknown))
             flags = " | ".join(flags)
 
+        self.oom_result.details["_trigger_proc_gfp_mask_decimal"] = int(
+            self.oom_result.details["trigger_proc_gfp_mask"], 16
+        )
         self.oom_result.details["trigger_proc_gfp_mask"] = "{} ({})".format(
             self.oom_result.details["trigger_proc_gfp_mask"], flags
         )
@@ -3143,10 +3167,14 @@ class OOMAnalyser:
             self.oom_result.details["trigger_proc_requested_memory_pages"]
             * self.oom_result.details["page_size_kb"]
         )
-        if "DMA32" in self.oom_result.details["trigger_proc_gfp_mask"]:
-            zone = "DMA32"
-        elif "DMA" in self.oom_result.details["trigger_proc_gfp_mask"]:
+
+        gfp_mask_decimal = self.oom_result.details["_trigger_proc_gfp_mask_decimal"]
+        gfp_flag_dma = self.oom_result.kconfig.GFP_FLAGS["__GFP_DMA"]["_value"]
+        gfp_flag_dma32 = self.oom_result.kconfig.GFP_FLAGS["__GFP_DMA32"]["_value"]
+        if (gfp_mask_decimal & gfp_flag_dma) == gfp_flag_dma:
             zone = "DMA"
+        elif (gfp_mask_decimal & gfp_flag_dma32) == gfp_flag_dma32:
+            zone = "DMA32"
         else:
             zone = "Normal"
         self.oom_result.details["trigger_proc_mem_zone"] = zone
