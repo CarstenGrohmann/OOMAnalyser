@@ -494,8 +494,9 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <td>Total resident anonymous memory <br> (rss)</td>
             <td class="killed_proc_total_rss_kb text--align-right"></td>
             <td>
-                All virtual process memory mapped into RAM. <br>
-                <code>TotalRSS = anon-rss + file-rss + shmem-rss</code>
+                All virtual process memory mapped into RAM. Normally, a process always requests more virtual memory
+                than it uses. <br>
+                <code>TotalRSS = anon-rss + file-rss + shmem-rss</code> <br>
             </td>
         </tr>
         <tr>

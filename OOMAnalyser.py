@@ -81,7 +81,6 @@ class document:
 
 
 class Node:
-
     classList = classList()
     id = None
     offsetWidth = 0
@@ -667,7 +666,6 @@ class BaseKernelConfig:
 
 
 class KernelConfig_3_10(BaseKernelConfig):
-
     name = "Configuration for Linux kernel 3.10 or later"
     release = (3, 10, "")
 
