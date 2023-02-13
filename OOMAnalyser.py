@@ -44,7 +44,7 @@ class document:
 
         @param names: A string representing the class name(s) to match; multiple class names are separated by whitespace.
         @type names: List(str)
-        @return: List(Node)
+        @rtype: List(Node)
         """
         return [Node()]
 
