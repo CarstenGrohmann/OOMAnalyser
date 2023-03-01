@@ -937,6 +937,12 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 'Wrong watermark level for node %s in zone "%s" (got: %d, expect %d)'
                 % (node, zone, level, except_level),
             )
+        self.assertEqual(
+            analyser.oom_result.kconfig.MAX_ORDER,
+            11,  # This is a hard coded value as extracted from kernel 6.2.0
+            "Unexpected number of chunk sizes (got: %s, expect: 11 (kernel 6.2.0))"
+            % analyser.oom_result.kconfig.MAX_ORDER,
+        )
 
 
 if __name__ == "__main__":

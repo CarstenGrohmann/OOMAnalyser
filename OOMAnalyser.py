@@ -454,6 +454,22 @@ class BaseKernelConfig:
     @see: _gfp_create_reverse_lookup()
     """
 
+    MAX_ORDER = -1
+    """
+    The kernel memory allocator divides physically contiguous memory
+    blocks into "zones", where each zone is a power of two number of
+    pages.  This option selects the largest power of two that the kernel
+    keeps in the memory allocator.
+
+    This config option is actually maximum order plus one. For example,
+    a value of 11 means that the largest free memory block is 2^10 pages.
+
+    The value will be calculated dynamically based on the numbers of
+    orders in OOMAnalyser._extract_buddyinfo().
+
+    @see: OOMAnalyser._extract_buddyinfo().
+    """
+
     pstable_items = [
         "pid",
         "uid",
@@ -3030,6 +3046,17 @@ class OOMAnalyser:
                     size = element.split("*")[1]
                     size = size[:-2]  # strip "kB"
                     self.oom_result.details["_buddyinfo_pagesize_kb"] = int(size)
+
+        # MAX_ORDER is actually maximum order plus one. For example,
+        # a value of 11 means that the largest free memory block is 2^10 pages.
+        # __pragma__ ('jsiter')
+        max_order = 0
+        for o in self.oom_result.details["_buddyinfo"]["DMA"]:
+            # JS: integer is sometimes a string :-/
+            if (isinstance(o, str) and o.isdigit()) or isinstance(o, int):
+                max_order += 1
+        # __pragma__ ('nojsiter')
+        self.oom_result.kconfig.MAX_ORDER = max_order
 
     def _extract_watermarks(self):
         """
