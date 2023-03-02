@@ -132,6 +132,28 @@ class OOMEntityType:
     manual = 2
 
 
+class OOMMemoryAllocFailureType:
+    """Enum to store the results why the memory allocation could have failed"""
+
+    not_started = 0
+    """Analysis not started"""
+
+    missing_data = 1
+    """Missing data to start analysis"""
+
+    failed_below_low_watermark = 2
+    """Failed, because after satisfying this request, the free memory will be below the low memory watermark"""
+
+    failed_no_free_chunks = 3
+    """Failed, because no suitable chunk is free in the current or any higher order."""
+
+    failed_unknown_reason = 4
+    """Failed, but the reason is unknown"""
+
+    skipped_high_order_dont_trigger_oom = 5
+    """"high order" requests don't trigger OOM"""
+
+
 def is_visible(element):
     return element.offsetWidth > 0 and element.offsetHeight > 0
 
@@ -484,6 +506,11 @@ class BaseKernelConfig:
     ]
     """Elements of the process table"""
 
+    PAGE_ALLOC_COSTLY_ORDER = 3
+    """
+    Requests with order > PAGE_ALLOC_COSTLY_ORDER will never trigger the OOM-killer to satisfy the request.
+    """
+
     pstable_html = [
         "PID",
         "UID",
@@ -547,6 +574,13 @@ class BaseKernelConfig:
     Pattern to find the start of the memory chunk information (buddyinfo)
 
     :type: str
+    """
+
+    ZONE_TYPES = ["DMA", "DMA32", "Normal", "HighMem", "Movable"]
+    """
+    List of memory zones
+
+    @type: List(str)
     """
 
     def __init__(self):
@@ -2670,25 +2704,8 @@ class OOMEntity:
 class OOMResult:
     """Results of an OOM analysis"""
 
-    kconfig = BaseKernelConfig()
-    """Kernel configuration"""
-
     details = {}
     """Extracted result"""
-
-    oom_entity = None
-    """
-    State of this OOM (unknown, incomplete, ...)
-
-    :type: OOMEntityState
-    """
-
-    oom_type = OOMEntityType.unknown
-    """
-    Type of this OOM (manually or automatically triggered)
-
-    :type: OOMEntityType
-    """
 
     error_msg = ""
     """
@@ -2697,6 +2714,9 @@ class OOMResult:
     @type: str
     """
 
+    kconfig = BaseKernelConfig()
+    """Kernel configuration"""
+
     kversion = None
     """
     Kernel version
@@ -2704,11 +2724,31 @@ class OOMResult:
     @type: str
     """
 
+    mem_alloc_failure = OOMMemoryAllocFailureType.not_started
+    """State/result of the memory allocation failure analysis
+
+    @see: OOMAnalyser._analyse_alloc_failure()
+    """
+
+    oom_entity = None
+    """
+    State of this OOM (unknown, incomplete, ...)
+
+    :type: OOMEntityState
+    """
+
     oom_text = None
     """
     OOM text
 
     @type: str
+    """
+
+    oom_type = OOMEntityType.unknown
+    """
+    Type of this OOM (manually or automatically triggered)
+
+    :type: OOMEntityType
     """
 
     swap_active = False
@@ -3063,7 +3103,8 @@ class OOMAnalyser:
         Extract memory watermark information from all zones
 
         This function fills:
-        * OOMResult.details["_watermarks"] with [<zone>][<node>][(free|min|low|high)] = <XXX>
+        * OOMResult.details["_watermarks"] with [<zone>][<node>][(free|min|low|high)] = int
+        * OOMResult.details["_watermarks"] with [<zone>][<node>][(lowmem_reserve)] = List(int)
         """
         self.oom_result.details["_watermarks"] = {}
         watermark_info = self.oom_result.details["_watermarks"]
@@ -3075,9 +3116,16 @@ class OOMAnalyser:
         # Therefore, we reset the counter by one line.
         self.oom_entity.back()
 
+        node = None
+        zone = None
         for line in self.oom_entity:
             match = self.REC_WATERMARK.match(line)
             if not match:
+                if line.startswith("lowmem_reserve[]:"):
+                    # zone and node are defined in the previous round
+                    watermark_info[zone][node]["lowmem_reserve"] = [
+                        int(v) for v in line.split()[1:]
+                    ]
                 continue
 
             node = int(match.group("node"))
@@ -3088,6 +3136,32 @@ class OOMAnalyser:
                 watermark_info[zone][node] = {}
             for i in ["free", "min", "low", "high"]:
                 watermark_info[zone][node][i] = int(match.group(i))
+
+    def _extract_node_from_watermarks(self, zone):
+        """
+        Search node with memory shortage: watermark "free" < "min"
+
+        @param str zone: Requested zone
+        @return: First node with memory shortage or None if no node found
+        @rtype: None|int
+        """
+        watermark_info = self.oom_result.details["_watermarks"]
+        if zone not in watermark_info:
+            debug(
+                "Missing watermark info for zone {} - skip memory analysis".format(zone)
+            )
+            return None
+        # __pragma__ ('jsiter')
+        for node in watermark_info[zone]:
+            if watermark_info[zone][node]["free"] < watermark_info[zone][node]["min"]:
+                return int(node)
+        # __pragma__ ('nojsiter')
+
+        debug(
+            "Node with current memory shortage cannot be determined - skip memory analysis"
+        )
+
+        return None
 
     def _gfp_hex2flags(self, hexvalue):
         """\
@@ -3169,6 +3243,114 @@ class OOMAnalyser:
 
         ps_index.sort(key=int)
         self.oom_result.details["_pstable_index"] = ps_index
+
+    def _check_free_chunks(self, start_with_order, zone, node):
+        """Check for at least one free chunk in the current or any higher order.
+
+        Returns True, if at lease one suitable chunk is free.
+        Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
+
+        @param int start_with_order: Start checking with this order
+        @param str zone: Memory zone
+        @param int node: Node number
+        @rtype: None|bool
+        """
+        if not self.oom_result.details["_buddyinfo"]:
+            return None
+        buddyinfo = self.oom_result.details["_buddyinfo"]
+        if zone not in buddyinfo:
+            return None
+
+        for order in range(start_with_order, self.oom_result.kconfig.MAX_ORDER):
+            if order not in buddyinfo[zone]:
+                break
+            if node not in buddyinfo[zone][order]:
+                return None
+            free_chunks = buddyinfo[zone][order][node]
+            if free_chunks:
+                return True
+        return False
+
+    def _analyse_alloc_failure(self):
+        """
+        Analyse why the memory allocation could be failed.
+
+        The code in this function is inspired by mm/page_alloc.c:__zone_watermark_ok()
+        """
+        self.oom_result.mem_alloc_failure = OOMMemoryAllocFailureType.not_started
+
+        if self.oom_result.oom_type == OOMEntityType.manual:
+            debug("OOM triggered manually - skip memory analysis")
+            return
+        if "_buddyinfo" not in self.oom_result.details:
+            debug("Missing buddyinfo - skip memory analysis")
+            return
+        if not self.oom_result.details["_buddyinfo"]:
+            debug("Empty buddyinfo - skip memory analysis")
+            return
+        if ("trigger_proc_order" not in self.oom_result.details) or (
+            "trigger_proc_mem_zone" not in self.oom_result.details
+        ):
+            debug(
+                "Missing trigger_proc_order and/or trigger_proc_mem_zone - skip memory analysis"
+            )
+            return
+        if "_watermarks" not in self.oom_result.details:
+            debug("Missing watermark information - skip memory analysis")
+            return
+
+        order = self.oom_result.details["trigger_proc_order"]
+        zone = self.oom_result.details["trigger_proc_mem_zone"]
+        watermark_info = self.oom_result.details["_watermarks"]
+
+        # "high order" requests don't trigger OOM
+        if int(order) > self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER:
+            debug("high order requests should not trigger OOM - skip memory analysis")
+            self.oom_result.mem_alloc_failure = (
+                OOMMemoryAllocFailureType.skipped_high_order_dont_trigger_oom
+            )
+            return
+
+        # Search node with memory shortage: watermark "free" < "min"
+        node = self._extract_node_from_watermarks(zone)
+        if node is None:
+            return  # error cause already shown as debug message
+
+        # the remaining code is similar to mm/page_alloc.c:__zone_watermark_ok()
+        # =======================================================================
+
+        # calculation in kB and not in pages
+        free_kb = watermark_info[zone][node]["free"]
+        highest_zoneidx = self.oom_result.kconfig.ZONE_TYPES.index(zone)
+        lowmem_reserve = watermark_info[zone][node]["lowmem_reserve"]
+        min_kb = watermark_info[zone][node]["low"]
+        page_size = self.oom_result.details["_buddyinfo_pagesize_kb"]
+
+        # reduce minimum watermark for high priority calls
+        # ALLOC_HIGH == __GFP_HIGH
+        gfp_mask_decimal = self.oom_result.details["_trigger_proc_gfp_mask_decimal"]
+        gfp_flag_high = self.oom_result.kconfig.GFP_FLAGS["__GFP_DMA"]["_value"]
+        if (gfp_mask_decimal & gfp_flag_high) == gfp_flag_high:
+            min_kb -= int(min_kb / 2)
+
+        # check watermarks, if these are not met, then a high-order request also
+        # cannot go ahead even if a suitable page happened to be free.
+        if free_kb <= (min_kb + (lowmem_reserve[highest_zoneidx] * page_size)):
+            self.oom_result.mem_alloc_failure = (
+                OOMMemoryAllocFailureType.failed_below_low_watermark
+            )
+            return
+
+        # For a high-order request, check at least one suitable page is free
+        if not self._check_free_chunks(order, zone, node):
+            self.oom_result.mem_alloc_failure = (
+                OOMMemoryAllocFailureType.failed_no_free_chunks
+            )
+            return
+
+        self.oom_result.mem_alloc_failure = (
+            OOMMemoryAllocFailureType.failed_unknown_reason
+        )
 
     def _calc_pstable_values(self):
         """Set additional notes to processes listed in the process table"""
@@ -3323,6 +3505,7 @@ class OOMAnalyser:
         self._calc_system_values()
         self._calc_trigger_process_values()
         self._calc_killed_process_values()
+        self._analyse_alloc_failure()
 
     def analyse(self):
         """
@@ -4189,6 +4372,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self._show_items()
         self._show_swap_usage()
         self._show_ram_usage()
+        self._show_alloc_failure()
 
         # generate process table
         self._show_pstable()
@@ -4197,6 +4381,29 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         element = document.getElementById("oom")
         element.textContent = self.oom_result.oom_text
         self.toggle_oom(show=False)
+
+    def _show_alloc_failure(self):
+        """Show details why the memory allocation failed"""
+        if (
+            self.oom_result.mem_alloc_failure
+            == OOMMemoryAllocFailureType.failed_below_low_watermark
+        ):
+            show_elements(".js-alloc-failure--show")
+            show_elements(".js-alloc-failure-below-low-watermark--show")
+        elif (
+            self.oom_result.mem_alloc_failure
+            == OOMMemoryAllocFailureType.failed_no_free_chunks
+        ):
+            show_elements(".js-alloc-failure--show")
+            show_elements(".js-alloc-failure-no-free-chunks--show")
+        elif (
+            self.oom_result.mem_alloc_failure
+            == OOMMemoryAllocFailureType.failed_unknown_reason
+        ):
+            show_elements(".js-alloc-failure--show")
+            show_elements(".js-alloc-failure-unknown-reason-show")
+        else:
+            hide_elements(".js-alloc-failure--show")
 
     def _show_ram_usage(self):
         """Generate RAM usage diagram"""

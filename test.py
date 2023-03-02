@@ -245,6 +245,11 @@ class TestInBrowser(TestBase):
             "99% (8343236 kBytes out of 8388604 kBytes) swap space" in explanation.text,
             "Used swap space in summary not found",
         )
+        self.assertTrue(
+            "The request failed because after its fulfillment the free memory would be below the memory low watermark."
+            in explanation.text,
+            "Memory allocation failure analysis not found",
+        )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
         self.assertEqual(
@@ -314,6 +319,10 @@ class TestInBrowser(TestBase):
             "9% (209520 kBytes out of 2096632 kBytes) physical memory"
             in explanation.text,
             "Used physical memory in summary not found",
+        )
+        self.assertTrue(
+            "The request failed because" not in explanation.text,
+            "Memory allocation failure analysis found",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -937,11 +946,84 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 'Wrong watermark level for node %s in zone "%s" (got: %d, expect %d)'
                 % (node, zone, level, except_level),
             )
+        node = analyser._extract_node_from_watermarks("Normal")
+        self.assertTrue(
+            node == 0, "Wrong node with memory shortage (got: %s, expect: 0)" % node
+        )
         self.assertEqual(
             analyser.oom_result.kconfig.MAX_ORDER,
             11,  # This is a hard coded value as extracted from kernel 6.2.0
             "Unexpected number of chunk sizes (got: %s, expect: 11 (kernel 6.2.0))"
             % analyser.oom_result.kconfig.MAX_ORDER,
+        )
+
+    def test_011_alloc_failure(self):
+        """Test analysis why the memory allocation could be failed"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.oom_type,
+            OOMAnalyser.OOMEntityType.automatic,
+            "OOM triggered manually",
+        )
+        self.assertTrue(
+            "_buddyinfo" in analyser.oom_result.details, "Missing buddyinfo"
+        )
+        self.assertTrue(analyser.oom_result.details["_buddyinfo"], "Empty buddyinfo")
+        self.assertTrue(
+            "trigger_proc_order" in analyser.oom_result.details
+            and "trigger_proc_mem_zone" in analyser.oom_result.details,
+            "Missing trigger_proc_order and/or trigger_proc_mem_zone",
+        )
+        self.assertTrue(
+            "_watermarks" in analyser.oom_result.details,
+            "Missing watermark information - skip memory analysis",
+        )
+
+        for zone, order, node, expected_result in [
+            ("DMA", 0, 0, True),
+            ("DMA", 6, 0, True),
+            ("DMA32", 0, 0, True),
+            ("DMA32", 10, 0, False),
+            ("Normal", 0, 0, True),
+            ("Normal", 0, 1, True),
+            ("Normal", 6, 0, False),
+            ("Normal", 6, 1, True),
+            ("Normal", 7, 0, False),
+            ("Normal", 7, 1, True),
+            ("Normal", 9, 0, False),
+            ("Normal", 9, 1, False),
+        ]:
+            result = analyser._check_free_chunks(order, zone, node)
+            self.assertEqual(
+                result,
+                expected_result,
+                "Wrong result of the check for free chunks with the same or higher order for Node %d, "
+                'Zone "%s" and order %d (got: %s, expected %s)'
+                % (node, zone, order, result, expected_result),
+            )
+
+        # Search node with memory shortage: watermark "free" < "min"
+        for zone, expected_node in [
+            ("DMA", None),
+            ("DMA32", None),
+            ("Normal", 0),
+        ]:
+            node = analyser._extract_node_from_watermarks(zone)
+            self.assertEqual(
+                node,
+                expected_node,
+                'Wrong result if a node has memory shortage in zone "%s" (got: %s, expected %s)'
+                % (zone, node, expected_node),
+            )
+
+        self.assertEqual(
+            analyser.oom_result.mem_alloc_failure,
+            OOMAnalyser.OOMMemoryAllocFailureType.failed_below_low_watermark,
+            "Unexpected reason why the memory allocation has failed.",
         )
 
 
