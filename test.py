@@ -250,6 +250,10 @@ class TestInBrowser(TestBase):
             in explanation.text,
             "Memory allocation failure analysis not found",
         )
+        self.assertTrue(
+            "The system memory is not heavily fragmented" in explanation.text,
+            "Missing statement about not fragmented memory",
+        )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
         self.assertEqual(
@@ -322,7 +326,12 @@ class TestInBrowser(TestBase):
         )
         self.assertTrue(
             "The request failed because" not in explanation.text,
-            "Memory allocation failure analysis found",
+            "Unexpected memory allocation failure analysis found",
+        )
+        self.assertTrue(
+            "The system memory is heavily fragmented" not in explanation.text
+            and "The system memory is not heavily fragmented" not in explanation.text,
+            "Unexpected memory fragmentation statement found",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -1024,6 +1033,23 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             analyser.oom_result.mem_alloc_failure,
             OOMAnalyser.OOMMemoryAllocFailureType.failed_below_low_watermark,
             "Unexpected reason why the memory allocation has failed.",
+        )
+
+    def test_012_fragmentation(self):
+        """Test memory fragmentation"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+        zone = analyser.oom_result.details["trigger_proc_mem_zone"]
+        node = analyser._extract_node_from_watermarks(zone)
+        mem_fragmented = not analyser._check_free_chunks(
+            analyser.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
+        )
+        self.assertFalse(
+            mem_fragmented,
+            'Memory of Node %d, Zone "%s" is not fragmented, but reported as fragmented'
+            % (node, zone),
         )
 
 

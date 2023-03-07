@@ -87,6 +87,15 @@ THIS PROGRAM COMES WITH NO WARRANTY
         .js-killed-proc-score--show {
             /* empty - used to hide/show OOM score of killed process */
         }
+        .js-memory-fragmentation--show {
+            /* empty - used to hide/show details for memory fragmentation */
+        }
+        .js-memory-heavy-fragmentation--show {
+            /* empty - used to hide/show details for memory fragmentation */
+        }
+        .js-memory-no-heavy-fragmentation--show {
+            /* empty - used to hide/show details for memory fragmentation */
+        }
 
         .js-oom-automatic--show {
             /* empty - used to show sections for automatically triggered OOMs */
@@ -440,6 +449,21 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     The request failed, but the reason is unknown.
                 </span>
                 This analysis result is an estimate because the kernel reduces the minimum watermark in some rare cases.
+            </p>
+        </div>
+        <div>
+            <p class="js-text--default-hide js-memory-fragmentation--show">
+                Memory fragmentation is common. It occurs due to dynamic memory allocation by the kernel as well as by
+                all applications.
+                <span class="js-text--default-hide js-memory-heavy-fragmentation--show">
+                    The system memory is heavily fragmented, because all chunks with an order &ge;
+                    <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are in use. Allocation of larger contiguous
+                    memory areas will fail.
+                </span>
+                <span class="js-text--default-hide js-memory-no-heavy-fragmentation--show">
+                    The system memory is not heavily fragmented, because chunks with an order &ge;
+                    <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are freely available.
+                </span>
             </p>
         </div>
     </div>
@@ -992,6 +1016,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Add GFP flags for more kernel releases</li>
         <li>Display missing memory chunks (buddyinfo) again</li>
         <li>Add analysis why the memory request failed</li>
+        <li>Add check for heavy memory fragmentation</li>
         <li>...</li>
     </ol>
 

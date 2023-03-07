@@ -2730,6 +2730,13 @@ class OOMResult:
     @see: OOMAnalyser._analyse_alloc_failure()
     """
 
+    mem_fragmented = None
+    """True if the memory is heavily fragmented. This means that the higher order has no free chunks.
+
+    @see: BaseKernelConfig.PAGE_ALLOC_COSTLY_ORDER, OOMAnalyser._check_for_memory_fragmentation()
+    @type: None | bool
+    """
+
     oom_entity = None
     """
     State of this OOM (unknown, incomplete, ...)
@@ -3271,6 +3278,27 @@ class OOMAnalyser:
                 return True
         return False
 
+    def _check_for_memory_fragmentation(self):
+        """Check for heavy memory fragmentation. This means that the higher order has no free chunks.
+
+        Returns True, all high order chunk are in use.
+        Returns False, if high order chunks are available.
+        Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
+
+        @see: BaseKernelConfig.PAGE_ALLOC_COSTLY_ORDER, OOMResult.mem_fragmented
+        @rtype: None|bool
+        """
+        zone = self.oom_result.details["trigger_proc_mem_zone"]
+        node = self._extract_node_from_watermarks(zone)
+        if zone not in self.oom_result.details["_buddyinfo"]:
+            return None
+        self.oom_result.mem_fragmented = not self._check_free_chunks(
+            self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
+        )
+        self.oom_result.details[
+            "kconfig.PAGE_ALLOC_COSTLY_ORDER"
+        ] = self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER
+
     def _analyse_alloc_failure(self):
         """
         Analyse why the memory allocation could be failed.
@@ -3506,6 +3534,7 @@ class OOMAnalyser:
         self._calc_trigger_process_values()
         self._calc_killed_process_values()
         self._analyse_alloc_failure()
+        self._check_for_memory_fragmentation()
 
     def analyse(self):
         """
@@ -4373,6 +4402,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self._show_swap_usage()
         self._show_ram_usage()
         self._show_alloc_failure()
+        self._show_memory_fragmentation()
 
         # generate process table
         self._show_pstable()
@@ -4404,6 +4434,16 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             show_elements(".js-alloc-failure-unknown-reason-show")
         else:
             hide_elements(".js-alloc-failure--show")
+
+    def _show_memory_fragmentation(self):
+        """Show details about memory fragmentation"""
+        if self.oom_result.mem_fragmented is None:
+            return
+        show_elements(".js-memory-fragmentation--show")
+        if self.oom_result.mem_fragmented:
+            show_elements(".js-memory-heavy-fragmentation--show")
+        else:
+            show_elements(".js-memory-no-heavy-fragmentation--show")
 
     def _show_ram_usage(self):
         """Generate RAM usage diagram"""
