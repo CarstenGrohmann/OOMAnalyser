@@ -955,7 +955,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 'Wrong watermark level for node %s in zone "%s" (got: %d, expect %d)'
                 % (node, zone, level, except_level),
             )
-        node = analyser._extract_node_from_watermarks("Normal")
+        node = analyser.oom_result.details["trigger_proc_numa_node"]
         self.assertTrue(
             node == 0, "Wrong node with memory shortage (got: %s, expect: 0)" % node
         )
@@ -1021,7 +1021,10 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("DMA32", None),
             ("Normal", 0),
         ]:
-            node = analyser._extract_node_from_watermarks(zone)
+            # override zone with test data and trigger extracting node
+            analyser.oom_result.details["trigger_proc_mem_zone"] = zone
+            analyser._search_node_with_memory_shortage()
+            node = analyser.oom_result.details["trigger_proc_numa_node"]
             self.assertEqual(
                 node,
                 expected_node,
@@ -1042,7 +1045,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         success = analyser.analyse()
         self.assertTrue(success, "OOM analysis failed")
         zone = analyser.oom_result.details["trigger_proc_mem_zone"]
-        node = analyser._extract_node_from_watermarks(zone)
+        node = analyser.oom_result.details["trigger_proc_numa_node"]
         mem_fragmented = not analyser._check_free_chunks(
             analyser.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
         )

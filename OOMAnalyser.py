@@ -3144,31 +3144,28 @@ class OOMAnalyser:
             for i in ["free", "min", "low", "high"]:
                 watermark_info[zone][node][i] = int(match.group(i))
 
-    def _extract_node_from_watermarks(self, zone):
+    def _search_node_with_memory_shortage(self):
         """
-        Search node with memory shortage: watermark "free" < "min"
+        Search NUMA node with memory shortage: watermark "free" < "min".
 
-        @param str zone: Requested zone
-        @return: First node with memory shortage or None if no node found
-        @rtype: None|int
+        This function fills:
+        * OOMResult.details["trigger_proc_numa_node"] = <int(first node with memory shortage) | None>
         """
+        self.oom_result.details["trigger_proc_numa_node"] = None
+        zone = self.oom_result.details["trigger_proc_mem_zone"]
         watermark_info = self.oom_result.details["_watermarks"]
         if zone not in watermark_info:
             debug(
                 "Missing watermark info for zone {} - skip memory analysis".format(zone)
             )
-            return None
+            return
         # __pragma__ ('jsiter')
         for node in watermark_info[zone]:
             if watermark_info[zone][node]["free"] < watermark_info[zone][node]["min"]:
-                return int(node)
+                self.oom_result.details["trigger_proc_numa_node"] = int(node)
+                return
         # __pragma__ ('nojsiter')
-
-        debug(
-            "Node with current memory shortage cannot be determined - skip memory analysis"
-        )
-
-        return None
+        return
 
     def _gfp_hex2flags(self, hexvalue):
         """\
@@ -3289,7 +3286,7 @@ class OOMAnalyser:
         @rtype: None|bool
         """
         zone = self.oom_result.details["trigger_proc_mem_zone"]
-        node = self._extract_node_from_watermarks(zone)
+        node = self.oom_result.details["trigger_proc_numa_node"]
         if zone not in self.oom_result.details["_buddyinfo"]:
             return None
         self.oom_result.mem_fragmented = not self._check_free_chunks(
@@ -3340,9 +3337,9 @@ class OOMAnalyser:
             return
 
         # Search node with memory shortage: watermark "free" < "min"
-        node = self._extract_node_from_watermarks(zone)
+        node = self.oom_result.details["trigger_proc_numa_node"]
         if node is None:
-            return  # error cause already shown as debug message
+            return
 
         # the remaining code is similar to mm/page_alloc.c:__zone_watermark_ok()
         # =======================================================================
@@ -3533,6 +3530,7 @@ class OOMAnalyser:
         self._calc_system_values()
         self._calc_trigger_process_values()
         self._calc_killed_process_values()
+        self._search_node_with_memory_shortage()
         self._analyse_alloc_failure()
         self._check_for_memory_fragmentation()
 
