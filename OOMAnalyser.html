@@ -387,20 +387,13 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 The OOM killer calculates a score for each process and terminates the process with the highest score
                 to satisfy the original memory request.
             </p>
-            <p>
-                The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span
-                    class="trigger_proc_pid"></span>)
-                requested <span class="trigger_proc_requested_memory_pages_kb"></span>
-                (<span class="trigger_proc_requested_memory_pages"></span>) memory
-                from the <span class="trigger_proc_mem_zone"></span> memory zone.
-            </p>
         </div>
         <div class="js-text--default-show js-oom-manual--show">
             <p>
                 The OOM killer was manually triggered (e.g. with &quot;<code>echo f > /proc/sysrq-trigger</code>&quot;)
-                by a user with root privileges.
-                There is no demand to free memory but the OOM killer started nevertheless.
-                The OOM killer calculates a score for each process and terminates the process with the highest score.
+                by a user with root privileges. There is no demand to free memory but the OOM killer started
+                nevertheless. The OOM killer calculates a score for each process and terminates the process with the
+                highest score.
             </p>
         </div>
         <div class="js-text--default-show js-swap-active--show">
@@ -421,22 +414,21 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 physical memory are in use.
             </p>
         </div>
-        <p>
-            The process &quot;<span class="killed_proc_name"></span>&quot;
-            (PID <span class="killed_proc_pid"></span>)
-            <span class="js-text--default-show js-killed-proc-score--show">
-                with an OOM score of <span class="killed_proc_score"></span>
-            </span>
-            has been terminated. It uses <span class="killed_proc_rss_percent"></span>
-            (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
-        </p>
-        <div class="js-text--default-hide js-alloc-failure--show">
+        <div class="js-text--default-show js-oom-automatic--show">
             <p>
-                A memory chunk of order <span class="trigger_proc_order"></span> (
-                <span class="trigger_proc_requested_memory_pages"></span> /
-                <span class="trigger_proc_requested_memory_pages_kb"></span> ) has been requested from the
+                The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
+                requested a memory chunk of order <span class="trigger_proc_order"></span> from the
                 &quot;<span class="trigger_proc_mem_zone"></span>&quot; memory zone.
 
+                That are 2<span class="text__superscript">order</span> pages ==
+                2<span class="trigger_proc_order text__superscript"></span> pages ==
+                <span class="trigger_proc_requested_memory_pages"></span>
+                a <span class="page_size_kb"></span> ==
+                <span class="trigger_proc_requested_memory_pages_kb"></span> memory.
+            </p>
+        </div>
+        <div class="js-text--default-hide js-alloc-failure--show">
+            <p>
                 <span class="js-text--default-hide js-alloc-failure-below-low-watermark--show">
                     The request failed because after its fulfillment the free memory would be below the memory
                     low watermark.
@@ -448,13 +440,22 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <span class="js-text--default-hide js-alloc-failure-unknown-reason-show">
                     The request failed, but the reason is unknown.
                 </span>
-                This analysis result is an estimate because the kernel reduces the minimum watermark in some rare cases.
+                    The memory shortage triggers the OOM process.
             </p>
         </div>
-        <div>
-            <p class="js-text--default-hide js-memory-fragmentation--show">
-                Memory fragmentation is common. It occurs due to dynamic memory allocation by the kernel as well as by
-                all applications.
+        <p>
+            The process &quot;<span class="killed_proc_name"></span>&quot;
+            (PID <span class="killed_proc_pid"></span>)
+            <span class="js-text--default-show js-killed-proc-score--show">
+                with an OOM score of <span class="killed_proc_score"></span>
+            </span>
+            has been terminated. It uses <span class="killed_proc_rss_percent"></span>
+            (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
+        </p>
+        <div class="js-text--default-hide js-memory-fragmentation--show">
+            <p>
+                Dynamic memory allocation is used by both the kernel and all applications. This leads to memory
+                fragmentation and is a common behavior.
                 <span class="js-text--default-hide js-memory-heavy-fragmentation--show">
                     The system memory is heavily fragmented, because all chunks with an order &ge;
                     <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are in use. Allocation of larger contiguous
@@ -505,18 +506,41 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <td class="trigger_proc_nodemask text--align-right"></td>
             <td>Bit mask indicating the cores on which the process can run.</td>
         </tr>
+
         <tr class="js-oom-automatic--show">
-            <td>Requested memory<br>(order)</td>
+            <td>Requested memory: order</td>
             <td class="text--align-right">
-                <span class="trigger_proc_requested_memory_pages"></span> (2<span class="trigger_proc_order text__superscript"></span>) pages /
-                <span class="trigger_proc_requested_memory_pages_kb"></span>
+                <span class="trigger_proc_order"></span>
             </td>
-            <td>The kernel specifies the requested number of pages as exponent of power of two.
+            <td>The kernel specifies the requested number of pages as an exponent of a power of two.</td>
         </tr>
-        <tr>
-            <td>Requested memory<br>(zone)</td>
+        <tr class="js-oom-automatic--show">
+            <td>Requested memory: number of pages</td>
+            <td class="text--align-right">
+                <span class="trigger_proc_requested_memory_pages"></span>
+                (2<span class="trigger_proc_order text__superscript"></span> pages) a
+                <span class="page_size_kb"></span> per page
+            </td>
+            <td>Requested memory in number of pages.</td>
+        </tr>
+        <tr class="js-oom-automatic--show">
+            <td>Requested memory: size</td>
+            <td class="text--align-right"><span class="trigger_proc_requested_memory_pages_kb"></span></td>
+            <td>Requested memory in kBytes.</td>
+        </tr>
+        <tr class="js-oom-automatic--show">
+            <td>Requested memory: zone</td>
             <td class="trigger_proc_mem_zone text--align-right"></td>
-            <td>Memory zone from which the requested storage chunk should come from.
+            <td>Memory zone from which the requested storage chunk should come.</td>
+        </tr>
+        <tr class="js-oom-automatic--show">
+            <td>Requested memory: node</td>
+            <td class="trigger_proc_numa_node text--align-right"></td>
+            <td>
+                First NUMA node with memory shortage watermark &quot;<code>free</code>&quot; &lt;
+                &quot;<code>min</code>&quot; in memory watermark information.
+                <br>
+                Assumption that this is the node where the OOM was triggered.
             </td>
         </tr>
         <tr>
@@ -1017,6 +1041,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Display missing memory chunks (buddyinfo) again</li>
         <li>Add analysis why the memory request failed</li>
         <li>Add check for heavy memory fragmentation</li>
+        <li>Summary of the analysis revised</li>
         <li>...</li>
     </ol>
 
