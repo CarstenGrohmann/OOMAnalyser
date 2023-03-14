@@ -885,7 +885,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             (3, 10, ".el7."),
             "Wrong KernelConfig release",
         )
-        buddyinfo = analyser.oom_result.details["_buddyinfo"]
+        buddyinfo = analyser.oom_result.buddyinfo
         for zone, order, node, except_count in [
             ("Normal", 6, 0, 0),  # order 6 - page size 256kB
             ("Normal", 6, 1, 2),  # order 6 - page size 256kB
@@ -926,7 +926,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             (3, 10, ".el7."),
             "Wrong KernelConfig release",
         )
-        watermarks = analyser.oom_result.details["_watermarks"]
+        watermarks = analyser.oom_result.watermarks
         for zone, node, level, except_level in [
             ("Normal", 0, "free", 36692),
             ("Normal", 0, "min", 36784),
@@ -978,19 +978,13 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             OOMAnalyser.OOMEntityType.automatic,
             "OOM triggered manually",
         )
-        self.assertTrue(
-            "_buddyinfo" in analyser.oom_result.details, "Missing buddyinfo"
-        )
-        self.assertTrue(analyser.oom_result.details["_buddyinfo"], "Empty buddyinfo")
+        self.assertTrue(analyser.oom_result.buddyinfo, "Missing buddyinfo")
         self.assertTrue(
             "trigger_proc_order" in analyser.oom_result.details
             and "trigger_proc_mem_zone" in analyser.oom_result.details,
             "Missing trigger_proc_order and/or trigger_proc_mem_zone",
         )
-        self.assertTrue(
-            "_watermarks" in analyser.oom_result.details,
-            "Missing watermark information - skip memory analysis",
-        )
+        self.assertTrue(analyser.oom_result.watermarks, "Missing watermark information")
 
         for zone, order, node, expected_result in [
             ("DMA", 0, 0, True),

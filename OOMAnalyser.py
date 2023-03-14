@@ -2704,6 +2704,9 @@ class OOMEntity:
 class OOMResult:
     """Results of an OOM analysis"""
 
+    buddyinfo = {}
+    """Information about free areas in all zones"""
+
     details = {}
     """Extracted result"""
 
@@ -2764,6 +2767,9 @@ class OOMResult:
 
     @type: bool
     """
+
+    watermarks = {}
+    """Memory watermark information"""
 
 
 class OOMAnalyser:
@@ -3041,13 +3047,13 @@ class OOMAnalyser:
         mm/page_alloc.c:show_migration_types().
 
         This function fills:
-        * OOMResult.details["_buddyinfo"] with [<zone>][<order>][<node>] = <number of free chunks>
-        * OOMResult.details["_buddyinfo"] with [zone]["total_free_kb_per_node"][node] = int(total_free_kb_per_node)
+        * OOMResult.buddyinfo with [<zone>][<order>][<node>] = <number of free chunks>
+        * OOMResult.buddyinfo with [zone]["total_free_kb_per_node"][node] = int(total_free_kb_per_node)
         * OOMResult.details["_buddyinfo_pagesize_kb"] with the extracted page size
         """
-        self.oom_result.details["_buddyinfo"] = {}
+        self.oom_result.buddyinfo = {}
         self.oom_result.details["_buddyinfo_pagesize_kb"] = None
-        buddy_info = self.oom_result.details["_buddyinfo"]
+        buddy_info = self.oom_result.buddyinfo
         self.oom_entity.find_text(self.oom_result.kconfig.zoneinfo_start)
 
         # Currently omm_entity point to the first line of the buddyinfo.
@@ -3098,7 +3104,7 @@ class OOMAnalyser:
         # a value of 11 means that the largest free memory block is 2^10 pages.
         # __pragma__ ('jsiter')
         max_order = 0
-        for o in self.oom_result.details["_buddyinfo"]["DMA"]:
+        for o in self.oom_result.buddyinfo["DMA"]:
             # JS: integer is sometimes a string :-/
             if (isinstance(o, str) and o.isdigit()) or isinstance(o, int):
                 max_order += 1
@@ -3110,11 +3116,11 @@ class OOMAnalyser:
         Extract memory watermark information from all zones
 
         This function fills:
-        * OOMResult.details["_watermarks"] with [<zone>][<node>][(free|min|low|high)] = int
-        * OOMResult.details["_watermarks"] with [<zone>][<node>][(lowmem_reserve)] = List(int)
+        * OOMResult.watermarks with [<zone>][<node>][(free|min|low|high)] = int
+        * OOMResult.watermarks with [<zone>][<node>][(lowmem_reserve)] = List(int)
         """
-        self.oom_result.details["_watermarks"] = {}
-        watermark_info = self.oom_result.details["_watermarks"]
+        self.oom_result.watermarks = {}
+        watermark_info = self.oom_result.watermarks
         self.oom_entity.find_text(self.oom_result.kconfig.watermark_start)
 
         # Currently omm_entity point to the first line of the watermark information.
@@ -3153,7 +3159,7 @@ class OOMAnalyser:
         """
         self.oom_result.details["trigger_proc_numa_node"] = None
         zone = self.oom_result.details["trigger_proc_mem_zone"]
-        watermark_info = self.oom_result.details["_watermarks"]
+        watermark_info = self.oom_result.watermarks
         if zone not in watermark_info:
             debug(
                 "Missing watermark info for zone {} - skip memory analysis".format(zone)
@@ -3259,9 +3265,9 @@ class OOMAnalyser:
         @param int node: Node number
         @rtype: None|bool
         """
-        if not self.oom_result.details["_buddyinfo"]:
+        if not self.oom_result.buddyinfo:
             return None
-        buddyinfo = self.oom_result.details["_buddyinfo"]
+        buddyinfo = self.oom_result.buddyinfo
         if zone not in buddyinfo:
             return None
 
@@ -3287,7 +3293,7 @@ class OOMAnalyser:
         """
         zone = self.oom_result.details["trigger_proc_mem_zone"]
         node = self.oom_result.details["trigger_proc_numa_node"]
-        if zone not in self.oom_result.details["_buddyinfo"]:
+        if zone not in self.oom_result.buddyinfo:
             return None
         self.oom_result.mem_fragmented = not self._check_free_chunks(
             self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
@@ -3307,11 +3313,8 @@ class OOMAnalyser:
         if self.oom_result.oom_type == OOMEntityType.manual:
             debug("OOM triggered manually - skip memory analysis")
             return
-        if "_buddyinfo" not in self.oom_result.details:
+        if not self.oom_result.buddyinfo:
             debug("Missing buddyinfo - skip memory analysis")
-            return
-        if not self.oom_result.details["_buddyinfo"]:
-            debug("Empty buddyinfo - skip memory analysis")
             return
         if ("trigger_proc_order" not in self.oom_result.details) or (
             "trigger_proc_mem_zone" not in self.oom_result.details
@@ -3320,13 +3323,13 @@ class OOMAnalyser:
                 "Missing trigger_proc_order and/or trigger_proc_mem_zone - skip memory analysis"
             )
             return
-        if "_watermarks" not in self.oom_result.details:
+        if not self.oom_result.watermarks:
             debug("Missing watermark information - skip memory analysis")
             return
 
         order = self.oom_result.details["trigger_proc_order"]
         zone = self.oom_result.details["trigger_proc_mem_zone"]
-        watermark_info = self.oom_result.details["_watermarks"]
+        watermark_info = self.oom_result.watermarks
 
         # "high order" requests don't trigger OOM
         if int(order) > self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER:
@@ -4583,7 +4586,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         while swapped:
             swapped = False
             for i in range(len(ps_index) - 1):
-
                 v1 = getvalue(column_name, i)
                 v2 = getvalue(column_name, i + 1)
 
