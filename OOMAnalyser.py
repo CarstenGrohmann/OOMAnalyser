@@ -2799,6 +2799,9 @@ class OOMAnalyser:
     )
     """RE to extract free memory chunks of a memor zone"""
 
+    REC_PAGE_SIZE = re.compile("Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
+    """RE to extract the page size from buddyinfo DMA zone"""
+
     REC_WATERMARK = re.compile(
         "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
         "free:(?P<free>\d+)kB "
@@ -3018,10 +3021,22 @@ class OOMAnalyser:
             call_trace += "{}\n".format(line.strip())
         self.oom_result.details["call_trace"] = call_trace
 
+        self._extract_page_size()
         self._extract_pstable()
         self._extract_gpf_mask()
         self._extract_buddyinfo()
         self._extract_watermarks()
+
+    def _extract_page_size(self):
+        """Extract page size from buddyinfo DMZ zone"""
+        match = self.REC_PAGE_SIZE.search(self.oom_entity.text)
+        if match:
+            self.oom_result.details["page_size_kb"] = int(match.group("page_size"))
+            self.oom_result.details["_page_size_guessed"] = False
+        else:
+            # educated guess
+            self.oom_result.details["page_size_kb"] = 4
+            self.oom_result.details["_page_size_guessed"] = True
 
     def _extract_pstable(self):
         """Extract process table"""
@@ -3049,10 +3064,8 @@ class OOMAnalyser:
         This function fills:
         * OOMResult.buddyinfo with [<zone>][<order>][<node>] = <number of free chunks>
         * OOMResult.buddyinfo with [zone]["total_free_kb_per_node"][node] = int(total_free_kb_per_node)
-        * OOMResult.details["_buddyinfo_pagesize_kb"] with the extracted page size
         """
         self.oom_result.buddyinfo = {}
-        self.oom_result.details["_buddyinfo_pagesize_kb"] = None
         buddy_info = self.oom_result.buddyinfo
         self.oom_entity.find_text(self.oom_result.kconfig.zoneinfo_start)
 
@@ -3094,11 +3107,6 @@ class OOMAnalyser:
                 buddy_info[zone][order]["free_chunks_total"] += buddy_info[zone][order][
                     node
                 ]
-
-                if not self.oom_result.details["_buddyinfo_pagesize_kb"] and order == 0:
-                    size = element.split("*")[1]
-                    size = size[:-2]  # strip "kB"
-                    self.oom_result.details["_buddyinfo_pagesize_kb"] = int(size)
 
         # MAX_ORDER is actually maximum order plus one. For example,
         # a value of 11 means that the largest free memory block is 2^10 pages.
@@ -3352,7 +3360,6 @@ class OOMAnalyser:
         highest_zoneidx = self.oom_result.kconfig.ZONE_TYPES.index(zone)
         lowmem_reserve = watermark_info[zone][node]["lowmem_reserve"]
         min_kb = watermark_info[zone][node]["low"]
-        page_size = self.oom_result.details["_buddyinfo_pagesize_kb"]
 
         # reduce minimum watermark for high priority calls
         # ALLOC_HIGH == __GFP_HIGH
@@ -3363,7 +3370,13 @@ class OOMAnalyser:
 
         # check watermarks, if these are not met, then a high-order request also
         # cannot go ahead even if a suitable page happened to be free.
-        if free_kb <= (min_kb + (lowmem_reserve[highest_zoneidx] * page_size)):
+        if free_kb <= (
+            min_kb
+            + (
+                lowmem_reserve[highest_zoneidx]
+                * self.oom_result.details["page_size_kb"]
+            )
+        ):
             self.oom_result.mem_alloc_failure = (
                 OOMMemoryAllocFailureType.failed_below_low_watermark
             )
@@ -3514,9 +3527,6 @@ class OOMAnalyser:
         elif "-generic" in kernel_version:
             dist = "Ubuntu"
         self.oom_result.details["dist"] = dist
-
-        # educated guess
-        self.oom_result.details["page_size_kb"] = 4
 
     def _calc_from_oom_details(self):
         """
@@ -4404,6 +4414,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self._show_ram_usage()
         self._show_alloc_failure()
         self._show_memory_fragmentation()
+        self._show_page_size()
 
         # generate process table
         self._show_pstable()
@@ -4445,6 +4456,15 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             show_elements(".js-memory-heavy-fragmentation--show")
         else:
             show_elements(".js-memory-no-heavy-fragmentation--show")
+
+    def _show_page_size(self):
+        """Show page size"""
+        if self.oom_result.details.get("_page_size_guessed", True):
+            hide_elements(".js-pagesize-determined--show")
+            show_elements(".js-pagesize-guessed--show")
+        else:
+            show_elements(".js-pagesize-determined--show")
+            hide_elements(".js-pagesize-guessed--show")
 
     def _show_ram_usage(self):
         """Generate RAM usage diagram"""

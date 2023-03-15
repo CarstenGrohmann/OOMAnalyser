@@ -104,6 +104,13 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to show sections for manually triggered OOMs */
         }
 
+        .js-pagesize-guessed--show {
+            /* empty - used to show if the page size is guessed */
+        }
+        .js-pagesize-determined--show {
+            /* empty - used to show if the page size is determined */
+        }
+
         .js-pstable_sort_col0 {
             /* empty - used to sort process table */
         }
@@ -871,7 +878,14 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <tr>
             <td>Page size</td>
             <td class="page_size_kb text--align-right"></td>
-            <td>Guessed</td>
+            <td>
+                <span class="js-text--default-hide js-pagesize-determined--show">
+                    Extracted from DMA zone buddyinfo
+                </span>
+                <span class="js-text--default-hide js-pagesize-guessed--show">
+                    Guessed
+                </span>
+            </td>
         </tr>
 
 

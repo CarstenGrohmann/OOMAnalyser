@@ -1049,6 +1049,25 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             % (node, zone),
         )
 
+    def test_013_page_size(self):
+        """Test determination of the page size"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        page_size_kb = analyser.oom_result.details["page_size_kb"]
+        self.assertEqual(
+            page_size_kb,
+            4,
+            "Unexpected page size (got %s, expect: 4)" % page_size_kb,
+        )
+        self.assertEqual(
+            analyser.oom_result.details["_page_size_guessed"],
+            False,
+            "Page size guessed and not determinated",
+        )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
