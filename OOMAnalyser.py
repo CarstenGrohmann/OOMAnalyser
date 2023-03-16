@@ -4391,9 +4391,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.oom_result = analyser.oom_result
             self.show_oom_details()
             self.update_toc()
-        else:
-            # don't show results - just return
-            return
 
     def load_from_form(self):
         """
@@ -4454,7 +4451,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         show_elements(".js-memory-fragmentation--show")
         if self.oom_result.mem_fragmented:
             show_elements(".js-memory-heavy-fragmentation--show")
+            hide_elements(".js-memory-no-heavy-fragmentation--show")
         else:
+            hide_elements(".js-memory-heavy-fragmentation--show")
             show_elements(".js-memory-no-heavy-fragmentation--show")
 
     def _show_page_size(self):
