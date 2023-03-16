@@ -237,12 +237,13 @@ class TestInBrowser(TestBase):
             "Total memory in summary not found",
         )
         self.assertTrue(
-            "94% (31705788 kBytes out of 33519336 kBytes) physical memory"
+            "94 % (31705788 kBytes out of 33519336 kBytes) physical memory"
             in explanation.text,
             "Used physical memory in summary not found",
         )
         self.assertTrue(
-            "99% (8343236 kBytes out of 8388604 kBytes) swap space" in explanation.text,
+            "99 % (8343236 kBytes out of 8388604 kBytes) swap space"
+            in explanation.text,
             "Used swap space in summary not found",
         )
         self.assertTrue(
@@ -320,7 +321,7 @@ class TestInBrowser(TestBase):
             "Physical and swap memory in summary not found",
         )
         self.assertTrue(
-            "9% (209520 kBytes out of 2096632 kBytes) physical memory"
+            "9 % (209520 kBytes out of 2096632 kBytes) physical memory"
             in explanation.text,
             "Used physical memory in summary not found",
         )

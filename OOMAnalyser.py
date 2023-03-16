@@ -4178,26 +4178,26 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
             if item.endswith("_pages") and isinstance(content, int):
                 if content == 1:
-                    content = "{} page".format(content)
+                    content = "{}&nbsp;page".format(content)
                 else:
-                    content = "{} pages".format(content)
+                    content = "{}&nbsp;pages".format(content)
 
             if item.endswith("_bytes") and isinstance(content, int):
                 if content == 1:
-                    content = "{} Byte".format(content)
+                    content = "{}&nbsp;Byte".format(content)
                 else:
-                    content = "{} Bytes".format(content)
+                    content = "{}&nbsp;Bytes".format(content)
 
             if item.endswith("_kb") and isinstance(content, int):
                 if content == 1:
-                    content = "{} kByte".format(content)
+                    content = "{}&nbsp;kByte".format(content)
                 else:
-                    content = "{} kBytes".format(content)
+                    content = "{}&nbsp;kBytes".format(content)
 
             if item.endswith("_percent") and isinstance(content, int):
-                content = "{}%".format(content)
+                content = "{}&nbsp;%".format(content)
 
-            element.textContent = content
+            element.innerHTML = content
 
         if DEBUG:
             show_element("notify_box")
