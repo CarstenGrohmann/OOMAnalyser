@@ -36,6 +36,27 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 class TestBase(unittest.TestCase):
+    text_alloc_failed_below_low_watermark = (
+        "The request failed because after its fulfillment the free memory would "
+        "be below the memory low watermark."
+    )
+    text_alloc_failed_no_free_chunks = (
+        "The request failed because there is no free chunk in the current or "
+        "higher order."
+    )
+    text_alloc_failed_unknown_reason = "The request failed, but the reason is unknown."
+
+    text_mem_not_heavily_fragmented = "The system memory is not heavily fragmented"
+    text_mem_heavily_fragmented = "The system memory is heavily fragmented"
+
+    text_oom_triggered_manually = "OOM killer was manually triggered"
+    text_oom_triggered_automatically = "OOM killer was automatically triggered"
+
+    text_swap_space_not_in_use = "physical memory and no swap space"
+    text_swap_space_are_in_use = "swap space are in use"
+
+    text_with_an_oom_score_of = "with an OOM score of"
+
     def get_lines(self, text, count):
         """
         Return the number of lines specified by count from given text
@@ -221,12 +242,29 @@ class TestInBrowser(TestBase):
         self.assertEqual(swap_total_kb.text, "8388604 kBytes")
 
         explanation = self.driver.find_element(By.ID, "explanation")
-        self.assertTrue(
-            "OOM killer was automatically triggered" in explanation.text,
-            'Missing text "OOM killer was automatically triggered"',
-        )
+        for expected in [
+            self.text_alloc_failed_below_low_watermark,
+            self.text_mem_not_heavily_fragmented,
+            self.text_oom_triggered_automatically,
+            self.text_swap_space_are_in_use,
+            self.text_with_an_oom_score_of,
+        ]:
+            self.assertTrue(
+                expected in explanation.text,
+                'Missing statement "%s"' % expected,
+            )
+        for unexpected in [
+            self.text_alloc_failed_no_free_chunks,
+            self.text_alloc_failed_unknown_reason,
+            self.text_mem_heavily_fragmented,
+            self.text_oom_triggered_manually,
+            self.text_swap_space_not_in_use,
+        ]:
+            self.assertTrue(
+                unexpected not in explanation.text,
+                'Unexpected statement "%s"' % unexpected,
+            )
 
-        explanation = self.driver.find_element(By.ID, "explanation")
         self.assertTrue(
             "system has 33519336 kBytes physical memory and 8388604 kBytes swap space."
             in explanation.text,
@@ -245,15 +283,6 @@ class TestInBrowser(TestBase):
             "99 % (8343236 kBytes out of 8388604 kBytes) swap space"
             in explanation.text,
             "Used swap space in summary not found",
-        )
-        self.assertTrue(
-            "The request failed because after its fulfillment the free memory would be below the memory low watermark."
-            in explanation.text,
-            "Memory allocation failure analysis not found",
-        )
-        self.assertTrue(
-            "The system memory is not heavily fragmented" in explanation.text,
-            "Missing statement about not fragmented memory",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -304,35 +333,36 @@ class TestInBrowser(TestBase):
         )
 
         explanation = self.driver.find_element(By.ID, "explanation")
-        self.assertTrue(
-            "OOM killer was manually triggered" in explanation.text,
-            'Missing text "OOM killer was manually triggered"',
-        )
+        for expected in [
+            self.text_oom_triggered_manually,
+            self.text_swap_space_not_in_use,
+        ]:
+            self.assertTrue(
+                expected in explanation.text,
+                'Missing statement "%s"' % expected,
+            )
+        for unexpected in [
+            self.text_alloc_failed_below_low_watermark,
+            self.text_alloc_failed_no_free_chunks,
+            self.text_alloc_failed_unknown_reason,
+            self.text_mem_heavily_fragmented,
+            self.text_mem_not_heavily_fragmented,
+            self.text_oom_triggered_automatically,
+            self.text_with_an_oom_score_of,
+        ]:
+            self.assertTrue(
+                unexpected not in explanation.text,
+                'Unexpected statement "%s"' % unexpected,
+            )
 
-        self.assertFalse(
-            "with an OOM score of" in explanation.text,
-            'No OOM score but text "with an OOM score of"',
-        )
-
-        explanation = self.driver.find_element(By.ID, "explanation")
         self.assertTrue(
-            "system has 2096632 kBytes physical memory and no swap space"
-            in explanation.text,
-            "Physical and swap memory in summary not found",
+            "system has 2096632 kBytes physical memory" in explanation.text,
+            "Physical memory in summary not found",
         )
         self.assertTrue(
             "9 % (209520 kBytes out of 2096632 kBytes) physical memory"
             in explanation.text,
             "Used physical memory in summary not found",
-        )
-        self.assertTrue(
-            "The request failed because" not in explanation.text,
-            "Unexpected memory allocation failure analysis found",
-        )
-        self.assertTrue(
-            "The system memory is heavily fragmented" not in explanation.text
-            and "The system memory is not heavily fragmented" not in explanation.text,
-            "Unexpected memory fragmentation statement found",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -358,19 +388,19 @@ class TestInBrowser(TestBase):
     def check_swap_inactive(self):
         explanation = self.driver.find_element(By.ID, "explanation")
         self.assertTrue(
-            "physical memory and no swap space" in explanation.text,
-            'Missing text "physical memory and no swap space"',
+            self.text_swap_space_not_in_use in explanation.text,
+            'Missing statement "%s"' % self.text_swap_space_not_in_use,
         )
-        self.assertFalse(
-            "swap space are in use" in explanation.text,
-            'No swap space but text "swap space are in use"',
+        self.assertTrue(
+            self.text_swap_space_are_in_use not in explanation.text,
+            'Unexpected statement "%s"' % self.text_swap_space_are_in_use,
         )
 
     def check_swap_active(self):
         explanation = self.driver.find_element(By.ID, "explanation")
         self.assertTrue(
-            "swap space are in use" in explanation.text,
-            'Swap space active but no text "swap space are in use"',
+            self.text_swap_space_are_in_use in explanation.text,
+            'Missing statement "%s"' % self.text_swap_space_are_in_use,
         )
 
     def test_010_load_page(self):
@@ -565,8 +595,12 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         explanation = self.driver.find_element(By.ID, "explanation")
         self.assertTrue(
-            "OOM killer was manually triggered" in explanation.text,
-            'Missing text "OOM killer was manually triggered"',
+            self.text_oom_triggered_manually in explanation.text,
+            'Missing statement "%s"' % self.text_oom_triggered_manually,
+        )
+        self.assertTrue(
+            self.text_oom_triggered_automatically not in explanation.text,
+            'Unexpected statement "%s"' % self.text_oom_triggered_automatically,
         )
 
     def test_080_swap_deactivated(self):
