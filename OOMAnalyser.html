@@ -24,13 +24,31 @@ THIS PROGRAM COMES WITH NO WARRANTY
             font-size: 0.83em;
         }
         .js-text--default-hide {
-            /* empty just used to hide elements in the default view */
-
+            /* empty - used with JS to hide elements in the default view
+             *
+             * OOMDisplay.set_html_defaults() hides all elements by
+             * adding "js-text--display-none" to classList.
+             */
         }
         .js-text--default-show {
-            /* empty just used to show elements in the default view */
+            /* empty - used with JS to show elements in the default view
+             *
+             * OOMDisplay.set_html_defaults() shows all elements by
+             * removing "js-text--display-none" from classList.
+             */
         }
         .js-text--display-none {
+            /* hide elements
+             *
+             * The visibility of elements will be toggled with JS.
+             * OOMAnalyser.show_elements(), OOMAnalyser.hide_elements() and
+             * OOMAnalyser.toggle_elements() are used to control the
+             * visibility.
+             *
+             * Set js-text--display-none to prevent flickering between loading
+             * the page and setting default values with
+             * OOMDisplay.set_html_defaults().
+             */
             display: none;
         }
 
@@ -387,7 +405,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h3>Summary</h3>
     <div id="explanation">
-        <div class="js-text--default-show js-oom-automatic--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
             <p>
                 The OOM killer was automatically triggered to free memory, because the system couldn't satisfy the
                 memory request.
@@ -395,7 +413,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 to satisfy the original memory request.
             </p>
         </div>
-        <div class="js-text--default-show js-oom-manual--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-manual--show">
             <p>
                 The OOM killer was manually triggered (e.g. with &quot;<code>echo f > /proc/sysrq-trigger</code>&quot;)
                 by a user with root privileges. There is no demand to free memory but the OOM killer started
@@ -403,7 +421,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 highest score.
             </p>
         </div>
-        <div class="js-text--default-show js-swap-active--show">
+        <div class="js-text--default-hide js-text--display-none js-swap-active--show">
             <p>
                 The system has <span class="system_total_ram_kb"></span> physical memory and
                 <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span>
@@ -413,7 +431,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 (<span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span>) swap space are in use.
             </p>
         </div>
-        <div class="js-text--default-show js-swap-inactive--show">
+        <div class="js-text--default-hide js-text--display-none js-swap-inactive--show">
             <p>
                 The system has <span class="system_total_ram_kb"></span> physical memory and no swap space.
                 <span class="system_total_used_percent"></span>
@@ -421,7 +439,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 physical memory are in use.
             </p>
         </div>
-        <div class="js-text--default-show js-oom-automatic--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
             <p>
                 The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
                 requested a memory chunk of order <span class="trigger_proc_order"></span> from the
@@ -434,17 +452,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <span class="trigger_proc_requested_memory_pages_kb"></span> memory.
             </p>
         </div>
-        <div class="js-text--default-hide js-alloc-failure--show">
+        <div class="js-text--default-hide js-text--display-none js-alloc-failure--show">
             <p>
-                <span class="js-text--default-hide js-alloc-failure-below-low-watermark--show">
+                <span class="js-text--default-hide js-text--display-none js-alloc-failure-below-low-watermark--show">
                     The request failed because after its fulfillment the free memory would be below the memory
                     low watermark.
                 </span>
-                <span class="js-text--default-hide js-alloc-failure-no-free-chunks--show">
+                <span class="js-text--default-hide js-text--display-none js-alloc-failure-no-free-chunks--show">
                     If this requirement were met, the free memory would still be above the low memory watermark.
                     The request failed because there is no free chunk in the current or higher order.
                 </span>
-                <span class="js-text--default-hide js-alloc-failure-unknown-reason-show">
+                <span class="js-text--default-hide js-text--display-none js-alloc-failure-unknown-reason-show">
                     The request failed, but the reason is unknown.
                 </span>
                     The memory shortage triggers the OOM process.
@@ -453,22 +471,22 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <p>
             The process &quot;<span class="killed_proc_name"></span>&quot;
             (PID <span class="killed_proc_pid"></span>)
-            <span class="js-text--default-show js-killed-proc-score--show">
+            <span class="js-text--default-hide js-text--display-none js-killed-proc-score--show">
                 with an OOM score of <span class="killed_proc_score"></span>
             </span>
             has been terminated. It uses <span class="killed_proc_rss_percent"></span>
             (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
         </p>
-        <div class="js-text--default-hide js-memory-fragmentation--show">
+        <div class="js-text--default-hide js-text--display-none js-memory-fragmentation--show">
             <p>
                 Dynamic memory allocation is used by both the kernel and all applications. This leads to memory
                 fragmentation and is a common behavior.
-                <span class="js-text--default-hide js-memory-heavy-fragmentation--show">
+                <span class="js-text--default-hide js-text--display-none js-memory-heavy-fragmentation--show">
                     The system memory is heavily fragmented, because all chunks with an order &ge;
                     <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are in use. Allocation of larger contiguous
                     memory areas will fail.
                 </span>
-                <span class="js-text--default-hide js-memory-no-heavy-fragmentation--show">
+                <span class="js-text--default-hide js-text--display-none js-memory-no-heavy-fragmentation--show">
                     The system memory is not heavily fragmented, because chunks with an order &ge;
                     <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are freely available.
                 </span>
@@ -879,10 +897,10 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <td>Page size</td>
             <td class="page_size_kb text--align-right"></td>
             <td>
-                <span class="js-text--default-hide js-pagesize-determined--show">
+                <span class="js-text--default-hide js-text--display-none js-pagesize-determined--show">
                     Extracted from DMA zone buddyinfo
                 </span>
-                <span class="js-text--default-hide js-pagesize-guessed--show">
+                <span class="js-text--default-hide js-text--display-none js-pagesize-guessed--show">
                     Guessed
                 </span>
             </td>

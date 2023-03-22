@@ -4154,7 +4154,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def __init__(self):
         self.oom = None
-        self.set_HTML_defaults()
+        self.set_html_defaults()
         self.update_toc()
 
         element = document.getElementById("version")
@@ -4308,16 +4308,17 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             else:
                 element.innerHTML = self.svg_array_updown
 
-    def set_HTML_defaults(self):
+    def set_html_defaults(self):
         """Reset the HTML document but don't clean elements"""
+
+        # show all hidden elements in the result table
+        show_elements("table .js-text--display-none")
+
         # hide all elements marked to be hidden by default
         hide_elements(".js-text--default-hide")
 
         # show all elements marked to be shown by default
         show_elements(".js-text--default-show")
-
-        # show hidden rows
-        show_elements("table .js-text--display-none")
 
         # clear notification box
         element = document.getElementById("notify_box")
@@ -4362,7 +4363,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def reset_form(self):
         document.getElementById("textarea_oom").value = ""
-        self.set_HTML_defaults()
+        self.set_html_defaults()
         self.update_toc()
 
     def toggle_oom(self, show=False):
@@ -4383,7 +4384,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self.oom = OOMEntity(self.load_from_form())
 
         # set defaults and clear notifications
-        self.set_HTML_defaults()
+        self.set_html_defaults()
 
         analyser = OOMAnalyser(self.oom)
         success = analyser.analyse()
@@ -4441,8 +4442,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         ):
             show_elements(".js-alloc-failure--show")
             show_elements(".js-alloc-failure-unknown-reason-show")
-        else:
-            hide_elements(".js-alloc-failure--show")
 
     def _show_memory_fragmentation(self):
         """Show details about memory fragmentation"""
@@ -4451,19 +4450,15 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         show_elements(".js-memory-fragmentation--show")
         if self.oom_result.mem_fragmented:
             show_elements(".js-memory-heavy-fragmentation--show")
-            hide_elements(".js-memory-no-heavy-fragmentation--show")
         else:
-            hide_elements(".js-memory-heavy-fragmentation--show")
             show_elements(".js-memory-no-heavy-fragmentation--show")
 
     def _show_page_size(self):
         """Show page size"""
         if self.oom_result.details.get("_page_size_guessed", True):
-            hide_elements(".js-pagesize-determined--show")
             show_elements(".js-pagesize-guessed--show")
         else:
             show_elements(".js-pagesize-determined--show")
-            hide_elements(".js-pagesize-guessed--show")
 
     def _show_ram_usage(self):
         """Generate RAM usage diagram"""
@@ -4512,9 +4507,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             elem_svg_swap = document.getElementById("svg_swap")
             elem_svg_swap.appendChild(svg_swap)
             show_elements(".js-swap-active--show")
-            hide_elements(".js-swap-inactive--show")
         else:
-            hide_elements(".js-swap-active--show")
             show_elements(".js-swap-inactive--show")
 
     def _show_items(self):
@@ -4522,11 +4515,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         hide_element("input")
         show_element("analysis")
         if self.oom_result.oom_type == OOMEntityType.manual:
-            hide_elements(".js-oom-automatic--show")
             show_elements(".js-oom-manual--show")
         else:
             show_elements(".js-oom-automatic--show")
-            hide_elements(".js-oom-manual--show")
 
         for item in self.oom_result.details.keys():
             # ignore internal items
@@ -4538,8 +4529,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
         if "killed_proc_score" in self.oom_result.details:
             show_elements(".js-killed-proc-score--show")
-        else:
-            hide_elements(".js-killed-proc-score--show")
 
     def sort_pstable(self, column_number):
         """
