@@ -294,7 +294,19 @@ class TestInBrowser(TestBase):
         self.assertEqual(
             mem_node_info.text[-80:],
             "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
-            "Unexpected memory chunks",
+            "Unexpected memory information about hugepages",
+        )
+
+        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+        self.assertEqual(
+            mem_watermarks.text[:51],
+            "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB",
+            "Unexpected memory watermarks",
+        )
+        self.assertEqual(
+            mem_watermarks.text[-25:],
+            "lowmem_reserve[]: 0 0 0 0",
+            "Unexpected lowmem_reserve values",
         )
 
         head = self.driver.find_element(By.ID, "pstable_header")
@@ -374,7 +386,19 @@ class TestInBrowser(TestBase):
         self.assertEqual(
             mem_node_info.text[-80:],
             "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
-            "Unexpected memory chunks",
+            "Unexpected memory information about hugepages",
+        )
+
+        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+        self.assertEqual(
+            mem_watermarks.text[:54],
+            "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB",
+            "Unexpected memory watermarks",
+        )
+        self.assertEqual(
+            mem_watermarks.text[-27:],
+            "lowmem_reserve[]: 0 0 0 0 0",
+            "Unexpected lowmem_reserve values",
         )
 
         head = self.driver.find_element(By.ID, "pstable_header")

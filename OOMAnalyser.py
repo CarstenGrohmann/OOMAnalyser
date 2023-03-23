@@ -304,6 +304,10 @@ class BaseKernelConfig:
             r"(?P<mem_node_info>(^Node \d+ ((DMA|DMA32|Normal):|(hugepages)).+(\n|$))+)",
             False,
         ),
+        "Memory watermarks": (
+            r"(?P<mem_watermarks>(^(Node \d+ (DMA|DMA32|Normal) free:|lowmem_reserve\[\]:).+(\n|$))+)",
+            False,
+        ),
         "Page cache": (
             r"^(?P<pagecache_total_pages>\d+) total pagecache pages.*$",
             True,
