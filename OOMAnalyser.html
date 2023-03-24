@@ -115,6 +115,10 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to hide/show details for memory fragmentation */
         }
 
+        .js-memory-shortage-node--hide {
+            /* empty - used to show the NUMA node with memory shortage */
+        }
+
         .js-oom-automatic--show {
             /* empty - used to show sections for automatically triggered OOMs */
         }
@@ -558,7 +562,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <td class="trigger_proc_mem_zone text--align-right"></td>
             <td>Memory zone from which the requested storage chunk should come.</td>
         </tr>
-        <tr class="js-oom-automatic--show">
+        <tr class="js-text--default-hide js-oom-automatic--show js-memory-shortage-node--hide">
             <td>Requested memory: node</td>
             <td class="trigger_proc_numa_node text--align-right"></td>
             <td>

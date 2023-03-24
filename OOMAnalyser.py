@@ -3351,7 +3351,7 @@ class OOMAnalyser:
             )
             return
 
-        # Search node with memory shortage: watermark "free" < "min"
+        # Node with memory shortage: watermark "free" < "min"
         node = self.oom_result.details["trigger_proc_numa_node"]
         if node is None:
             return
@@ -4456,6 +4456,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             show_elements(".js-memory-heavy-fragmentation--show")
         else:
             show_elements(".js-memory-no-heavy-fragmentation--show")
+        if self.oom_result.details["trigger_proc_numa_node"] is None:
+            hide_elements(".js-memory-shortage-node--hide")
 
     def _show_page_size(self):
         """Show page size"""
