@@ -534,12 +534,6 @@ class BaseKernelConfig:
     pstable_non_ints = ["pid", "name", "notes"]
     """Columns that are not converted to an integer"""
 
-    REC_PROCESS_LINE = re.compile(
-        r"^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
-        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*"
-    )
-    """Match content of process table"""
-
     pstable_start = "[ pid ]"
     """
     Pattern to find the start of the process table
@@ -560,11 +554,17 @@ class BaseKernelConfig:
     @type: (int, int, str)
     """
 
-    rec_oom_begin = re.compile(r"invoked oom-killer:", re.MULTILINE)
+    REC_OOM_BEGIN = re.compile(r"invoked oom-killer:", re.MULTILINE)
     """RE to match the first line of an OOM block"""
 
-    rec_oom_end = re.compile(r"^Killed process \d+", re.MULTILINE)
+    REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
+
+    REC_PROCESS_LINE = re.compile(
+        r"^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
+        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*"
+    )
+    """Match content of process table"""
 
     watermark_start = "Node 0 DMA free:"
     """
@@ -1425,7 +1425,7 @@ class KernelConfig_4_6(KernelConfig_4_5):
     }
 
     # The "oom_reaper" line is optionally
-    rec_oom_end = re.compile(
+    REC_OOM_END = re.compile(
         r"^((Out of memory.*|Memory cgroup out of memory): Killed process \d+|oom_reaper:)",
         re.MULTILINE,
     )
@@ -2935,12 +2935,12 @@ class OOMAnalyser:
         self.oom_state = OOMEntityState.unknown
         self.oom_result.error_msg = "Unknown OOM format"
 
-        if not self.oom_result.kconfig.rec_oom_begin.search(self.oom_entity.text):
+        if not self.oom_result.kconfig.REC_OOM_BEGIN.search(self.oom_entity.text):
             self.state = OOMEntityState.invalid
             self.oom_result.error_msg = "The inserted text is not a valid OOM block! The initial pattern was not found!"
             return False
 
-        if not self.oom_result.kconfig.rec_oom_end.search(self.oom_entity.text):
+        if not self.oom_result.kconfig.REC_OOM_END.search(self.oom_entity.text):
             self.state = OOMEntityState.started
             self.oom_result.error_msg = (
                 "The inserted OOM is incomplete! The initial pattern was found but not the "
