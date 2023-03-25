@@ -2664,12 +2664,18 @@ class OOMEntity:
 
         return stripped_lines
 
-    def back(self):
-        """Return the previous line"""
-        if self.current_line - 1 < 0:
-            raise StopIteration()
-        self.current_line -= 1
-        return self.lines[self.current_line]
+    def goto_previous_line(self):
+        """Set line pointer to previous line
+
+        If using in front of an iterator:
+        The line pointer in self.current_line points to the first line of a block.
+        An iterator based loop starts with a next() call (as defined by the iterator
+        protocol). This causes the current line to be skipped. Therefore, the line
+        pointer is set to the previous line.
+        """
+        if self.current_line > 0:
+            self.current_line -= 1
+        return
 
     def current(self):
         """Return the current line"""
@@ -2959,7 +2965,7 @@ class OOMAnalyser:
         block += "{}\n".format(line)
         for line in self.oom_entity:
             if ":" in line:
-                self.oom_entity.back()
+                self.oom_entity.goto_previous_line()
                 break
             block += "{}\n".format(line)
         return block
@@ -3073,12 +3079,7 @@ class OOMAnalyser:
         buddy_info = self.oom_result.buddyinfo
         self.oom_entity.find_text(self.oom_result.kconfig.zoneinfo_start)
 
-        # Currently omm_entity point to the first line of the buddyinfo.
-        # The iterator protocol uses the next() call. However, this will cause the
-        # current line to be skipped.
-        # Therefore, we reset the counter by one line.
-        self.oom_entity.back()
-
+        self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
             match = self.REC_FREE_MEMORY_CHUNKS.match(line)
             if not match:
@@ -3135,14 +3136,9 @@ class OOMAnalyser:
         watermark_info = self.oom_result.watermarks
         self.oom_entity.find_text(self.oom_result.kconfig.watermark_start)
 
-        # Currently omm_entity point to the first line of the watermark information.
-        # The iterator protocol uses the next() call. However, this will cause the
-        # current line to be skipped.
-        # Therefore, we reset the counter by one line.
-        self.oom_entity.back()
-
         node = None
         zone = None
+        self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
             match = self.REC_WATERMARK.match(line)
             if not match:
