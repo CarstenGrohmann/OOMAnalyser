@@ -554,17 +554,35 @@ class BaseKernelConfig:
     @type: (int, int, str)
     """
 
+    REC_FREE_MEMORY_CHUNKS = re.compile(
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
+    )
+    """RE to extract free memory chunks of a memory zone"""
+
     REC_OOM_BEGIN = re.compile(r"invoked oom-killer:", re.MULTILINE)
     """RE to match the first line of an OOM block"""
 
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
+    REC_PAGE_SIZE = re.compile("Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
+    """RE to extract the page size from buddyinfo DMA zone"""
+
     REC_PROCESS_LINE = re.compile(
         r"^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
         r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*"
     )
     """Match content of process table"""
+
+    REC_WATERMARK = re.compile(
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
+        "free:(?P<free>\d+)kB "
+        "min:(?P<min>\d+)kB "
+        "low:(?P<low>\d+)kB "
+        "high:(?P<high>\d+)kB "
+        ".*"
+    )
+    """RE to extract watermark information in a memory zone"""
 
     watermark_start = "Node 0 DMA free:"
     """
@@ -2804,42 +2822,7 @@ class OOMAnalyser:
     )
     """RE to match the OOM line with kernel version"""
 
-    REC_FREE_MEMORY_CHUNKS = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
-    )
-    """RE to extract free memory chunks of a memor zone"""
-
-    REC_PAGE_SIZE = re.compile("Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
-    """RE to extract the page size from buddyinfo DMA zone"""
-
-    REC_WATERMARK = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
-        "free:(?P<free>\d+)kB "
-        "min:(?P<min>\d+)kB "
-        "low:(?P<low>\d+)kB "
-        "high:(?P<high>\d+)kB "
-        ".*"
-    )
-    """RE to extract watermark information in a memory zone"""
-
-    def __init__(self, oom):
-        self.oom_entity = oom
-        self.oom_result = OOMResult()
-
-    def _identify_kernel_version(self):
-        """
-        Identify the used kernel version and
-
-        @rtype: bool
-        """
-        match = self.REC_KERNEL_VERSION.search(self.oom_entity.text)
-        if not match:
-            self.oom_result.error_msg = "Failed to extract kernel version from OOM text"
-            return False
-        self.oom_result.kversion = match.group("kernel_version")
-        return True
-
-    rec_split_kversion = re.compile(
+    REC_SPLIT_KVERSION = re.compile(
         r"(?P<kernel_version>"
         r"(?P<major>\d+)\.(?P<minor>\d+)"  # major . minor
         r"(\.\d+)?"  # optional: patch level
@@ -2858,6 +2841,23 @@ class OOMAnalyser:
      - 3.10.0-514.6.1.el7.x86_64 #1
     """
 
+    def __init__(self, oom):
+        self.oom_entity = oom
+        self.oom_result = OOMResult()
+
+    def _identify_kernel_version(self):
+        """
+        Identify the used kernel version and
+
+        @rtype: bool
+        """
+        match = self.REC_KERNEL_VERSION.search(self.oom_entity.text)
+        if not match:
+            self.oom_result.error_msg = "Failed to extract kernel version from OOM text"
+            return False
+        self.oom_result.kversion = match.group("kernel_version")
+        return True
+
     def _check_kversion_greater_equal(self, kversion, min_version):
         """
         Returns True if the kernel version is greater or equal to the minimum version
@@ -2866,7 +2866,7 @@ class OOMAnalyser:
         @param (int, int, str) min_version: Minimum version
         @rtype: bool
         """
-        match = self.rec_split_kversion.match(kversion)
+        match = self.REC_SPLIT_KVERSION.match(kversion)
 
         if not match:
             self.oom_result.error_msg = (
@@ -3039,7 +3039,7 @@ class OOMAnalyser:
 
     def _extract_page_size(self):
         """Extract page size from buddyinfo DMZ zone"""
-        match = self.REC_PAGE_SIZE.search(self.oom_entity.text)
+        match = self.oom_result.kconfig.REC_PAGE_SIZE.search(self.oom_entity.text)
         if match:
             self.oom_result.details["page_size_kb"] = int(match.group("page_size"))
             self.oom_result.details["_page_size_guessed"] = False
@@ -3081,7 +3081,7 @@ class OOMAnalyser:
 
         self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
-            match = self.REC_FREE_MEMORY_CHUNKS.match(line)
+            match = self.oom_result.kconfig.REC_FREE_MEMORY_CHUNKS.match(line)
             if not match:
                 continue
             node = int(match.group("node"))
@@ -3140,7 +3140,7 @@ class OOMAnalyser:
         zone = None
         self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
-            match = self.REC_WATERMARK.match(line)
+            match = self.oom_result.kconfig.REC_WATERMARK.match(line)
             if not match:
                 if line.startswith("lowmem_reserve[]:"):
                     # zone and node are defined in the previous round
