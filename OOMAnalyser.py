@@ -1545,7 +1545,6 @@ class KernelConfig_4_8(KernelConfig_4_6):
 class KernelConfig_4_9(KernelConfig_4_8):
     # Supported changes:
     #  * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
-    #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.9 or later"
     release = (4, 9, "")
@@ -2122,7 +2121,6 @@ class KernelConfig_4_18(KernelConfig_4_15):
 class KernelConfig_4_19(KernelConfig_4_18):
     # Supported changes:
     #  * mm, oom: describe task memory unit, larger PID pad (c3b78b11efbb2865433abf9d22c004ffe4a73f5c)
-    #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.19 or later"
     release = (4, 19, "")
@@ -2133,7 +2131,6 @@ class KernelConfig_4_19(KernelConfig_4_18):
 class KernelConfig_5_0(KernelConfig_4_19):
     # Supported changes:
     #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
-    #  * update GFP flags
 
     name = "Configuration for Linux kernel 5.0 or later"
     release = (5, 0, "")
@@ -2240,7 +2237,6 @@ class KernelConfig_5_1(KernelConfig_5_0):
 class KernelConfig_5_8(KernelConfig_5_1):
     # Supported changes:
     #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
-    #  * update GFP flags
 
     name = "Configuration for Linux kernel 5.8 or later"
     release = (5, 8, "")
@@ -2538,7 +2534,35 @@ class KernelConfig_6_0(KernelConfig_5_18):
     }
 
 
+class KernelConfig_6_1(KernelConfig_5_18):
+    # Supported changes:
+    #  * "mm: add NR_SECONDARY_PAGETABLE to count secondary page table uses." (ebc97a52b5d6)
+
+    name = "Configuration for Linux kernel 6.1 or later"
+    release = (6, 1, "")
+
+    EXTRACT_PATTERN_OVERLAY_61 = {
+        "Mem-Info (part 2)": (
+            r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
+            r"(?:\n)"
+            r"^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+)"
+            r"(?:\n)"
+            r"^ sec_pagetables:(?P<sec_pagetables>\d+) bounce:(?P<bounce_pages>\d+)"
+            r"(?:\n)"
+            r"^ kernel_misc_reclaimable:(?P<kernel_misc_reclaimable>\d+)"
+            r"(?:\n)"
+            r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_61)
+
+
 AllKernelConfigs = [
+    KernelConfig_6_1(),
     KernelConfig_6_0(),
     KernelConfig_5_18(),
     KernelConfig_5_14(),
@@ -2638,7 +2662,7 @@ class OOMEntity:
 
         @see: _rsyslog_unescape_lf()
         """
-        pattern = r"^\s+ (active_file|unevictable|slab_reclaimable|mapped|free):.+$"
+        pattern = r"^\s+ (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+$"
         rec = re.compile(pattern)
 
         add_cols = ""
