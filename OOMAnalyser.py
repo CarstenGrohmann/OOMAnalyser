@@ -277,7 +277,8 @@ class BaseKernelConfig:
             True,
         ),
         # split caused by a limited number of iterations during converting PY regex into JS regex
-        "Mem-Info (part 1)": (
+        # Source: mm/page_alloc.c:__show_free_areas()
+        "Overall Mem-Info (part 1)": (
             r"^Mem-Info:.*" r"(?:\n)"
             # first line (starting w/o a space)
             r"^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) "
@@ -291,7 +292,7 @@ class BaseKernelConfig:
             r"unstable:(?P<unstable_pages>\d+)",
             True,
         ),
-        "Mem-Info (part 2)": (
+        "Overall Mem-Info (part 2)": (
             r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
             r"(?:\n)"
             r"^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+) "
@@ -582,7 +583,11 @@ class BaseKernelConfig:
         "high:(?P<high>\d+)kB "
         ".*"
     )
-    """RE to extract watermark information in a memory zone"""
+    """
+    RE to extract watermark information in a memory zone
+
+    Source: mm/page_alloc.c:__show_free_areas()
+    """
 
     watermark_start = "Node 0 DMA free:"
     """
@@ -2242,7 +2247,7 @@ class KernelConfig_5_8(KernelConfig_5_1):
     release = (5, 8, "")
 
     EXTRACT_PATTERN_OVERLAY_58 = {
-        "Mem-Info (part 1)": (
+        "Overall Mem-Info (part 1)": (
             r"^Mem-Info:.*" r"(?:\n)"
             # first line (starting w/o a space)
             r"^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) "
@@ -2350,7 +2355,25 @@ class KernelConfig_5_14(KernelConfig_5_8):
     }
 
 
-class KernelConfig_5_18(KernelConfig_5_14):
+class KernelConfig_5_16(KernelConfig_5_14):
+    # Supported changes:
+    #  * mm/page_alloc.c: show watermark_boost of zone in zoneinfo (a6ea8b5b9f1c)
+
+    name = "Configuration for Linux kernel 5.16 or later"
+    release = (5, 16, "")
+
+    REC_WATERMARK = re.compile(
+        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
+        "free:(?P<free>\d+)kB "
+        "boost:(?P<boost>\d+)kB "
+        "min:(?P<min>\d+)kB "
+        "low:(?P<low>\d+)kB "
+        "high:(?P<high>\d+)kB "
+        ".*"
+    )
+
+
+class KernelConfig_5_18(KernelConfig_5_16):
     # Supported changes:
     #  * update GFP flags
 
@@ -2542,7 +2565,7 @@ class KernelConfig_6_1(KernelConfig_5_18):
     release = (6, 1, "")
 
     EXTRACT_PATTERN_OVERLAY_61 = {
-        "Mem-Info (part 2)": (
+        "Overall Mem-Info (part 2)": (
             r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
             r"(?:\n)"
             r"^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+)"
@@ -2565,6 +2588,7 @@ AllKernelConfigs = [
     KernelConfig_6_1(),
     KernelConfig_6_0(),
     KernelConfig_5_18(),
+    KernelConfig_5_16(),
     KernelConfig_5_14(),
     KernelConfig_5_8(),
     KernelConfig_5_1(),
