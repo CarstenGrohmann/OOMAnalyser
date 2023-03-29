@@ -313,6 +313,7 @@ class BaseKernelConfig:
             r"^(?P<pagecache_total_pages>\d+) total pagecache pages.*$",
             True,
         ),
+        # Source:mm/swap_state.c:show_swap_cache_info()
         "Swap usage information": (
             r"^(?P<swap_cache_pages>\d+) pages in swap cache"
             r"(?:\n)"
@@ -2468,6 +2469,7 @@ class KernelConfig_5_18(KernelConfig_5_16):
 class KernelConfig_6_0(KernelConfig_5_18):
     # Supported changes:
     #  * update GFP flags
+    #  * "mm/swap: remove swap_cache_info statistics" (442701e7058b)
 
     name = "Configuration for Linux kernel 6.0 or later"
     release = (6, 0, "")
@@ -2556,8 +2558,23 @@ class KernelConfig_6_0(KernelConfig_5_18):
         "___GFP_NOLOCKDEP": {"value": 0x8000000},
     }
 
+    EXTRACT_PATTERN_OVERLAY_60 = {
+        "Swap usage information": (
+            r"^(?P<swap_cache_pages>\d+) pages in swap cache"
+            r"(?:\n)"
+            r"^Free swap  = (?P<swap_free_kb>\d+)kB"
+            r"(?:\n)"
+            r"^Total swap = (?P<swap_total_kb>\d+)kB",
+            False,
+        ),
+    }
 
-class KernelConfig_6_1(KernelConfig_5_18):
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_60)
+
+
+class KernelConfig_6_1(KernelConfig_6_0):
     # Supported changes:
     #  * "mm: add NR_SECONDARY_PAGETABLE to count secondary page table uses." (ebc97a52b5d6)
 
