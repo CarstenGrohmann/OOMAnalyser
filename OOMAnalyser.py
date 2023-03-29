@@ -3601,11 +3601,8 @@ class OOMAnalyser:
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
-        try:
+        if "swap_total_kb" in self.oom_result.details:
             self.oom_result.swap_active = self.oom_result.details["swap_total_kb"] > 0
-        except KeyError:
-            self.oom_result.swap_active = False
-
         if not self.oom_result.swap_active:
             return
 
