@@ -449,7 +449,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 requested a memory chunk of order <span class="trigger_proc_order"></span> from the
                 &quot;<span class="trigger_proc_mem_zone"></span>&quot; memory zone.
 
-                That are 2<span class="text__superscript">order</span> pages ==
+                This is 2<span class="text__superscript">order</span> pages ==
                 2<span class="trigger_proc_order text__superscript"></span> pages ==
                 <span class="trigger_proc_requested_memory_pages"></span>
                 a <span class="page_size_kb"></span> ==
@@ -459,17 +459,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <div class="js-text--default-hide js-text--display-none js-alloc-failure--show">
             <p>
                 <span class="js-text--default-hide js-text--display-none js-alloc-failure-below-low-watermark--show">
-                    The request failed because after its fulfillment the free memory would be below the memory
-                    low watermark.
+                    The request failed because the free memory would be below the memory low watermark
+                    after its completion.
                 </span>
                 <span class="js-text--default-hide js-text--display-none js-alloc-failure-no-free-chunks--show">
-                    If this requirement were met, the free memory would still be above the low memory watermark.
+                    If this requirement was satisfied, the free memory would still be above the low memory watermark.
                     The request failed because there is no free chunk in the current or higher order.
                 </span>
                 <span class="js-text--default-hide js-text--display-none js-alloc-failure-unknown-reason-show">
                     The request failed, but the reason is unknown.
                 </span>
-                    The memory shortage triggers the OOM process.
+                    This memory shortage triggers the OOM process.
             </p>
         </div>
         <p>

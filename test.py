@@ -37,8 +37,8 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 class TestBase(unittest.TestCase):
     text_alloc_failed_below_low_watermark = (
-        "The request failed because after its fulfillment the free memory would "
-        "be below the memory low watermark."
+        "The request failed because the free memory would be below the memory low "
+        "watermark after its completion."
     )
     text_alloc_failed_no_free_chunks = (
         "The request failed because there is no free chunk in the current or "
