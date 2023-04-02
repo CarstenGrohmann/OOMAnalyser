@@ -3299,22 +3299,27 @@ class OOMAnalyser:
         self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
             match = self.oom_result.kconfig.REC_WATERMARK.match(line)
-            if not match:
-                if line.startswith("lowmem_reserve[]:"):
-                    # zone and node are defined in the previous round
-                    watermark_info[zone][node]["lowmem_reserve"] = [
-                        int(v) for v in line.split()[1:]
-                    ]
-                continue
-
-            node = int(match.group("node"))
-            zone = match.group("zone")
-            if zone not in watermark_info:
-                watermark_info[zone] = {}
-            if node not in watermark_info[zone]:
-                watermark_info[zone][node] = {}
-            for i in ["free", "min", "low", "high"]:
-                watermark_info[zone][node][i] = int(match.group(i))
+            if match:
+                node = int(match.group("node"))
+                zone = match.group("zone")
+                if zone not in watermark_info:
+                    watermark_info[zone] = {}
+                if node not in watermark_info[zone]:
+                    watermark_info[zone][node] = {}
+                for i in ["free", "min", "low", "high"]:
+                    watermark_info[zone][node][i] = int(match.group(i))
+            elif (
+                line.startswith("lowmem_reserve[]:")
+                and zone is not None
+                and node is not None
+            ):
+                # REC_WATERMARK may not match for newer/unknown kernels,
+                # "lowmem_reserve[]:" would match first in such cases but zone and
+                # node are not set, because both are set with the information from
+                # REC_WATERMARK.
+                watermark_info[zone][node]["lowmem_reserve"] = [
+                    int(v) for v in line.split()[1:]
+                ]
 
     def _search_node_with_memory_shortage(self):
         """
