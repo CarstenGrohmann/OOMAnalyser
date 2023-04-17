@@ -2351,7 +2351,7 @@ class KernelConfig_5_14(KernelConfig_5_8):
         "___GFP_HARDWALL": {"value": 0x100000},
         "___GFP_ACCOUNT": {"value": 0x400000},
         "___GFP_ZEROTAGS": {"value": 0x800000},
-        "___GFP_SKIP_KASAN_POISON": {"value": 0x1000000},
+        "___GFP_SKIP_KASAN_POISON": {"value": 0x0},
         "___GFP_NOLOCKDEP": {"value": 0x2000000},
     }
 
@@ -2459,9 +2459,9 @@ class KernelConfig_5_18(KernelConfig_5_16):
         "___GFP_HARDWALL": {"value": 0x100000},
         "___GFP_ACCOUNT": {"value": 0x400000},
         "___GFP_ZEROTAGS": {"value": 0x800000},
-        "___GFP_SKIP_ZERO": {"value": 0x1000000},
-        "___GFP_SKIP_KASAN_UNPOISON": {"value": 0x2000000},
-        "___GFP_SKIP_KASAN_POISON": {"value": 0x4000000},
+        "___GFP_SKIP_ZERO": {"value": 0x0},
+        "___GFP_SKIP_KASAN_UNPOISON": {"value": 0x0},
+        "___GFP_SKIP_KASAN_POISON": {"value": 0x0},
         "___GFP_NOLOCKDEP": {"value": 0x8000000},
     }
 
@@ -2552,9 +2552,9 @@ class KernelConfig_6_0(KernelConfig_5_18):
         "___GFP_HARDWALL": {"value": 0x100000},
         "___GFP_ACCOUNT": {"value": 0x400000},
         "___GFP_ZEROTAGS": {"value": 0x800000},
-        "___GFP_SKIP_ZERO": {"value": 0x1000000},
-        "___GFP_SKIP_KASAN_UNPOISON": {"value": 0x2000000},
-        "___GFP_SKIP_KASAN_POISON": {"value": 0x4000000},
+        "___GFP_SKIP_ZERO": {"value": 0x0},
+        "___GFP_SKIP_KASAN_UNPOISON": {"value": 0x0},
+        "___GFP_SKIP_KASAN_POISON": {"value": 0x0},
         "___GFP_NOLOCKDEP": {"value": 0x8000000},
     }
 
