@@ -4062,6 +4062,183 @@ class OOMDisplay:
     @rtype: OOMResult
     """
 
+    example_archlinux_6_1_1 = """\
+doxygen invoked oom-killer: gfp_mask=0x140dca(GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO), order=0, oom_score_adj=0
+CPU: 3 PID: 473206 Comm: doxygen Tainted: G           OE      6.1.1-arch1-1 #1 9bd09188b430be630e611f984454e4f3c489be77
+Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./Z77 Extreme6, BIOS P2.80 07/01/2013
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x48/0x60
+ dump_header+0x4a/0x211
+ oom_kill_process.cold+0xb/0x10
+ out_of_memory+0x1f1/0x520
+ __alloc_pages_slowpath.constprop.0+0xcbd/0xe10
+ __alloc_pages+0x224/0x250
+ __folio_alloc+0x1b/0x50
+ vma_alloc_folio+0xa0/0x360
+ __handle_mm_fault+0x92f/0xfa0
+ handle_mm_fault+0xdf/0x2d0
+ do_user_addr_fault+0x1be/0x6a0
+ ? sched_clock_cpu+0xd/0xb0
+ exc_page_fault+0x74/0x170
+ asm_exc_page_fault+0x26/0x30
+RIP: 0033:0x7f5ba27c6d6f
+Code: Unable to access opcode bytes at 0x7f5ba27c6d45.
+RSP: 002b:00007ffd84637ec0 EFLAGS: 00010206
+RAX: 0000000000015fd1 RBX: 0000000000001010 RCX: 00005658cf73d030
+RDX: 0000000000001011 RSI: 00005658cf73e030 RDI: 0000000000000004
+RBP: 00007f5ba2909ba0 R08: 0000000000001001 R09: 00007f5ba2909c70
+R10: 00007f5ba2909c70 R11: 0000000000000000 R12: 0000000000001001
+R13: 0000000000000063 R14: ffffffffffffff78 R15: 00007f5ba2909c00
+ </TASK>
+Mem-Info:
+active_anon:1413442 inactive_anon:1509191 isolated_anon:0
+ active_file:29 inactive_file:186 isolated_file:0
+ unevictable:2047 dirty:56 writeback:20
+ slab_reclaimable:130091 slab_unreclaimable:89303
+ mapped:1293 shmem:19540 pagetables:25704
+ sec_pagetables:0 bounce:0
+ kernel_misc_reclaimable:0
+ free:34629 free_pcp:0 free_cma:0
+Node 0 active_anon:5653768kB inactive_anon:6036764kB active_file:728kB inactive_file:132kB unevictable:8188kB isolated(anon):0kB isolated(file):0kB mapped:5172kB dirty:224kB writeback:80kB shmem:78160kB shmem_thp: 0kB shmem_pmdmapped: 0kB anon_thp: 1236992kB writeback_tmp:0kB kernel_stack:10592kB pagetables:102816kB sec_pagetables:0kB all_unreclaimable? no
+Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB high:96kB reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB inactive_file:0kB unevictable:0kB writepending:0kB present:15984kB managed:15360kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+lowmem_reserve[]: 0 3191 15659 15659 15659
+Node 0 DMA32 free:63304kB boost:0kB min:13760kB low:17200kB high:20640kB reserved_highatomic:0KB active_anon:1816112kB inactive_anon:1188180kB active_file:0kB inactive_file:240kB unevictable:544kB writepending:28kB present:3348656kB managed:3283120kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+lowmem_reserve[]: 0 0 12468 12468 12468
+Node 0 Normal free:61900kB boost:8192kB min:61948kB low:75384kB high:88820kB reserved_highatomic:0KB active_anon:1529368kB inactive_anon:7156872kB active_file:0kB inactive_file:860kB unevictable:7644kB writepending:276kB present:13096960kB managed:12774792kB mlocked:64kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+lowmem_reserve[]: 0 0 0 0 0
+Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 1*1024kB (U) 2*2048kB (UM) 2*4096kB (M) = 13312kB
+Node 0 DMA32: 550*4kB (UM) 250*8kB (UE) 46*16kB (UE) 14*32kB (UME) 6*64kB (UME) 2*128kB (UM) 1*256kB (U) 14*512kB (ME) 7*1024kB (ME) 19*2048kB (ME) 1*4096kB (M) = 63624kB
+Node 0 Normal: 6676*4kB (UME) 2120*8kB (UE) 595*16kB (UME) 188*32kB (UME) 50*64kB (UME) 1*128kB (M) 0*256kB 0*512kB 0*1024kB 0*2048kB 0*4096kB = 62528kB
+Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
+44659 total pagecache pages
+24863 pages in swap cache
+Free swap  = 84kB
+Total swap = 25165820kB
+4115400 pages RAM
+0 pages HighMem/MovableOnly
+97082 pages reserved
+0 pages cma reserved
+0 pages hwpoisoned
+Tasks state (memory values in pages):
+[  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
+[    246]     0   246    16404       66   159744      303          -250 systemd-journal
+[    274]     0   274     8511        0    98304      638         -1000 systemd-udevd
+[    493]     0   493      631        1    40960       36             0 acpid
+[    495]    84   495     2120        0    57344      130             0 avahi-daemon
+[    496]     0   496     1761       14    57344      187             0 crond
+[    497]    81   497     2282        1    61440      358          -900 dbus-daemon
+[    499]     0   499     2729        0    57344      382             0 smartd
+[    500]     0   500    12576       23    90112      299             0 systemd-logind
+[    501]     0   501     4280        0    73728      286             0 systemd-machine
+[    504]   993   504      767        0    49152      122             0 dhcpcd
+[    505]     0   505      850        1    53248       84             0 dhcpcd
+[    506]   993   506      721        0    49152       90             0 dhcpcd
+[    507]   993   507      719        0    49152       97             0 dhcpcd
+[    509]    84   509     2120        0    53248      138             0 avahi-daemon
+[    526]     0   526     6756        0    86016      417             0 cupsd
+[    558]     0   558    58147        0    86016      300             0 lightdm
+[    569]     0   569   204061     1279   708608     7704             0 Xorg
+[    687]     0   687    40542        0    77824      371             0 lightdm
+[    693]   504   693     5035        0    81920      605           100 systemd
+[    694]   504   694     6218        0    81920      891           100 (sd-pam)
+[    700]   504   700   116292      236   253952     5766             0 xfce4-session
+[    709]   504   709     2278       15    61440      317           200 dbus-daemon
+[    720]   504   720    60626        0   110592      936           200 gvfsd
+[    725]   504   725    94774        0   102400     1371           200 gvfsd-fuse
+[    732]   504   732    77011        0    94208      853           200 at-spi-bus-laun
+[    738]   504   738     2144        0    61440      192           200 dbus-daemon
+[    745]   504   745    40251        0    77824      268           200 at-spi2-registr
+[    747]   102   747    77578        0   102400      906             0 polkitd
+[    760]   504   760     1855        0    53248      209             0 ssh-agent
+[    767]   504   767    38905       55    73728       67           200 gpg-agent
+[    769]   504   769   242402     1658   401408     4392             0 xfwm4
+[    778]   504   778    58286      225   167936     1911             0 xfsettingsd
+[    791]   504   791   453174     1056   393216     2624           200 pulseaudio
+[    792]   133   792    22084        0    57344      175             0 rtkit-daemon
+[    841]   504   841   176141     1378   266240     3418             0 xfce4-panel
+[    881]   504   881   137016       15   249856     3888             0 Thunar
+[    886]   504   886   114166      558   208896     1267             0 panel-6-systray
+[    887]   504   887   114470      462   212992     2358             0 panel-2-actions
+[    888]   504   888   159010     1173   315392    10226             0 xfdesktop
+[    906]   504   906    59197        0    86016      852           200 gsettings-helpe
+[    911]   504   911   355202        0   442368    10408             0 claws-mail
+[    912]   504   912   796658     8304  1429504    81625             0 clementine
+[    913]   504   913   242116     2555   327680     4878             0 xfce4-terminal
+[    914]   504   914    58010        0   167936     1998             0 xfce4-power-man
+[    922]     0   922    58307        0    90112      828             0 upowerd
+[    959]   504   959   161371      132   184320     1131           200 gvfs-udisks2-vo
+[    976]   504   976     2115        1    53248      243             0 bash
+[    978]   504   978     2030        0    61440      231             0 bash
+[    979]   504   979     2030        0    57344      231             0 bash
+[    980]   504   980     2054        0    53248      241             0 bash
+[    982]   504   982     2029        0    49152      243             0 bash
+[    986]     0   986    98535      216   131072     1210             0 udisksd
+[    987]   504   987     2029        0    53248      229             0 bash
+[    989]   504   989     2054        0    53248      241             0 bash
+[    998]   504   998     2029        0    57344      230             0 bash
+[   1008]   504  1008     2238        1    49152      387             0 bash
+[   1227]   504  1227    79220        0   114688     1551           200 gvfsd-trash
+[   1238]   504  1238    39834        0    77824      749           200 gvfsd-metadata
+[   1267]   504  1267    17396        0   135168      526             0 clementine-tagr
+[   1268]   504  1268    17397        0   131072      539             0 clementine-tagr
+[   1269]   504  1269    17398        0   126976      549             0 clementine-tagr
+[   1270]   504  1270    17398        0   135168      547             0 clementine-tagr
+[   1298]   504  1298    57817        0   172032     1926             0 polkit-gnome-au
+[   1299]   504  1299     1216      138    49152       69         -1000 xscreensaver
+[   1300]   504  1300   102371       46   225280     3021             0 xfce4-notifyd
+[   1308]   504  1308   252426     1143   356352     3844             0 pavucontrol
+[   1310]   504  1310     1926        0    57344      134             0 xscreensaver-sy
+[   1676]   504  1676    97743        0   131072     1047           200 gvfsd-network
+[   1682]   504  1682    79674        0   118784      975           200 gvfsd-dnssd
+[   5514]   504  5514    38890        0    73728      792           200 dconf-service
+[  10333]   504 10333   159849      468   299008     8753             0 mousepad
+[ 316097]   504 316097   117647     2682   217088     8661             0 python2
+[ 322400]   504 322400   211848        0   303104     5300             0 xfce4-appfinder
+[ 331049]   504 331049  2316564   516062 12025856   547863             0 java
+[ 351065]   504 351065     2202       61    57344      760             0 fsnotifier
+[ 375042]   504 375042  8546231     9209  1327104    24903             0 chrome
+[ 375046]   504 375046     1493        0    49152       27             0 cat
+[ 375047]   504 375047     1493        0    53248       46             0 cat
+[ 375049]   504 375049  8393904        0    61440      113             0 chrome_crashpad
+[ 375051]   504 375051  8391851        0    53248      112             0 chrome_crashpad
+[ 375057]   504 375057  8461795       34   397312     2772             0 chrome
+[ 375058]   504 375058  8461793        3   409600     2774             0 chrome
+[ 375060]   504 375060  8391944        1    77824      114             0 nacl_helper
+[ 375063]   504 375063  8461799       11   266240     2798             0 chrome
+[ 375091]   504 375091  8476826     3620   970752    17473           200 chrome
+[ 375094]   504 375094  8474193      273   503808     4651           200 chrome
+[ 376692]   504 376692 296469227     2362  1826816    57194           300 chrome
+[ 376850]   504 376850  8540727      588   471040     2920           200 chrome
+[ 384429]   504 384429 296196870      161   892928    10673           300 chrome
+[ 384480]   504 384480 296197707     1513  1761280    35094           300 chrome
+[ 384572]   504 384572 296192141      146   806912     9569           300 chrome
+[ 429251]   504 429251 296191891      151   802816    10933           300 chrome
+[ 429292]   504 429292 296195734      159   798720     7995           300 chrome
+[ 429373]   504 429373 296193695      132  1060864    19693           300 chrome
+[ 429392]   504 429392 296192194      867   962560    15007           300 chrome
+[ 442829]   504 442829 296195874      170   942080    11840           300 chrome
+[ 443457]   504 443457     2081        0    53248      247             0 bash
+[ 452899]   504 452899 296191069      184   663552     5157           300 chrome
+[ 453235]   504 453235 296190983      145   675840     4694           300 chrome
+[ 453303]   504 453303 296453346      213   884736    17367           300 chrome
+[ 466649]   504 466649 296458526     1742   847872     9381           300 chrome
+[ 469274]   504 469274 296191525       39   790528     8550           300 chrome
+[ 469323]   504 469323 296188917      156   663552     4015           300 chrome
+[ 470905]   504 470905     2030        0    57344      234             0 bash
+[ 471736]   504 471736 296191883      107   847872    11573           300 chrome
+[ 472463]   504 472463 296191588     2361   737280     3564           300 chrome
+[ 472477]   504 472477 296182731       87   581632     3768           300 chrome
+[ 472728]   993 472728      850        0    49152       90             0 dhcpcd
+[ 473029]   504 473029    58100       56    86016      134           200 xfconfd
+[ 473206]   504 473206  7572670  2308581 60686336  5225427             0 doxygen
+[ 473207]   504 473207     2835      124    61440      143             0 top
+[ 473257]   504 473257  8547051     5143   983040     4216           200 chrome
+oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/user.slice/user-504.slice/session-2.scope,task=doxygen,pid=473206,uid=504
+Out of memory: Killed process 473206 (doxygen) total-vm:30290680kB, anon-rss:9234320kB, file-rss:4kB, shmem-rss:0kB, UID:504 pgtables:59264kB oom_score_adj:0
+oom_reaper: reaped process 473206 (doxygen), now anon-rss:0kB, file-rss:0kB, shmem-rss:0kB
+    """
+
     example_rhel7 = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
 sed cpuset=/ mems_allowed=0-1
@@ -4515,14 +4692,22 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             )
             element.firstChild.textContent = "col {}".format(i + 1)
 
-    def copy_example_rhel7_to_form(self):
-        document.getElementById("textarea_oom").value = self.example_rhel7
-
-    def copy_example_ubuntu_to_form(self):
-        document.getElementById("textarea_oom").value = self.example_ubuntu2110
+    def copy_example_to_form(self):
+        """Copy example to input area"""
+        selection = document.getElementById("examples").value
+        if selection == "empty":
+            self.reset_form()
+        elif selection == "RHEL7":
+            document.getElementById("textarea_oom").value = self.example_rhel7
+        elif selection == "Ubuntu_2110":
+            document.getElementById("textarea_oom").value = self.example_ubuntu2110
+        elif selection == "ArchLinux":
+            document.getElementById("textarea_oom").value = self.example_archlinux_6_1_1
 
     def reset_form(self):
+        """Reset HTML input form"""
         document.getElementById("textarea_oom").value = ""
+        document.getElementById("examples").value = "empty"
         self.set_html_defaults()
         self.update_toc()
 

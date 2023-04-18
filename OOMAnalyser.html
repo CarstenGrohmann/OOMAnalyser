@@ -387,14 +387,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <input accept=".txt,.log" onchange="read_and_display_file(this.files[0])" type="file">
     </div>
     <br/>
-    <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()" title="Analyse the OOM from the input area and show it" type="button">Analyse<br>OOM block</button>
-    <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Clean the input area" type="reset">Reset<br>form</button>
-    <button onclick="OOMAnalyser.OOMDisplayInstance.copy_example_rhel7_to_form()" title="Copy an example OOM from RHEL7 (kernel 3.10) w/ swap into the input area" type="button">
-        Insert RHEL7 example<br>Kernel 3.10, swap enabled
-    </button>
-    <button onclick="OOMAnalyser.OOMDisplayInstance.copy_example_ubuntu_to_form()" title="Copy an example OOM from Ubuntu 21.10 (kernel 5.13) w/o swap into the input area" type="button">
-        Insert Ubuntu 21.10 example<br>Kernel 5.13, swap disabled
-    </button>
+    <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()"
+            title="Analyse the OOM from the input area and show it" type="button">Analyse OOM block</button>
+    <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()"
+            title="Clean the input area" type="reset">Reset form</button>
+    <select id="examples" name="examples" onchange="OOMAnalyser.OOMDisplayInstance.copy_example_to_form()">
+        <option value="empty">Select an example:</option>
+        <option value="RHEL7">Insert RHEL7 example, Kernel 3.10, swap enabled</option>
+        <option value="Ubuntu_2110">Insert Ubuntu 21.10 example, Kernel 5.13, swap disabled</option>
+        <option value="ArchLinux">Insert ArchLinux example, Kernel 6.1.1, swap enabled</option>
+    </select>
+
 </div>
 
 <div class="js-text--default-hide js-text--display-none" id="analysis">
@@ -1092,6 +1095,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Summary of the analysis revised</li>
         <li>Show memory watermarks together will all details</li>
         <li>Add support for kernel 6.0 and newer</li>
+        <li>Add new example ArchLinux, Kernel 6.1.1</li>
         <li>...</li>
     </ol>
 

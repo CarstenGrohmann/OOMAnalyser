@@ -10,6 +10,8 @@ import re
 import socketserver
 import threading
 import unittest
+
+from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.common.exceptions import *
 from selenium.webdriver.chrome.service import Service
@@ -140,9 +142,22 @@ class TestInBrowser(TestBase):
         self.assert_on_warn()
         self.assert_on_error()
 
-    def click_analyse(self):
-        analyse = self.driver.find_element(By.XPATH, '//button[text()="Analyse"]')
+    def click_analyse_button(self):
+        analyse = self.driver.find_element(
+            By.XPATH, '//button[text()="Analyse OOM block"]'
+        )
         analyse.click()
+
+    def click_reset_button(self):
+        reset = self.driver.find_element(By.XPATH, '//button[text()="Reset form"]')
+        if reset.is_displayed():
+            reset.click()
+        else:
+            new_analysis = self.driver.find_element(
+                By.XPATH, '//a[contains(text(), "Step 1 - Enter your OOM message")]'
+            )
+            new_analysis.click()
+        self.assert_on_warn_error()
 
     def get_error_text(self):
         """
@@ -157,16 +172,30 @@ class TestInBrowser(TestBase):
             return ""
         return notify_box.text
 
-    def click_reset(self):
-        reset = self.driver.find_element(By.XPATH, '//button[text()="Reset"]')
-        if reset.is_displayed():
-            reset.click()
-        else:
-            new_analysis = self.driver.find_element(
-                By.XPATH, '//a[contains(text(), "Step 1 - Enter your OOM message")]'
-            )
-            new_analysis.click()
-        self.assert_on_warn_error()
+    def insert_example(self, select_value):
+        """
+        Select and insert example from the combobox
+
+        @param str select_value: Option value to specify the example
+        """
+        textarea = self.driver.find_element(By.ID, "textarea_oom")
+        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
+        select_element = self.driver.find_element(By.ID, "examples")
+        select = Select(select_element)
+        option_values = [o.get_attribute("value") for o in select.options]
+        self.assertTrue(
+            select_value in option_values,
+            "Missing proper option for example %s" % select_value,
+        )
+        select.select_by_value(select_value)
+        self.assertNotEqual(
+            textarea.get_attribute("value"), "", "Missing OOM text in textarea"
+        )
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
+        self.assertFalse(
+            h3_summary.is_displayed(),
+            "Analysis details incl. <h3>Summary</h3> should be not displayed",
+        )
 
     def analyse_oom(self, text):
         """
@@ -188,7 +217,143 @@ class TestInBrowser(TestBase):
             "Analysis details incl. <h3>Summary</h3> should be not displayed",
         )
 
-        self.click_analyse()
+        self.click_analyse_button()
+
+    def check_results_archlinux_6_1_1(self):
+        """Check the results of the analysis of the ArchLinux 6.1.1 example"""
+        self.assert_on_warn_error()
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
+        self.assertTrue(
+            h3_summary.is_displayed(),
+            "Analysis details incl. <h3>Summary</h3> should be displayed",
+        )
+        trigger_proc_name = self.driver.find_element(By.CLASS_NAME, "trigger_proc_name")
+        self.assertEqual(
+            trigger_proc_name.text, "doxygen", "Unexpected trigger process name"
+        )
+        trigger_proc_pid = self.driver.find_element(By.CLASS_NAME, "trigger_proc_pid")
+        self.assertEqual(
+            trigger_proc_pid.text,
+            "473206",
+            "Unexpected trigger process pid: --%s--" % trigger_proc_pid.text,
+        )
+        trigger_proc_gfp_mask = self.driver.find_element(
+            By.CLASS_NAME, "trigger_proc_gfp_mask"
+        )
+        # 0x140dca will split into
+        #  GFP_HIGHUSER_MOVABLE -> 0x100cca
+        #                         (GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN_POISON | __GFP_SKIP_KASAN_UNPOISON)
+        #      GFP_HIGHUSER
+        #          GFP_USER
+        #              __GFP_RECLAIM
+        #                   ___GFP_DIRECT_RECLAIM       0x400
+        #                   ___GFP_KSWAPD_RECLAIM       0x800
+        #              __GFP_IO                          0x40
+        #              __GFP_FS                          0x80
+        #              __GFP_HARDWALL                0x100000
+        #          __GFP_HIGHMEM                         0x02
+        #      __GFP_MOVABLE                             0x08
+        #      __GFP_SKIP_KASAN_POISON                   0x00
+        #      __GFP_SKIP_KASAN_UNPOISON                 0x00
+        #  __GFP_COMP                                 0x40000
+        #  __GFP_ZERO                                   0x100
+        #                                       sum: 0x140dca
+        self.assertEqual(
+            trigger_proc_gfp_mask.text,
+            "0x140dca (GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO)",
+            "Unexpected GFP Mask",
+        )
+
+        killed_proc_score = self.driver.find_element(By.CLASS_NAME, "killed_proc_score")
+        self.assertTrue(
+            not killed_proc_score.text,
+            "Unexpected statement for OOM score of killed process",
+        )
+
+        swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
+        self.assertEqual(swap_cache_kb.text, "99452 kBytes")
+        swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
+        self.assertEqual(swap_used_kb.text, "25066284 kBytes")
+        swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
+        self.assertEqual(swap_free_kb.text, "84 kBytes")
+        swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
+        self.assertEqual(swap_total_kb.text, "25165820 kBytes")
+
+        explanation = self.driver.find_element(By.ID, "explanation")
+        for expected in [
+            self.text_alloc_failed_below_low_watermark,
+            self.text_mem_not_heavily_fragmented,
+            self.text_oom_triggered_automatically,
+            self.text_swap_space_are_in_use,
+        ]:
+            self.assertTrue(
+                expected in explanation.text,
+                'Missing statement "%s"' % expected,
+            )
+        for unexpected in [
+            self.text_alloc_failed_no_free_chunks,
+            self.text_alloc_failed_unknown_reason,
+            self.text_mem_heavily_fragmented,
+            self.text_oom_triggered_manually,
+            self.text_swap_space_not_in_use,
+            self.text_with_an_oom_score_of,
+        ]:
+            self.assertTrue(
+                unexpected not in explanation.text,
+                'Unexpected statement "%s"' % unexpected,
+            )
+
+        self.assertTrue(
+            "system has 16461600 kBytes physical memory and 25165820 kBytes swap space."
+            in explanation.text,
+            "Physical and swap memory in summary not found",
+        )
+        self.assertTrue(
+            "That's 41627420 kBytes total." in explanation.text,
+            "Total memory in summary not found",
+        )
+        self.assertTrue(
+            "69 % (11513452 kBytes out of 16461600 kBytes) physical memory"
+            in explanation.text,
+            "Used physical memory in summary not found",
+        )
+        self.assertTrue(
+            "99 % (25066284 kBytes out of 25165820 kBytes) swap space"
+            in explanation.text,
+            "Used swap space in summary not found",
+        )
+
+        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+        self.assertEqual(
+            mem_node_info.text[:44],
+            "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB",
+            "Unexpected memory chunks",
+        )
+        self.assertEqual(
+            mem_node_info.text[-80:],
+            "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+            "Unexpected memory information about hugepages",
+        )
+
+        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+        self.assertEqual(
+            mem_watermarks.text[:51],
+            "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB",
+            "Unexpected memory watermarks",
+        )
+        self.assertEqual(
+            mem_watermarks.text[-27:],
+            "lowmem_reserve[]: 0 0 0 0 0",
+            "Unexpected lowmem_reserve values",
+        )
+
+        header = self.driver.find_element(By.ID, "pstable_header")
+        self.assertTrue(
+            "Page Table Bytes" in header.text,
+            'Missing column header "Page Table Bytes"',
+        )
+
+        self.check_swap_active()
 
     def check_results_rhel7(self):
         """Check the results of the analysis of the RHEL7 example"""
@@ -309,10 +474,10 @@ class TestInBrowser(TestBase):
             "Unexpected lowmem_reserve values",
         )
 
-        head = self.driver.find_element(By.ID, "pstable_header")
+        header = self.driver.find_element(By.ID, "pstable_header")
         self.assertTrue(
-            "Page Table Entries" in head.text,
-            'Missing column head line "Page Table Entries"',
+            "Page Table Entries" in header.text,
+            'Missing column header "Page Table Entries"',
         )
 
         self.check_swap_active()
@@ -401,10 +566,10 @@ class TestInBrowser(TestBase):
             "Unexpected lowmem_reserve values",
         )
 
-        head = self.driver.find_element(By.ID, "pstable_header")
+        header = self.driver.find_element(By.ID, "pstable_header")
         self.assertTrue(
-            "Page Table Bytes" in head.text,
-            'Missing column head line "Page Table Bytes"',
+            "Page Table Bytes" in header.text,
+            'Missing column header "Page Table Bytes"',
         )
 
         self.check_swap_inactive()
@@ -438,47 +603,23 @@ class TestInBrowser(TestBase):
 
     def test_030_insert_and_analyse_rhel7_example(self):
         """Test loading and analysing RHEL7 example"""
-        textarea = self.driver.find_element(By.ID, "textarea_oom")
-        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
-        insert_example = self.driver.find_element(
-            By.XPATH, '//button[contains(text(), "RHEL7" )]'
-        )
-        insert_example.click()
-        self.assertNotEqual(
-            textarea.get_attribute("value"), "", "Missing OOM text in textarea"
-        )
-
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertFalse(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be not displayed",
-        )
-
-        self.click_analyse()
+        self.insert_example("RHEL7")
+        self.click_analyse_button()
         self.check_results_rhel7()
 
     def test_031_insert_and_analyse_ubuntu_example(self):
         """Test loading and analysing Ubuntu 21.10 example"""
-        textarea = self.driver.find_element(By.ID, "textarea_oom")
-        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
-        insert_example = self.driver.find_element(
-            By.XPATH, '//button[contains(text(), "Ubuntu" )]'
-        )
-        insert_example.click()
-        self.assertNotEqual(
-            textarea.get_attribute("value"), "", "Missing OOM text in textarea"
-        )
-
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertFalse(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be not displayed",
-        )
-
-        self.click_analyse()
+        self.insert_example("Ubuntu_2110")
+        self.click_analyse_button()
         self.check_results_ubuntu2110()
 
-    def test_032_empty_textarea(self):
+    def test_032_insert_and_analyse_archlinux_example(self):
+        """Test loading and analysing ArchLinux 6.1.1 example"""
+        self.insert_example("ArchLinux")
+        self.click_analyse_button()
+        self.check_results_archlinux_6_1_1()
+
+    def test_033_empty_textarea(self):
         """Test "Analyse" with empty textarea"""
         textarea = self.driver.find_element(By.ID, "textarea_oom")
         self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
@@ -496,14 +637,14 @@ class TestInBrowser(TestBase):
             "Analysis details incl. <h3>Summary</h3> should be not displayed",
         )
 
-        self.click_analyse()
+        self.click_analyse_button()
         self.assertEqual(
             self.get_error_text(),
             "ERROR: Empty OOM text. Please insert an OOM message block.",
         )
-        self.click_reset()
+        self.click_reset_button()
 
-    def test_033_begin_but_no_end(self):
+    def test_034_begin_but_no_end(self):
         """Test incomplete OOM text - just the beginning"""
         example = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -516,9 +657,9 @@ CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
             "ERROR: The inserted OOM is incomplete! The initial pattern was "
             "found but not the final.",
         )
-        self.click_reset()
+        self.click_reset_button()
 
-    def test_034_no_begin_but_end(self):
+    def test_035_no_begin_but_end(self):
         """Test incomplete OOM text - just the end"""
         example = """\
 Out of memory: Kill process 6576 (java) score 651 or sacrifice child
@@ -529,9 +670,9 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.get_error_text(),
             "ERROR: Failed to extract kernel version from OOM text",
         )
-        self.click_reset()
+        self.click_reset_button()
 
-    def test_035_leading_journalctl_input(self):
+    def test_036_leading_journalctl_input(self):
         """Test loading input from journalctl"""
         # prepare example
         example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
@@ -560,7 +701,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
         self.analyse_oom(example)
         self.check_results_rhel7()
-        self.click_reset()
+        self.click_reset_button()
 
     def test_040_trigger_proc_space(self):
         """Test trigger process name contains a space"""
@@ -592,7 +733,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         """Test removal of leading but useless columns"""
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
         self.check_results_rhel7()
-        self.click_reset()
+        self.click_reset_button()
         for prefix in [
             "[11686.888109] ",
             "Apr 01 14:13:32 mysrv: ",
@@ -608,7 +749,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.analyse_oom(oom_text)
 
             self.check_results_rhel7()
-            self.click_reset()
+            self.click_reset_button()
 
     def test_070_manually_triggered_OOM(self):
         """Test for manually triggered OOM"""
@@ -635,7 +776,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self.assert_on_warn_error()
 
         self.check_swap_inactive()
-        self.click_reset()
+        self.click_reset_button()
 
         example = OOMAnalyser.OOMDisplay.example_rhel7
         example = re.sub(r"\d+ pages in swap cac.*\n*", "", example, re.MULTILINE)
@@ -831,7 +972,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ),
             ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
             (
-                "0x5000000",  # 0x1000000 + 0x4000000
+                "0x5000000",  # 0x1000000 (__GFP_WRITE) + 0x4000000  (no flag - unused)
                 ["__GFP_WRITE"],
                 0x4000000,
             ),
@@ -864,6 +1005,59 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("__GFP_DMA", 0x01),
             ("__GFP_IO", 0x40),
             ("__GFP_FS", 0x80),
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x4001000",  # 0x1000 (__GFP_WRITE) + 0x4000000 (no flag - unused)
+                ["__GFP_WRITE"],
+                0x4000000,
+            ),
+            (
+                "0xCC0",
+                ["GFP_KERNEL"],
+                0,
+            ),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (6, 1, ""),
+            "Wrong KernelConfig release",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
             (
                 "GFP_KERNEL",
                 0xCC0,
@@ -884,10 +1078,11 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ),
             ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
             (
-                "0x4001000",  # 0x1000 + 0x4000000
+                "0x201000",  # 0x1000 (__GFP_WRITE) + 0x200000 (no flag - unused)
                 ["__GFP_WRITE"],
-                0x4000000,
+                0x200000,
             ),
+            ("0x140dca", ["GFP_HIGHUSER_MOVABLE", "__GFP_COMP", "__GFP_ZERO"], 0),
         ]:
             flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
             self.assertEqual(
