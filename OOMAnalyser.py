@@ -30,6 +30,23 @@ class classList:
         pass
 
 
+class console:
+    @staticmethod
+    def log(message):
+        """Log message on JS console"""
+        pass
+
+    @staticmethod
+    def js_clear():
+        """
+        Clear JS console
+
+        clear is an alias and converted by Transcrypt to py_clear. Instead, we use
+        JS alias js_clear(), that will be converted to clear().
+        """
+        pass
+
+
 class document:
     def querySelectorAll(
         self,
@@ -243,6 +260,9 @@ def add_to_notifybox(prefix, msg):
     notification.classList.add(css_class)
     notification.innerHTML = "{}: {}<br>".format(prefix, escape_html(msg))
     notify_box.appendChild(notification)
+
+    # Also show all messages on the JS console
+    console.log("{}: {}".format(prefix, msg))
 
 
 class BaseKernelConfig:
@@ -4648,6 +4668,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     def set_html_defaults(self):
         """Reset the HTML document but don't clean elements"""
 
+        # clear JS console
+        console.js_clear()
+
         # show all hidden elements in the result table
         show_elements("table .js-text--display-none")
 
@@ -4726,11 +4749,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def analyse_and_show(self):
         """Analyse the OOM text inserted into the form and show the results"""
-        self.oom = OOMEntity(self.load_from_form())
-
-        # set defaults and clear notifications
+        # set defaults and clear notifications / JS console
         self.set_html_defaults()
 
+        self.oom = OOMEntity(self.load_from_form())
         analyser = OOMAnalyser(self.oom)
         success = analyser.analyse()
         if success:
