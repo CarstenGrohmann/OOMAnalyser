@@ -3184,11 +3184,28 @@ class OOMAnalyser:
                 self.oom_result.details.update(match.groupdict())
             elif is_mandatory:
                 error(
-                    'Failed to extract information from OOM text. The regular expression "{}" (pattern "{}") '
+                    "Failed to extract information from OOM text. The regular "
+                    'expression "{}" (kernel {}, config {}.{}{}) '
                     "does not find anything. This can lead to errors later on.".format(
-                        k, pattern
+                        k,
+                        self.oom_result.kversion,
+                        self.oom_result.kconfig.release[0],
+                        self.oom_result.kconfig.release[1],
+                        self.oom_result.kconfig.release[2],
                     )
                 )
+            else:
+                debug(
+                    'Regular expression "{}" (kernel {}, config {}.{}{}) does not '
+                    "match with current OOM text.".format(
+                        k,
+                        self.oom_result.kversion,
+                        self.oom_result.kconfig.release[0],
+                        self.oom_result.kconfig.release[1],
+                        self.oom_result.kconfig.release[2],
+                    )
+                )
+
         # __pragma__ ('nojsiter')
 
         if self.oom_result.details["trigger_proc_order"] == "-1":
