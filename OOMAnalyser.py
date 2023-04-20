@@ -3034,6 +3034,7 @@ class OOMAnalyser:
             self.oom_result.error_msg = "Failed to extract kernel version from OOM text"
             return False
         self.oom_result.kversion = match.group("kernel_version")
+        debug("Found kernel version: {}".format(self.oom_result.kversion))
         return True
 
     def _check_kversion_greater_equal(self, kversion, min_version):
@@ -3088,6 +3089,13 @@ class OOMAnalyser:
                 )
             )
             self.oom_result.kconfig = BaseKernelConfig()
+        debug(
+            "Choose kernel config {}.{}{}".format(
+                self.oom_result.kconfig.release[0],
+                self.oom_result.kconfig.release[1],
+                self.oom_result.kconfig.release[2],
+            )
+        )
         return
 
     def _check_for_empty_oom(self):
@@ -3196,13 +3204,8 @@ class OOMAnalyser:
                 )
             else:
                 debug(
-                    'Regular expression "{}" (kernel {}, config {}.{}{}) does not '
-                    "match with current OOM text.".format(
+                    'Regular expression "{}" does not match with current OOM text.'.format(
                         k,
-                        self.oom_result.kversion,
-                        self.oom_result.kconfig.release[0],
-                        self.oom_result.kconfig.release[1],
-                        self.oom_result.kconfig.release[2],
                     )
                 )
 
