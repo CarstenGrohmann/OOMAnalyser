@@ -128,7 +128,7 @@ class TestInBrowser(TestBase):
             self.fail('Unexpected warning message: "%s"' % warning.text)
 
     def assert_on_error(self):
-        error = self.get_error_text()
+        error = self.get_first_error_msg()
         if error:
             self.fail('Unexpected error message: "%s"' % error)
 
@@ -159,15 +159,19 @@ class TestInBrowser(TestBase):
             new_analysis.click()
         self.assert_on_warn_error()
 
-    def get_error_text(self):
+    def get_first_error_msg(self):
         """
-        Return text from error notification box or an empty string if no error message exists
+        Return first (oldest) error message from error notification box or an empty
+        string if no error message exists.
 
         @rtype: str
         """
         notify_box = self.driver.find_element(By.ID, "notify_box")
         try:
-            notify_box.find_element(By.CLASS_NAME, "js-notify_box__msg--error")
+            first_error_msg = notify_box.find_element(
+                By.CLASS_NAME, "js-notify_box__msg--error"
+            )
+            return first_error_msg.text
         except NoSuchElementException:
             return ""
         return notify_box.text
@@ -639,7 +643,7 @@ class TestInBrowser(TestBase):
 
         self.click_analyse_button()
         self.assertEqual(
-            self.get_error_text(),
+            self.get_first_error_msg(),
             "ERROR: Empty OOM text. Please insert an OOM message block.",
         )
         self.click_reset_button()
@@ -653,7 +657,7 @@ CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
         self.analyse_oom(example)
         self.assertEqual(
-            self.get_error_text(),
+            self.get_first_error_msg(),
             "ERROR: The inserted OOM is incomplete! The initial pattern was "
             "found but not the final.",
         )
@@ -667,7 +671,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         """
         self.analyse_oom(example)
         self.assertEqual(
-            self.get_error_text(),
+            self.get_first_error_msg(),
             "ERROR: Failed to extract kernel version from OOM text",
         )
         self.click_reset_button()
