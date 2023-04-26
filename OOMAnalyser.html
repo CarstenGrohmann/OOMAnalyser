@@ -354,7 +354,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 <body>
 
 
-<h1>Analyse and visualise Linux OOM output</h1>
+<h1>Analyse and explain Linux OOM output</h1>
 
 <nav class="table-of-contents" id="table_of_contents">
     <h2>On this page</h2>
@@ -363,13 +363,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 </nav>
 
 <p>
-    OOMAnalyser is a small project to transform the OOM message of a Linux kernel into a more user-friendly format.
+    OOMAnalyser is a web page to analyse and explain the OOM message of a Linux kernel. The analysis is performed
+    automatically in the browser. You get a summary and a list of (almost) all parameters with their values and a
+    short explanation. Among them are also 2 diagrams that illustrate the memory usage.
 </p>
 <p>
-    OOMAnalyser consists of a web page into whose input field the OOM message is copied. JavaScript code extracts
-    the data from it and displays the details. All processing takes place in the browser. No data is transferred
-    to external servers. This makes it possible to use a locally stored copy of the website for analysis.
-
+    OOMAnalyser consists of a web page where the OOM message is copied into the input field. JavaScript code extracts
+    the data and displays the details. All processing takes place in the browser. No data is transferred to any server.
+    Therefore, confidential OOM messages can also be analyzed, and the analysis can be performed in environments
+    without an Internet connection.
+</p>
+<p>
     This project is written in <a href="https://www.python.org">Python</a> and uses
     <a href="https://www.transcrypt.org/">Transcrypt</a> to translate Python code into JavaScript.
 </p>
