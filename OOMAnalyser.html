@@ -15,6 +15,18 @@ THIS PROGRAM COMES WITH NO WARRANTY
     <style>
         /* Use BEM (Block__Element--Modifier) naming convention */
 
+        body {
+            margin: 0 auto;
+            font-family: "Helvetica", "Arial", sans-serif;  /* use a sans-serif font to improve page look */
+            line-height: 1.5;  /* increase readability */
+            padding: 1em;
+        }
+
+        table {
+            border-collapse: collapse;
+            line-height: normal;  /* reset line-height in all tables */
+        }
+
         .text--align-right {
             text-align: right;
         }
@@ -172,7 +184,6 @@ THIS PROGRAM COMES WITH NO WARRANTY
         }
 
         .result__table {
-            border-collapse: collapse;
             padding: 10px;
             table-layout: fixed;
             text-align: left;
@@ -184,31 +195,30 @@ THIS PROGRAM COMES WITH NO WARRANTY
         }
 
         .result__table--border {
-            border-collapse: collapse;
             padding: 10px;
         }
 
         .pstable__table--noborder {
-            border: none;
-            text-align: right;
             background-color: unset;
+            border: none;
+            line-height: normal;
             table-layout: fixed;
+            text-align: right;
         }
-
         .pstable__table--noborder thead * {
+            border: none;  /* overwrite the generic th/td settings */
             font-weight: bold;
             padding-right: unset;
             padding-left: unset;
             white-space: nowrap;
-            /* overwrite the generic th/td settings */
-            border: none;
         }
 
         .pstable__table--noborder tbody * {
+            border: none;  /* overwrite the generic th/td settings */
+            padding-bottom: unset;
+            padding-top: unset;
             padding-left: 5px;
             padding-right: 18px;
-            /* overwrite the generic th/td settings */
-            border: none;
         }
 
         /* Align last both columns to left in the process table */
@@ -239,20 +249,21 @@ THIS PROGRAM COMES WITH NO WARRANTY
             width: 20ch;
         }
         .pstable__row-sort--width {
+            display: inline-block;
             padding-left: unset;
             padding-right: unset;
             width: 10px;
-            display: inline-block;
         }
 
         th {
-            font-weight: bold;
             font-size: large;
+            font-weight: bold;
             padding: 5px;
         }
 
         th, td {
             border: 1px solid black;
+            padding: 5px;
             word-wrap: break-word;
         }
 
@@ -573,8 +584,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <td>Requested memory: node</td>
             <td class="trigger_proc_numa_node text--align-right"></td>
             <td>
-                First NUMA node with memory shortage watermark &quot;<code>free</code>&quot; &lt;
-                &quot;<code>min</code>&quot; in memory watermark information.
+                First NUMA node with memory shortage watermark <code>free &lt; min </code> in memory watermark
+                information.
                 <br>
                 Assumption that this is the node where the OOM was triggered.
             </td>
