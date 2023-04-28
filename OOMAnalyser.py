@@ -3709,9 +3709,9 @@ class OOMAnalyser:
         """Determinate platform and distribution"""
         kernel_version = self.oom_result.details.get("kernel_version", "")
         if "x86_64" in kernel_version:
-            self.oom_result.details["platform"] = "x86 64bit"
+            platform = "x86 64bit"
         else:
-            self.oom_result.details["platform"] = "unknown"
+            platform = "unknown"
 
         dist = "unknown"
         if ".el7uek" in kernel_version:
@@ -3722,11 +3722,13 @@ class OOMAnalyser:
             dist = "RHEL 6/CentOS 6"
         elif ".el5" in kernel_version:
             dist = "RHEL 5/CentOS 5"
-        elif "ARCH" in kernel_version:
+        elif "ARCH" in kernel_version or "-arch" in kernel_version:
             dist = "Arch Linux"
+            platform = "x86 64bit"
         elif "-generic" in kernel_version:
             dist = "Ubuntu"
         self.oom_result.details["dist"] = dist
+        self.oom_result.details["platform"] = platform
 
     def _calc_from_oom_details(self):
         """
