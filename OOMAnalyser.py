@@ -3382,6 +3382,7 @@ class OOMAnalyser:
                 self.oom_result.details["trigger_proc_numa_node"] = int(node)
                 return
         # __pragma__ ('nojsiter')
+        debug("No NUMA node has a memory shortage : watermark free < min")
         return
 
     def _gfp_hex2flags(self, hexvalue):
@@ -3553,6 +3554,7 @@ class OOMAnalyser:
         # Node with memory shortage: watermark "free" < "min"
         node = self.oom_result.details["trigger_proc_numa_node"]
         if node is None:
+            debug("No NUMA node found - skip analysis of memory allocation failure")
             return
 
         # the remaining code is similar to mm/page_alloc.c:__zone_watermark_ok()
@@ -4813,6 +4815,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def _show_alloc_failure(self):
         """Show details why the memory allocation failed"""
+
         if (
             self.oom_result.mem_alloc_failure
             == OOMMemoryAllocFailureType.failed_below_low_watermark
@@ -4831,6 +4834,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         ):
             show_elements(".js-alloc-failure--show")
             show_elements(".js-alloc-failure-unknown-reason-show")
+        else:
+            debug(
+                "Memory allocation failed: {}".format(self.oom_result.mem_alloc_failure)
+            )
 
     def _show_memory_fragmentation(self):
         """Show details about memory fragmentation"""
