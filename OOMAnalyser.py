@@ -4098,7 +4098,6 @@ class SVGChart:
 class OOMDisplay:
     """Display the OOM analysis"""
 
-    # result ergibt an manchen stellen self.result.result :-/
     oom_result = OOMResult()
     """
     OOM analysis details
