@@ -277,8 +277,8 @@ class BaseKernelConfig:
 
     This dict will be filled from EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY during class constructor is executed.
 
-    :type: None|Dict
-    :see: EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY
+    @type: None|Dict
+    @see: EXTRACT_PATTERN_BASE and EXTRACT_PATTERN_OVERLAY
     """
 
     EXTRACT_PATTERN_BASE = {
@@ -386,16 +386,16 @@ class BaseKernelConfig:
 
     This dictionary will be copied to EXTRACT_PATTERN during class constructor is executed.
 
-    :type: dict(tuple(str, bool))
-    :see: EXTRACT_PATTERN
+    @type: dict(tuple(str, bool))
+    @see: EXTRACT_PATTERN
     """
 
     EXTRACT_PATTERN_OVERLAY = {}
     """
     To extend / overwrite parts of EXTRACT_PATTERN in kernel configuration.
 
-    :type: dict(tuple(str, bool))
-    :see: EXTRACT_PATTERN
+    @type: dict(tuple(str, bool))
+    @see: EXTRACT_PATTERN
     """
 
     # NOTE: These flags are automatically extracted from a gfp.h file.
@@ -487,7 +487,7 @@ class BaseKernelConfig:
 
     Source: include/linux/gpf.h
 
-    @note : This list os probably a mixture of different kernel versions - be carefully
+    @note: This list os probably a mixture of different kernel versions - be carefully
     """
 
     gfp_reverse_lookup = []
@@ -560,7 +560,7 @@ class BaseKernelConfig:
     """
     Pattern to find the start of the process table
 
-    :type: str
+    @type: str
     """
 
     release = (3, 10, "")
@@ -614,14 +614,14 @@ class BaseKernelConfig:
     """
     Pattern to find the start of the memory watermark information
 
-    :type: str
+    @type: str
      """
 
     zoneinfo_start = "Node 0 DMA: "
     """
     Pattern to find the start of the memory chunk information (buddyinfo)
 
-    :type: str
+    @type: str
     """
 
     ZONE_TYPES = ["DMA", "DMA32", "Normal", "HighMem", "Movable"]
@@ -2889,10 +2889,10 @@ class OOMEntity:
         Search the pattern and set the position to the first found line.
         Otherwise the position pointer won't be changed.
 
-        :param pattern: Text to find
-        :type pattern: str
+        @param pattern: Text to find
+        @type pattern: str
 
-        :return: True if the marker has found.
+        @return: True if the marker has found.
         """
         for line in self.lines:
             if pattern in line:
@@ -2950,7 +2950,7 @@ class OOMResult:
     """
     State of this OOM (unknown, incomplete, ...)
 
-    :type: OOMEntityState
+    @type: OOMEntityState
     """
 
     oom_text = None
@@ -2964,7 +2964,7 @@ class OOMResult:
     """
     Type of this OOM (manually or automatically triggered)
 
-    :type: OOMEntityType
+    @type: OOMEntityType
     """
 
     swap_active = False
@@ -2985,14 +2985,14 @@ class OOMAnalyser:
     """
     State of this OOM (unknown, incomplete, ...)
 
-    :type: OOMEntityState
+    @type: OOMEntityState
     """
 
     oom_result = OOMResult()
     """
     Store details of OOM analysis
 
-    :type: OOMResult
+    @type: OOMResult
     """
 
     REC_KERNEL_VERSION = re.compile(
@@ -3141,7 +3141,7 @@ class OOMAnalyser:
     def _extract_block_from_next_pos(self, marker):
         """
         Extract a block that starts with the marker and contains all lines up to the next line with ":".
-        :rtype: str
+        @rtype: str
         """
         block = ""
         if not self.oom_entity.find_text(marker):
@@ -3382,7 +3382,7 @@ class OOMAnalyser:
                 self.oom_result.details["trigger_proc_numa_node"] = int(node)
                 return
         # __pragma__ ('nojsiter')
-        debug("No NUMA node has a memory shortage : watermark free < min")
+        debug("No NUMA node has a memory shortage: watermark free < min")
         return
 
     def _gfp_hex2flags(self, hexvalue):
@@ -4932,7 +4932,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         Sort process table by values
 
-        :param int column_number: Number of column to sort
+        @param int column_number: Number of column to sort
         """
         # TODO Check operator overloading
         #      Operator overloading (Pragma opov) does not work in this context.
