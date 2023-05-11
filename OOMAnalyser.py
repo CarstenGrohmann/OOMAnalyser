@@ -2996,7 +2996,7 @@ class OOMAnalyser:
     """
 
     REC_KERNEL_VERSION = re.compile(
-        r"CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z ]+) (?P<kernel_version>\d[\w.-]+) #.+"
+        r"CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z- ]+) (?P<kernel_version>\d[\w.-]+) #.+"
     )
     """RE to match the OOM line with kernel version"""
 
