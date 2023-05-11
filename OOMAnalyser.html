@@ -1067,25 +1067,48 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 <h2 id="infos">Further Information</h2>
 <ol>
     <li>
+        <a href="https://carstengrohmann.de/oomanalyser.html">Project Page</a>
+    </li>
+    <li>
         <a href="https://man7.org/">Linux man pages online</a>
     </li>
-    <li>
-        <a href="https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures">
-            Decoding the Linux kernel's page allocation failure messages
-        </a>
+    <li>How to read and decode OOM messages
+        <ol>
+            <li>
+                <a href="https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures">
+                    Decoding the Linux kernel's page allocation failure messages
+                </a>
+            </li>
+            <li>
+                <a href="http://elearningmedium.com/linux-kernel-oom-log-analysis/">Linux Kernel OOM Log Analysis</a>
+            </li>
+            <li>
+                <a href="https://community.wandisco.com/s/article/Guide-to-Out-of-Memory-OOM-events-and-decoding-their-logging">
+                    Out of Memory events and decoding their logging
+                </a>
+            </li>
+        </ol>
     </li>
-    <li>
-        <a href="http://elearningmedium.com/linux-kernel-oom-log-analysis/">Linux Kernel OOM Log Analysis</a>
-    </li>
-    <li>
-        <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git">Kernel Source code</a> with
-        <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c"><code>mm/omm_kill.c</code></a>
-        as starting point at <a href="https://www.kernel.org">kernel.org</a>
-    </li>
-    <li>
-        A more comfortable kernel source code browser with
-        <a href="https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c"><code>mm/omm_kill.c</code></a> at
-        <a href="https://elixir.bootlin.com/">elixir.bootlin.com</a>
+    <li><a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git">Kernel Source code</a>
+        starting points:
+        <ol>
+            <li>
+                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c">
+                    <code>mm/omm_kill.c</code></a>
+                at <a href="https://kernel.org/">kernel.org</a> or more comfortable
+                <a href="https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c">
+                    <code>mm/omm_kill.c</code></a>
+                at <a href="https://elixir.bootlin.com/">elixir.bootlin.com</a>
+            </li>
+            <li>
+                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/page_alloc.c">
+                    <code>mm/page_alloc.c:zone_watermark_ok()</code></a>
+                at <a href="https://kernel.org/">kernel.org</a> or more comfortable
+                <a href="https://elixir.bootlin.com/linux/latest/source/mm/page_alloc.c#L4074">
+                    <code>mm/page_alloc.c:zone_watermark_ok()</code></a>
+                at <a href="https://elixir.bootlin.com/">elixir.bootlin.com</a>
+            </li>
+        </ol>
     </li>
 </ol>
 
@@ -1097,7 +1120,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
 <div class="js-text--default-hide js-text--display-none" id="changelog">
 
-    <h3>Version 0.6.0 - 2023-XX-XX:</h3>
+    <h3>Version 0.6.0 - 2023-05-XX:</h3>
 
     <h4>General</h4>
     <ol>
@@ -1111,7 +1134,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Show memory watermarks together will all details</li>
         <li>Add support for kernel 6.0 and newer</li>
         <li>Add new example ArchLinux, Kernel 6.1.1</li>
-        <li>...</li>
+        <li>Bug fixes</li>
     </ol>
 
     <h4>Note</h4>
@@ -1135,6 +1158,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Add support for journalctl output (suggested by Mikko Rantalainen)</li>
         <li>Add support for newer process table format</li>
         <li>Rework memory charts to show all items in legend</li>
+        <li>Bug fixes</li>
     </ol>
 
     <h4>Note</h4>
