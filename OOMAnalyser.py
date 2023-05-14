@@ -2668,6 +2668,16 @@ class OOMEntity:
     lines = []
     """OOM text as list of lines"""
 
+    REC_MEMINFO_INDENTED_LINES = re.compile(
+        r"^ (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+$"
+    )
+    """RE to match the second part of the "Mem-Info:" block
+
+    The second part of the "Mem-Info:" block as starting with the third line
+    has not a prefix like the lines before and after it. It is indented only
+    by a single space.
+    """
+
     state = OOMEntityState.unknown
     """State of the OOM after initial parsing"""
 
@@ -2697,9 +2707,6 @@ class OOMEntity:
         cols_to_strip = self._number_of_columns_to_strip(
             oom_lines[self._get_CPU_index(oom_lines)]
         )
-        oom_lines = self._journalctl_add_leading_columns_to_meminfo(
-            oom_lines, cols_to_strip
-        )
         oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
 
@@ -2710,34 +2717,6 @@ class OOMEntity:
             self.state = OOMEntityState.complete
         else:
             self.state = OOMEntityState.started
-
-    def _journalctl_add_leading_columns_to_meminfo(self, oom_lines, cols_to_add):
-        """
-        Add leading columns to handle line breaks in journalctl output correctly.
-
-        The output of the "Mem-Info:" block contains line breaks. journalctl breaks these lines accordingly, but
-        inserts at the beginning spaces instead of date and time. As a result, removing the needless columns no longer
-        works correctly.
-
-        This function adds columns back in the affected rows so that the removal works cleanly over all rows.
-
-        @see: _rsyslog_unescape_lf()
-        """
-        pattern = r"^\s+ (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+$"
-        rec = re.compile(pattern)
-
-        add_cols = ""
-        for i in range(cols_to_add):
-            add_cols += "Col{} ".format(i)
-
-        expanded_lines = []
-        for line in oom_lines:
-            match = rec.search(line)
-            if match:
-                line = "{} {}".format(add_cols, line.strip())
-            expanded_lines.append(line)
-
-        return expanded_lines
 
     def _get_CPU_index(self, lines):
         """
@@ -2853,9 +2832,15 @@ class OOMEntity:
             if not line.strip():
                 continue
 
-            if cols_to_strip:
-                # [-1] slicing needs Transcrypt operator overloading
-                line = line.split(" ", cols_to_strip)[-1]  # __:opov
+            # The output of the "Mem-Info:" block contains line breaks. journalctl
+            # breaks these lines, but doesn't insert date and time.
+            # As a result, removing the needless columns does not work correctly.
+            #
+            # see: self._rsyslog_unescape_lf()
+            if not self.REC_MEMINFO_INDENTED_LINES.search(line):
+                if cols_to_strip:
+                    # [-1] slicing needs Transcrypt operator overloading
+                    line = line.split(" ", cols_to_strip)[-1]  # __:opov
             stripped_lines.append(line)
 
         return stripped_lines

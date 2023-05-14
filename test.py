@@ -88,6 +88,28 @@ class TestBase(unittest.TestCase):
         """
         return self.get_lines(text, -1)
 
+    def check_meminfo_format_rhel7(self, prefix, oom_text):
+        """
+        Check if the example contains a proper formatted "Mem-Info:" block
+
+        @param str prefix: Prefix for error message
+        @param str oom_text: Whole OOM block as text
+
+        @see: OOMAnalyser.OOMDisplay.example_rhel7
+        """
+        found = False
+        for line in oom_text.split("\n"):
+            if "active_file:1263 " in line:
+                found = True
+                self.assertTrue(
+                    line.startswith(" active_file:1263 "),
+                    f'{prefix}: Unexpected prefix for third "Mem-Info:" block line: >>>{line}<<<',
+                )
+        self.assertTrue(
+            found,
+            f'{prefix}: Missing content "active_file:1263 " in "Mem-Info:" block of\n{oom_text}',
+        )
+
 
 class TestInBrowser(TestBase):
     """Test OOM web page in a browser"""
@@ -676,36 +698,48 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         )
         self.click_reset_button()
 
-    def test_036_leading_journalctl_input(self):
-        """Test loading input from journalctl"""
-        # prepare example
-        example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-        res = []
+    def test_036_loading_journalctl_input(self):
+        """Test loading input from journalctl
 
-        # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
-        for line in example_lines:
-            if "#012" in line:
-                res.extend(line.split("#012"))
-            else:
+        The second part of the "Mem-Info:" block as starting with the third
+        line has not a prefix like the lines before and after it. It is
+        indented only by a single space.
+        """
+        for prefix in [
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+            "[1234567.654321]",
+        ]:
+            # prepare example
+            example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+            res = []
+
+            # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
+            for line in example_lines:
+                if "#012" in line:
+                    res.extend(line.split("#012"))
+                else:
+                    res.append(line)
+            example_lines = res
+            res = []
+
+            # add date/time prefix except for "Mem-Info:" block
+            for line in example_lines:
+                if not OOMAnalyser.OOMEntity.REC_MEMINFO_INDENTED_LINES.search(line):
+                    line = f"{prefix} {line}"
                 res.append(line)
-        example_lines = res
-        res = []
+            example = "\n".join(res)
 
-        # add date/time prefix except for "Mem-Info:" block
-        pattern = r"^ (active_file|unevictable|slab_reclaimable|mapped|free):.+$"
-        rec = re.compile(pattern)
-        for line in example_lines:
-            match = rec.search(line)
-            if match:
-                line = "                                             {}".format(line)
-            else:
-                line = "Apr 01 14:13:32 mysrv <kern.warning> kernel: {}".format(line)
-            res.append(line)
-        example = "\n".join(res)
+            self.check_meminfo_format_rhel7(
+                f'Unprocessed example with prefix "{prefix}"', example
+            )
+            oom = OOMAnalyser.OOMEntity(example)
+            self.check_meminfo_format_rhel7(
+                f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
+            )
 
-        self.analyse_oom(example)
-        self.check_results_rhel7()
-        self.click_reset_button()
+            self.analyse_oom(example)
+            self.check_results_rhel7()
+            self.click_reset_button()
 
     def test_040_trigger_proc_space(self):
         """Test trigger process name contains a space"""
