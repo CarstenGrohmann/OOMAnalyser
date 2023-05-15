@@ -56,6 +56,8 @@ class TestBase(unittest.TestCase):
 
     text_swap_space_not_in_use = "physical memory and no swap space"
     text_swap_space_are_in_use = "swap space are in use"
+    test_swap_no_space = "No swap space available"
+    test_swap_swap_total = "Swap Total"
 
     text_with_an_oom_score_of = "with an OOM score of"
 
@@ -314,7 +316,7 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 expected in explanation.text,
-                'Missing statement "%s"' % expected,
+                'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
             self.text_alloc_failed_no_free_chunks,
@@ -326,7 +328,23 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 unexpected not in explanation.text,
-                'Unexpected statement "%s"' % unexpected,
+                'Unexpected statement in OOM summary: "%s"' % unexpected,
+            )
+
+        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+        for expected in [
+            self.test_swap_swap_total,
+        ]:
+            self.assertTrue(
+                expected in result_table.text,
+                'Missing statement in result table: "%s"' % expected,
+            )
+        for unexpected in [
+            self.test_swap_no_space,
+        ]:
+            self.assertTrue(
+                unexpected not in result_table.text,
+                'Unexpected statement in result table: "%s"' % unexpected,
             )
 
         self.assertTrue(
@@ -442,7 +460,7 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 expected in explanation.text,
-                'Missing statement "%s"' % expected,
+                'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
             self.text_alloc_failed_no_free_chunks,
@@ -453,7 +471,23 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 unexpected not in explanation.text,
-                'Unexpected statement "%s"' % unexpected,
+                'Unexpected statement in OOM summary: "%s"' % unexpected,
+            )
+
+        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+        for expected in [
+            self.test_swap_swap_total,
+        ]:
+            self.assertTrue(
+                expected in result_table.text,
+                'Missing statement in result table: "%s"' % expected,
+            )
+        for unexpected in [
+            self.test_swap_no_space,
+        ]:
+            self.assertTrue(
+                unexpected not in result_table.text,
+                'Unexpected statement in result table: "%s"' % unexpected,
             )
 
         self.assertTrue(
@@ -542,7 +576,7 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 expected in explanation.text,
-                'Missing statement "%s"' % expected,
+                'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
             self.text_alloc_failed_below_low_watermark,
@@ -555,7 +589,23 @@ class TestInBrowser(TestBase):
         ]:
             self.assertTrue(
                 unexpected not in explanation.text,
-                'Unexpected statement "%s"' % unexpected,
+                'Unexpected statement in OOM summary: "%s"' % unexpected,
+            )
+
+        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+        for expected in [
+            self.test_swap_no_space,
+        ]:
+            self.assertTrue(
+                expected in result_table.text,
+                'Missing statement in result table: "%s"' % expected,
+            )
+        for unexpected in [
+            self.test_swap_swap_total,
+        ]:
+            self.assertTrue(
+                unexpected not in result_table.text,
+                'Unexpected statement in result table: "%s"' % unexpected,
             )
 
         self.assertTrue(

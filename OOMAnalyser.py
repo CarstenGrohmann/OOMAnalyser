@@ -4889,7 +4889,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             elem_svg_swap = document.getElementById("svg_swap")
             elem_svg_swap.appendChild(svg_swap)
             show_elements(".js-swap-active--show")
+            hide_elements(".js-swap-inactive--show")
         else:
+            hide_elements(".js-swap-active--show")
             show_elements(".js-swap-inactive--show")
 
     def _show_items(self):
