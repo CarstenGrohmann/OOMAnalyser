@@ -5,11 +5,14 @@
 
 ## Introduction
 
-OOMAnalyser is a small project to transform the OOM message of a Linux kernel into a more user-friendly format.
+OOMAnalyser is a web page to analyse and explain the OOM message of a Linux kernel. The analysis is performed
+automatically in the browser. You get a summary and a list of (almost) all parameters with their values and a
+short explanation. Among them are also 2 diagrams that illustrate the memory usage.
 
-OOMAnalyser consists of a web page into whose input field the OOM message is copied. JavaScript code extracts the data
-from it and displays the details. All processing takes place in the browser. No data is transferred to external servers.
-This makes it possible to use a locally stored copy of the website for analysis.
+OOMAnalyser consists of a web page where the OOM message is copied into the input field. JavaScript code extracts
+the data and displays the details. All processing takes place in the browser. No data is transferred to any server.
+Therefore, confidential OOM messages can also be analyzed, and the analysis can be performed in environments
+without an Internet connection.
 
 This project is written in [Python](https://www.python.org) and uses [Transcrypt](https://www.transcrypt.org/)  to
 translate Python code into JavaScript.
@@ -120,8 +123,19 @@ or
 
  * [Transcrypt](https://www.transcrypt.org/)
  * [Linux man pages online](https://man7.org/)
- * [Decoding the Linux kernel's page allocation failure messages](https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures)
- * [Linux Kernel OOM Log Analysis](http://elearningmedium.com/linux-kernel-oom-log-analysis/)
+ * How to read and decode OOM messages
+    * [Decoding the Linux kernel's page allocation failure messages](https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures)
+    * [Linux Kernel OOM Log Analysis](http://elearningmedium.com/linux-kernel-oom-log-analysis/)
+    * [Out of Memory events and decoding their logging](https://community.wandisco.com/s/article/Guide-to-Out-of-Memory-OOM-events-and-decoding-their-logging)
+ * Kernel Source code starting points:
+    * [mm/omm_kill.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c)
+      at [kernel.org](https://kernel.org) or more comfortable
+      [mm/omm_kill.c](https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c)
+      at [elixir.bootlin.com](https://elixir.bootlin.com)
+    * [mm/page_alloc.c:zone_watermark_ok()](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/page_alloc.c)
+      at [kernel.org](https://kernel.org) or more comfortable
+      [mm/page_alloc.c:zone_watermark_ok()](https://elixir.bootlin.com/linux/latest/source/mm/page_alloc.c#L4074)
+      at [elixir.bootlin.com](https://elixir.bootlin.com)
 
 
 ## Known Bugs/Issues
@@ -134,7 +148,7 @@ for current open bugs. New bugs can be reported there also.
 
 This project is licensed under the MIT license.
 
-> Copyright (c) 2017-2023 Carsten Grohmann,  mail <add at here> carstengrohmann.de
+> Copyright (c) 2017-2023 Carsten Grohmann,  mail &lt;add at here&gt; carstengrohmann.de
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of
 > this software and associated documentation files (the "Software"), to deal in
