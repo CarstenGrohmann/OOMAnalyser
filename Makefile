@@ -23,7 +23,7 @@ TEST_FILE         = $(BASE_DIR)/test.py
 # e.g. 0.6.0 or 0.6.0_devel
 VERSION           = 0.6.0_devel
 RELEASE_DIR       = $(BASE_DIR)/release
-RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE) rollup.config.js Makefile requirements.txt \
+RELEASE_FILES     = $(HTML_FILE) $(JS_OUT_FILE) $(PY_SOURCE) $(TEST_FILE) rollup.config.mjs Makefile requirements.txt \
 				    LICENSE.txt  README.md
 RELEASE_INST_DIR  = $(RELEASE_DIR)/OOMAnalyser-$(VERSION)
 RELEASE_TARGZ     = OOMAnalyser-$(VERSION).tar.gz
