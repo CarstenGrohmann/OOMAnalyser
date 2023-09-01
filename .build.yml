@@ -17,7 +17,7 @@ sources:
 shell: null
 tasks:
   - setup_pkgs: |
-      yay -S --noconfirm --noeditmenu --noupgrademenu rollup chromedriver google-chrome
+      yay -S --noconfirm --noeditmenu rollup chromedriver google-chrome
       git clone https://aur.archlinux.org/python37.git
       cd python37
       # disable optimizations to speedup build process by 8 minutes
