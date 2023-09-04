@@ -17,13 +17,20 @@ sources:
 shell: null
 tasks:
   - setup_pkgs: |
-      yay -S --noconfirm --noeditmenu rollup chromedriver google-chrome
-      git clone https://aur.archlinux.org/python37.git
-      cd python37
-      # disable optimizations to speedup build process by 8 minutes
-      sed -i '/enable-optimizations/d' PKGBUILD
-      makepkg --noconfirm -si --skippgpcheck
-      cd ..
+      # Use precompiled Python binaries to speedup test from 17 minutes to 12 minutes
+      cat << EOT | sudo bash -
+      echo "[python]" >> /etc/pacman.conf
+      echo "SigLevel = Optional" >> /etc/pacman.conf
+      echo "Server = https://ffy00.github.io/arch-python-repo/" >> /etc/pacman.conf
+      EOT
+      # install pre-compiled Python 3.7 incl. dependencies
+      #  - openssl-1.1 is required to install via pip from https sources
+      #  - libffi7 is required to install Transcrypt
+      yay -Sy --noconfirm --noeditmenu openssl-1.1 libffi7 python37
+      # install JS bundler
+      yay -Sy --noconfirm --noeditmenu rollup
+      # install selenium helper and browser to run tests later
+      yay -Sy --noconfirm --noeditmenu chromedriver google-chrome
   - setup_venv: |
       cd OOMAnalyser
       make venv
