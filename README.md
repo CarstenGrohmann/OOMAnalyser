@@ -27,28 +27,28 @@ Both can be stored locally to use OOMAnalyser without an Internet connection.
 
 ### Installation steps
 
- 1. Open [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) in a browser
- 2. Browse down to the paragraph "Local Installation" at the end of the document
- 3. Download the HTML file and the JavaScript file to the main directory
- 4. Open the file `OOMAnalyser.html` in your favourite browser
+1. Open [https://www.carstengrohmann.de/oom/](https://www.carstengrohmann.de/oom/) in a browser
+2. Browse down to the paragraph "Local Installation" at the end of the document
+3. Download the HTML file and the JavaScript file to the main directory
+4. Open the file `OOMAnalyser.html` in your favourite browser
 
 
 ## Building OOMAnalyser
 
 ### Requirements
 
- * [Python](http://www.python.org) 3.7
- * [Transcrypt](https://www.transcrypt.org/) 3.7
- * [Rollup](https://rollupjs.org/)
+* [Python](http://www.python.org) 3.7
+* [Transcrypt](https://www.transcrypt.org/) 3.7
+* [Rollup](https://rollupjs.org/)
 
 
 ### Prepare the build environment
 
- * Clone the repository:
+* Clone the repository:
 
         # git clone https://git.sr.ht/~carstengrohmann/OOMAnalyser
 
- * Set up the Python virtual environment:
+* Set up the Python virtual environment:
 
         # virtualenv env
         # . env/bin/activate
@@ -72,9 +72,9 @@ or
 
 ### Usage
 
- * Change into the source directory and start your own small web server.
+* Change into the source directory and start your own small web server.
 
- * Start Python built-in web server:
+* Start Python built-in web server:
 
         # python3 -m http.server 8080 --bind 127.0.0.1
 
@@ -82,7 +82,7 @@ or
 
         # make websrv
 
- * Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
+* Open the URL http://localhost:8080/OOMAnalyser.html in your favorite browser.
 
 
 ## Publish a new release
@@ -92,42 +92,75 @@ or
 * `NEW_GIT_VERSION` - Git version string of the new version e.g. `v0.5.0`
 
 ### Steps
- 1. Commit all open changes
- 2. Updating the documentation in `README.md` and `OOMAnalyser.html` and commit changes
+1. Commit all open changes
+
+2. Finalise changelog and add a new "Note" section to `OOMAnalyser.html`
+
+3. Updating the documentation in `README.md` and `OOMAnalyser.html`
+
+4. Commit changes
 
         # git commit -m "Update documentation"
 
- 3. Update version number in `OOMAnalyser.py` and `Makefile`
+5. Update version number in `OOMAnalyser.py`, `OOMAnalyser.html` and `Makefile`
 
         # git commit -m "Bump version number to <NEW_VERSION>"
 
- 4. Create a new annotated git tag with shortened changelog
+6. Create a new annotated git tag with shortened changelog
 
         # git tag -a <NEW_GIT_VERSION>
 
- 5. Push changes into public repositories
+        Template:
+
+        Version <NEW_VERSION>
+
+        OMAnalyser is a small project to transform the OOM message of a Linux
+        kernel into a more user-friendly format.
+
+        The current online version is available at
+        https://www.carstengrohmann.de/oom/.
+
+        Changelog:
+         * <add all change log entries from OOMAnalyser.html>
+
+7. Push changes into public repositories
 
         # git push
         # git push origin --tags
 
- 6. Create release packages in zip and tar.gz format
+8. Create release packages in zip and tar.gz format
 
         # make release
 
- 7. Create release on SourceHut & GitHub
+9. Create release on SourceHut & GitHub
 
- 8. Start a new development cycle by setting new version numbers
+10. Start a new development cycle by setting new version numbers
 
+11. Start new changelog block in `OOMAnalyser.html`
+
+        # Template
+
+        <h3>Version <next version> - 2024-XX-XX:</h3>
+
+        <h4>General</h4>
+        <ol>
+            <li>...</li>
+        </ol>
+
+
+12. Commit changes
+
+        # git commit -m "Start new development cycle"
 
 ## Resources
 
- * [Transcrypt](https://www.transcrypt.org/)
- * [Linux man pages online](https://man7.org/)
- * How to read and decode OOM messages
+* [Transcrypt](https://www.transcrypt.org/)
+* [Linux man pages online](https://man7.org/)
+* How to read and decode OOM messages
     * [Decoding the Linux kernel's page allocation failure messages](https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures)
     * [Linux Kernel OOM Log Analysis](http://elearningmedium.com/linux-kernel-oom-log-analysis/)
     * [Out of Memory events and decoding their logging](https://community.wandisco.com/s/article/Guide-to-Out-of-Memory-OOM-events-and-decoding-their-logging)
- * Kernel Source code starting points:
+* Kernel Source code starting points:
     * [mm/omm_kill.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c)
       at [kernel.org](https://kernel.org) or more comfortable
       [mm/omm_kill.c](https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c)
