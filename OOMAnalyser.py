@@ -3695,7 +3695,7 @@ class OOMAnalyser:
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
         kernel_version = self.oom_result.details.get("kernel_version", "")
-        if "x86_64" in kernel_version:
+        if "x86_64" in kernel_version or "amd64" in kernel_version:
             platform = "x86 64bit"
         else:
             platform = "unknown"
