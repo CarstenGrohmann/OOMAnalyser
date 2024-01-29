@@ -147,13 +147,15 @@ or
             <li>...</li>
         </ol>
 
-
 12. Commit changes
 
         # git commit -m "Start new development cycle"
 
 ## Resources
 
+* [Project Page](https://carstengrohmann.de/oomanalyser.html)
+* [Source Code](https://git.sr.ht/~carstengrohmann/OOMAnalyser)
+  (mirrored on [GitHub](https://github.com/CarstenGrohmann/OOMAnalyser))
 * [Transcrypt](https://www.transcrypt.org/)
 * [Linux man pages online](https://man7.org/)
 * How to read and decode OOM messages
@@ -202,4 +204,5 @@ This project is licensed under the MIT license.
 > SOFTWARE.
 
 Enjoy!
+
 Carsten Grohmann
