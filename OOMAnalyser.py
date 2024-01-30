@@ -537,6 +537,18 @@ class BaseKernelConfig:
     Requests with order > PAGE_ALLOC_COSTLY_ORDER will never trigger the OOM-killer to satisfy the request.
     """
 
+    PLATFORM_DESCRIPTION = (
+        ("x86_64", "x86 64-bit"),
+        ("aarch64", "ARM 64-bit"),
+        ("arm64", "ARM 64-bit"),
+        ("armv8", "ARM 64-bit"),
+        ("i386", "x86 32-bit"),
+        ("i686", "x86 32-bit (6th generation)"),
+    )
+    """
+    Brief description of some platforms based on an identifier
+    """
+
     pstable_html = [
         "PID",
         "UID",
@@ -3695,12 +3707,14 @@ class OOMAnalyser:
     def _determinate_platform_and_distribution(self):
         """Determinate platform and distribution"""
         kernel_version = self.oom_result.details.get("kernel_version", "")
-        if "x86_64" in kernel_version or "amd64" in kernel_version:
-            platform = "x86 64bit"
-        else:
-            platform = "unknown"
-
         dist = "unknown"
+        platform = "unknown"
+
+        for identifier, desc in self.oom_result.kconfig.PLATFORM_DESCRIPTION:
+            if identifier in kernel_version:
+                platform = desc
+                break
+
         if ".el7uek" in kernel_version:
             dist = "Oracle Linux 7 (Unbreakable Enterprise Kernel)"
         elif ".el7" in kernel_version:
@@ -3710,8 +3724,9 @@ class OOMAnalyser:
         elif ".el5" in kernel_version:
             dist = "RHEL 5/CentOS 5"
         elif "ARCH" in kernel_version or "-arch" in kernel_version:
+            # ArchLinux has not platform identifier in the kernel version
             dist = "Arch Linux"
-            platform = "x86 64bit"
+            platform = "x86 64-bit"
         elif "-generic" in kernel_version:
             dist = "Ubuntu"
         self.oom_result.details["dist"] = dist
