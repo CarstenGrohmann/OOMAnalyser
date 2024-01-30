@@ -397,11 +397,11 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <textarea autocomplete="off" cols="100" id="textarea_oom"
               placeholder="<Paste your OOM here, drag & drop a file or use the file dialog below>"
               rows="20" title="OOM input field"></textarea>
-    <br/>
+    <br>
     <div>
         <input accept=".txt,.log" onchange="read_and_display_file(this.files[0])" type="file">
     </div>
-    <br/>
+    <br>
     <button onclick="OOMAnalyser.OOMDisplayInstance.analyse_and_show()"
             title="Analyse the OOM from the input area and show it" type="button">Analyse OOM block</button>
     <button onclick="OOMAnalyser.OOMDisplayInstance.reset_form()"
@@ -523,44 +523,44 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <h3>Corrective Actions</h3>
     <p>
         Top this list are the actions that have the greatest impact on preventing OOMs.
-        <ol>
-            <li>
-                Use an appropriate memory setup, i.e., configure your server with enough memory to run your workload
-                or configure your application to use only the available memory.
-            </li>
-            <li>
-                Improve software that causes memory fragmentation, or ask the software vendor to improve it.
-            </li>
-            <li>
-                If you are using a 32-bit kernel, consider upgrading to 64-bit. Since the memory zone setup has been
-                improved.
-            </li>
-            <li>
-                Trigger memory compaction manually to provide more contiguous blocks of free memory.
-                Write <code>1</code> to <code>/proc/sys/vm/compact_memory</code>.
-            </li>
-            <li>
-                Try different memory tunables to run memory compaction more aggressively. This may postpone the OOM
-                event until later, but of course will not prevent it.
-                <ol>
-                    <li>
-                        increase <code>/proc/sys/vm/watermark_scale_factor</code>
-                    </li>
-                    <li>
-                        increase <code>/proc/sys/vm/watermark_boost_factor</code>
-                    </li>
-                    <li>
-                        enable a more aggressive approaches to memory reclaim by writing <code>3</code> to
-                        <code>/proc/sys/vm/zone_reclaim_mode</code>
-                    </li>
-                    <li>
-                        decrease the value <code>/proc/sys/vm/extfrag_threshold</code> to start memory compaction earlier
-                    </li>
-                </ol>
-                More aggressive memory defragmentation can cause latency spikes during its execution.
-            </li>
-        </ol>
     </p>
+    <ol>
+        <li>
+            Use an appropriate memory setup, i.e., configure your server with enough memory to run your workload
+            or configure your application to use only the available memory.
+        </li>
+        <li>
+            Improve software that causes memory fragmentation, or ask the software vendor to improve it.
+        </li>
+        <li>
+            If you are using a 32-bit kernel, consider upgrading to 64-bit. Since the memory zone setup has been
+            improved.
+        </li>
+        <li>
+            Trigger memory compaction manually to provide more contiguous blocks of free memory.
+            Write <code>1</code> to <code>/proc/sys/vm/compact_memory</code>.
+        </li>
+        <li>
+            Try different memory tunables to run memory compaction more aggressively. This may postpone the OOM
+            event until later, but of course will not prevent it.
+            <ol>
+                <li>
+                    increase <code>/proc/sys/vm/watermark_scale_factor</code>
+                </li>
+                <li>
+                    increase <code>/proc/sys/vm/watermark_boost_factor</code>
+                </li>
+                <li>
+                    enable a more aggressive approaches to memory reclaim by writing <code>3</code> to
+                    <code>/proc/sys/vm/zone_reclaim_mode</code>
+                </li>
+                <li>
+                    decrease the value <code>/proc/sys/vm/extfrag_threshold</code> to start memory compaction earlier
+                </li>
+            </ol>
+            More aggressive memory defragmentation can cause latency spikes during its execution.
+        </li>
+    </ol>
 
     <h3>Details of analysis</h3>
     <p>
@@ -576,523 +576,524 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </colgroup>
 
         <!-- Trigger process -->
+        <tbody>
 
-        <tr>
-            <th colspan="3" scope="row">Trigger Process</th>
-        </tr>
-        <tr class="js-oom-automatic--show">
-            <td></td>
-            <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
-            <td>This process requests memory and is triggering thereby the OOM situation.</td>
-        </tr>
-        <tr>
-            <td>Memory allocation flags<br>(gfp_mask)</td>
-            <td class="trigger_proc_gfp_mask text--align-right"></td>
-            <td>These flags are also called GFP (get free pages) flags. They control the kernel-internal memory
-                allocation.<br>
-                Some OOM variants include the individual flags in addition to the hexadecimal representation. The flags
-                are calculated if they are not specified.
-            </td>
-        </tr>
-        <tr>
-            <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
-            <td class="trigger_proc_nodemask text--align-right"></td>
-            <td>Bit mask indicating the cores on which the process can run.</td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Trigger Process</th>
+            </tr>
+            <tr class="js-oom-automatic--show">
+                <td></td>
+                <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
+                <td>This process requests memory and is triggering thereby the OOM situation.</td>
+            </tr>
+            <tr>
+                <td>Memory allocation flags<br>(gfp_mask)</td>
+                <td class="trigger_proc_gfp_mask text--align-right"></td>
+                <td>These flags are also called GFP (get free pages) flags. They control the kernel-internal memory
+                    allocation.<br>
+                    Some OOM variants include the individual flags in addition to the hexadecimal representation. The flags
+                    are calculated if they are not specified.
+                </td>
+            </tr>
+            <tr>
+                <td>Node mask to show on which CPU Cores this process can run<br>(nodemask)</td>
+                <td class="trigger_proc_nodemask text--align-right"></td>
+                <td>Bit mask indicating the cores on which the process can run.</td>
+            </tr>
 
-        <tr class="js-oom-automatic--show">
-            <td>Requested memory: order</td>
-            <td class="text--align-right">
-                <span class="trigger_proc_order"></span>
-            </td>
-            <td>The kernel specifies the requested number of pages as an exponent of a power of two.</td>
-        </tr>
-        <tr class="js-oom-automatic--show">
-            <td>Requested memory: number of pages</td>
-            <td class="text--align-right">
-                <span class="trigger_proc_requested_memory_pages"></span>
-                (2<span class="trigger_proc_order text__superscript"></span> pages) a
-                <span class="page_size_kb"></span> per page
-            </td>
-            <td>Requested memory in number of pages.</td>
-        </tr>
-        <tr class="js-oom-automatic--show">
-            <td>Requested memory: size</td>
-            <td class="text--align-right"><span class="trigger_proc_requested_memory_pages_kb"></span></td>
-            <td>Requested memory in kBytes.</td>
-        </tr>
-        <tr class="js-oom-automatic--show">
-            <td>Requested memory: zone</td>
-            <td class="trigger_proc_mem_zone text--align-right"></td>
-            <td>Memory zone from which the requested storage chunk should come.</td>
-        </tr>
-        <tr class="js-text--default-hide js-oom-automatic--show js-memory-shortage-node--hide">
-            <td>Requested memory: node</td>
-            <td class="trigger_proc_numa_node text--align-right"></td>
-            <td>
-                First NUMA node with memory shortage watermark <code>free &lt; min </code> in memory watermark
-                information.
-                <br>
-                Assumption that this is the node where the OOM was triggered.
-            </td>
-        </tr>
-        <tr>
-            <td>Adjust oom-killer score<br>(oom_score_adj)</td>
-            <td class="trigger_proc_oomscore text--align-right"></td>
-            <td>
-                This value is added to the badness score before it's used to determine the process to be killed.
-            </td>
-        </tr>
+            <tr class="js-oom-automatic--show">
+                <td>Requested memory: order</td>
+                <td class="text--align-right">
+                    <span class="trigger_proc_order"></span>
+                </td>
+                <td>The kernel specifies the requested number of pages as an exponent of a power of two.</td>
+            </tr>
+            <tr class="js-oom-automatic--show">
+                <td>Requested memory: number of pages</td>
+                <td class="text--align-right">
+                    <span class="trigger_proc_requested_memory_pages"></span>
+                    (2<span class="trigger_proc_order text__superscript"></span> pages) a
+                    <span class="page_size_kb"></span> per page
+                </td>
+                <td>Requested memory in number of pages.</td>
+            </tr>
+            <tr class="js-oom-automatic--show">
+                <td>Requested memory: size</td>
+                <td class="text--align-right"><span class="trigger_proc_requested_memory_pages_kb"></span></td>
+                <td>Requested memory in kBytes.</td>
+            </tr>
+            <tr class="js-oom-automatic--show">
+                <td>Requested memory: zone</td>
+                <td class="trigger_proc_mem_zone text--align-right"></td>
+                <td>Memory zone from which the requested storage chunk should come.</td>
+            </tr>
+            <tr class="js-text--default-hide js-oom-automatic--show js-memory-shortage-node--hide">
+                <td>Requested memory: node</td>
+                <td class="trigger_proc_numa_node text--align-right"></td>
+                <td>
+                    First NUMA node with memory shortage watermark <code>free &lt; min </code> in memory watermark
+                    information.
+                    <br>
+                    Assumption that this is the node where the OOM was triggered.
+                </td>
+            </tr>
+            <tr>
+                <td>Adjust oom-killer score<br>(oom_score_adj)</td>
+                <td class="trigger_proc_oomscore text--align-right"></td>
+                <td>
+                    This value is added to the badness score before it's used to determine the process to be killed.
+                </td>
+            </tr>
 
-        <!-- Killed Process -->
+            <!-- Killed Process -->
 
-        <tr>
-            <th scope="row" colspan="3">Killed Process</th>
-        </tr>
-        <tr>
-            <td></td>
-            <td class="text--align-right">
-                <span class="killed_proc_name"></span>
-                (PID <span class="killed_proc_pid"></span>)
-            </td>
-            <td>Process killed by Linux kernel to satisfy the memory request.</td>
-        </tr>
-        <tr class="js-text--default-hide js-killed-proc-score--show">
-            <td>OOM Score<br>(score)</td>
-            <td class="killed_proc_score text--align-right"></td>
-            <td>Programs with the highest OOM score are terminated first.</td>
-        </tr>
-        <tr>
-            <td>Virtual Memory <br> (total_vm) </td>
-            <td class="killed_proc_total_vm_kb text--align-right"></td>
-            <td>Virtual memory used by this process.</td>
-        </tr>
-        <tr>
-            <td>Total resident anonymous memory <br> (rss)</td>
-            <td class="killed_proc_total_rss_kb text--align-right"></td>
-            <td>
-                All virtual process memory mapped into RAM. Normally, a process always requests more virtual memory
-                than it uses. <br>
-                <code>TotalRSS = anon-rss + file-rss + shmem-rss</code> <br>
-            </td>
-        </tr>
-        <tr>
-            <td>Resident anonymous memory <br> (anon-rss)</td>
-            <td class="killed_proc_anon_rss_kb text--align-right"></td>
-            <td>Resident anonymous pages <br> Part of the virtual process memory mapped into RAM.</td>
-        </tr>
-        <tr>
-            <td>Resident file mapping memory <br> (file-rss)</td>
-            <td class="killed_proc_file_rss_kb text--align-right"></td>
-            <td>
-                Resident file mapping pages <br> Files which have been mapped into RAM (with
-                <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
-            </td>
-        </tr>
-        <tr>
-            <td>Resident shared memory <br> (shmem-rss)</td>
-            <td class="killed_proc_shmem_rss_kb text--align-right"></td>
-            <td>
-                Resident shared memory pages <br>
-                This may include System V shared memory and shared anonymous memory.
-            </td>
-        </tr>
+            <tr>
+                <th scope="row" colspan="3">Killed Process</th>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="text--align-right">
+                    <span class="killed_proc_name"></span>
+                    (PID <span class="killed_proc_pid"></span>)
+                </td>
+                <td>Process killed by Linux kernel to satisfy the memory request.</td>
+            </tr>
+            <tr class="js-text--default-hide js-killed-proc-score--show">
+                <td>OOM Score<br>(score)</td>
+                <td class="killed_proc_score text--align-right"></td>
+                <td>Programs with the highest OOM score are terminated first.</td>
+            </tr>
+            <tr>
+                <td>Virtual Memory <br> (total_vm) </td>
+                <td class="killed_proc_total_vm_kb text--align-right"></td>
+                <td>Virtual memory used by this process.</td>
+            </tr>
+            <tr>
+                <td>Total resident anonymous memory <br> (rss)</td>
+                <td class="killed_proc_total_rss_kb text--align-right"></td>
+                <td>
+                    All virtual process memory mapped into RAM. Normally, a process always requests more virtual memory
+                    than it uses. <br>
+                    <code>TotalRSS = anon-rss + file-rss + shmem-rss</code> <br>
+                </td>
+            </tr>
+            <tr>
+                <td>Resident anonymous memory <br> (anon-rss)</td>
+                <td class="killed_proc_anon_rss_kb text--align-right"></td>
+                <td>Resident anonymous pages <br> Part of the virtual process memory mapped into RAM.</td>
+            </tr>
+            <tr>
+                <td>Resident file mapping memory <br> (file-rss)</td>
+                <td class="killed_proc_file_rss_kb text--align-right"></td>
+                <td>
+                    Resident file mapping pages <br> Files which have been mapped into RAM (with
+                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
+                </td>
+            </tr>
+            <tr>
+                <td>Resident shared memory <br> (shmem-rss)</td>
+                <td class="killed_proc_shmem_rss_kb text--align-right"></td>
+                <td>
+                    Resident shared memory pages <br>
+                    This may include System V shared memory and shared anonymous memory.
+                </td>
+            </tr>
 
-        <!-- Memory Usage -->
+            <!-- Memory Usage -->
 
-        <tr>
-            <th colspan="3" scope="row">Memory Usage</th>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Memory Usage</th>
+            </tr>
 
-        <!-- Graphs -->
+            <!-- Graphs -->
 
-        <tr>
-            <th class="table__sub-section--bold" colspan="3" scope="row">Graphs</th>
-        </tr>
-        <tr>
-            <td>RAM Summary</td>
-            <td class="result__table--border" colspan="2"><div id="svg_ram"></div></td>
-        </tr>
-        <tr class="js-text--default-show js-swap-active--show">
-            <td>Swap Summary</td>
-            <td class="result__table--border" colspan="2"><div id="svg_swap"></div></td>
-        </tr>
+            <tr>
+                <th class="table__sub-section--bold" colspan="3" scope="row">Graphs</th>
+            </tr>
+            <tr>
+                <td>RAM Summary</td>
+                <td class="result__table--border" colspan="2"><div id="svg_ram"></div></td>
+            </tr>
+            <tr class="js-text--default-show js-swap-active--show">
+                <td>Swap Summary</td>
+                <td class="result__table--border" colspan="2"><div id="svg_swap"></div></td>
+            </tr>
 
-        <!-- Swap Usage -->
+            <!-- Swap Usage -->
 
-        <tr class="js-text--default-show">
-            <th class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</th>
-        </tr>
-        <tr class="js-text--default-show js-swap-inactive--show">
-            <td colspan="3">No swap space available</td>
-        </tr>
-        <tr class="js-text--default-show js-swap-active--show">
-            <td>Swap Total</td>
-            <td class="swap_total_kb text--align-right"></td>
-            <td>Total amount of swap space available.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr class="js-text--default-show js-swap-active--show">
-            <td>Swap Free</td>
-            <td class="swap_free_kb text--align-right"></td>
-            <td>Amount of swap space that is currently unused.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr class="js-text--default-show js-swap-active--show">
-            <td>Swap Cached</td>
-            <td class="swap_cache_kb text--align-right"></td>
-            <td>Memory that once was swapped out, is swapped back in
-                but still also is in the swap file.  (If memory pressure
-                is high, these pages don't need to be swapped out
-                again because they are already in the swap file.  This
-                saves I/O).
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr class="js-text--default-show js-swap-active--show">
-            <td>Swap Used</td>
-            <td class="swap_used_kb text--align-right"></td>
-            <td>Amount of used swap space w/o cached swap <br>
-                (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
-            </td>
-        </tr>
+            <tr class="js-text--default-show">
+                <th class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</th>
+            </tr>
+            <tr class="js-text--default-show js-swap-inactive--show">
+                <td colspan="3">No swap space available</td>
+            </tr>
+            <tr class="js-text--default-show js-swap-active--show">
+                <td>Swap Total</td>
+                <td class="swap_total_kb text--align-right"></td>
+                <td>Total amount of swap space available.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr class="js-text--default-show js-swap-active--show">
+                <td>Swap Free</td>
+                <td class="swap_free_kb text--align-right"></td>
+                <td>Amount of swap space that is currently unused.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr class="js-text--default-show js-swap-active--show">
+                <td>Swap Cached</td>
+                <td class="swap_cache_kb text--align-right"></td>
+                <td>Memory that once was swapped out, is swapped back in
+                    but still also is in the swap file.  (If memory pressure
+                    is high, these pages don't need to be swapped out
+                    again because they are already in the swap file.  This
+                    saves I/O).
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr class="js-text--default-show js-swap-active--show">
+                <td>Swap Used</td>
+                <td class="swap_used_kb text--align-right"></td>
+                <td>Amount of used swap space w/o cached swap <br>
+                    (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
+                </td>
+            </tr>
 
-        <!-- Page Usage -->
+            <!-- Page Usage -->
 
-        <tr>
-            <th class="table__sub-section--bold" colspan="3" scope="row">Memory Pages</th>
-        </tr>
-        <tr>
-            <td>RAM pages</td>
-            <td class="ram_pages text--align-right"></td>
-            <td>Total number of RAM pages</td>
-        </tr>
-        <tr>
-            <td>HighMem/MovableOnly</td>
-            <td class="highmem_pages text--align-right"></td>
-            <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
-                <br>
-                HighMem pages are also counted in the total page number.
-            </td>
-        </tr>
-        <tr>
-            <td>Reserved pages</td>
-            <td class="reserved_pages text--align-right"></td>
-            <td>Number of reserved pages</td>
-        </tr>
-        <tr>
-            <td>CMA reserved pages</td>
-            <td class="cma_pages text--align-right">0</td>
-            <td>Pages reserved for Contiguous Memory Allocator (CMA)</td>
-        </tr>
-        <tr>
-            <td>Pagetable Cache</td>
-            <td class="pagetablecache_pages text--align-right">0</td>
-            <td>Number of pages in pagetable cache</td>
-        </tr>
-        <tr>
-            <td>Number of pages with hardware errors</td>
-            <td class="hwpoisoned_pages text--align-right">0</td>
-            <td>Pages with uncorrectable memory errors</td>
-        </tr>
+            <tr>
+                <th class="table__sub-section--bold" colspan="3" scope="row">Memory Pages</th>
+            </tr>
+            <tr>
+                <td>RAM pages</td>
+                <td class="ram_pages text--align-right"></td>
+                <td>Total number of RAM pages</td>
+            </tr>
+            <tr>
+                <td>HighMem/MovableOnly</td>
+                <td class="highmem_pages text--align-right"></td>
+                <td>Number of pages in the High Memory Area or marked movable for Contiguous Memory Allocator (CMA).
+                    <br>
+                    HighMem pages are also counted in the total page number.
+                </td>
+            </tr>
+            <tr>
+                <td>Reserved pages</td>
+                <td class="reserved_pages text--align-right"></td>
+                <td>Number of reserved pages</td>
+            </tr>
+            <tr>
+                <td>CMA reserved pages</td>
+                <td class="cma_pages text--align-right">0</td>
+                <td>Pages reserved for Contiguous Memory Allocator (CMA)</td>
+            </tr>
+            <tr>
+                <td>Pagetable Cache</td>
+                <td class="pagetablecache_pages text--align-right">0</td>
+                <td>Number of pages in pagetable cache</td>
+            </tr>
+            <tr>
+                <td>Number of pages with hardware errors</td>
+                <td class="hwpoisoned_pages text--align-right">0</td>
+                <td>Pages with uncorrectable memory errors</td>
+            </tr>
 
-        <!-- Memory Usage Details -->
+            <!-- Memory Usage Details -->
 
-        <tr>
-            <th class="table__sub-section--bold" colspan="3" scope="row">Memory Usage Details</th>
-        </tr>
-        <tr>
-            <td>Active anonymous memory <br> (active_anon)</td>
-            <td class="active_anon_pages text--align-right"></td>
-            <td>Recently used anonymous memory.<br>
-                These memory pages are not normally swapped out.
-            </td>
-        </tr>
-        <tr>
-            <td>Inactive anonymous memory <br> (inactive_anon)</td>
-            <td class="inactive_anon_pages text--align-right"></td>
-            <td>Least recently used anonymous memory.<br>
-                These memory pages can be swapped out.
-            </td>
-        </tr>
-        <tr>
-            <td>Isolated anonymous memory <br> (isolated_anon)</td>
-            <td class="isolated_anon_pages text--align-right"></td>
-            <td>Memory isolation is used to separate memory between different virtual machines.</td>
-        </tr>
-        <tr>
-            <td>Active Pagecache <br> (active_file)</td>
-            <td class="active_file_pages text--align-right"></td>
-            <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
-        </tr>
-        <tr>
-            <td>Inactive Pagecache <br> (inactive_file)</td>
-            <td class="inactive_file_pages text--align-right"></td>
-            <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
-        </tr>
-        <tr>
-            <td>Isolated Pagecache <br> (isolated_file)</td>
-            <td class="isolated_file_pages text--align-right"></td>
-            <td>Memory isolation is used to separate memory between different virtual machines.</td>
-        </tr>
-        <tr>
-            <td>Unevictable Pages <br> (unevictable)</td>
-            <td class="unevictable_pages text--align-right"></td>
-            <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
-                <a href="https://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
-                <a href="https://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
-                Unevictable pages are managed by kernels LRU framework.
-            </td>
-        </tr>
-        <tr>
-            <td>Dirty Pages <br> (dirty)</td>
-            <td class="dirty_pages text--align-right"></td>
-            <td>Memory which is waiting to get written back to the disk.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Writeback <br> (writeback)</td>
-            <td class="writeback_pages text--align-right"></td>
-            <td>
-                Memory which is actively being written back to the disk.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Unstable <br> (unstable)</td>
-            <td class="unstable_pages text--align-right"></td>
-            <td>Not yet committed to stable storage.</td>
-        </tr>
-        <tr>
-            <td>Slab Reclaimable <br> (slab_reclaimable)</td>
-            <td class="slab_reclaimable_pages text--align-right"></td>
-            <td>
-                Slab is an in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-                <br>
-                Additional details are listed in
-                <a href="https://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
-            </td>
-        </tr>
-        <tr>
-            <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
-            <td class="slab_unreclaimable_pages text--align-right"></td>
-            <td>
-                Part of Slab, that cannot be reclaimed on memory pressure.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Mapped <br> (mapped)</td>
-            <td class="mapped_pages text--align-right"></td>
-            <td>
-                Files which have been mapped into memory (with
-                <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Shared Memory <br> (shmem)</td>
-            <td class="shmem_pages text--align-right"></td>
-            <td>
-                Amount of memory consumed in
-                <a href="https://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
-                filesystems.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Pagetables <br> (pagetables)</td>
-            <td class="pagetables_pages text--align-right"></td>
-            <td>
-                Amount of memory dedicated to the lowest level of pagetables.
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Bounce <br> (bounce)</td>
-            <td class="bounce_pages text--align-right"></td>
-            <td>
-                Memory used for block device "bounce buffers".
-                <a class="a__footnote" href="#footnote-proc5">[1]</a>
-            </td>
-        </tr>
-        <tr>
-            <td>Free pages <br> (free)</td>
-            <td class="free_pages text--align-right"></td>
-            <td>Free pages</td>
-        </tr>
-        <tr>
-            <td>Free per-CPU pages <br> (free_pcp)</td>
-            <td class="free_pcp_pages text--align-right"></td>
-            <td>Free number of pages per CPU</td>
-        </tr>
-        <tr>
-            <td>Free CMA pages <br> (free_cma)</td>
-            <td class="free_cma_pages text--align-right"></td>
-            <td>Pages reserved but not used by Contiguous Memory Allocator (CMA)</td>
-        </tr>
-        <tr>
-            <td>Total Pagecache</td>
-            <td class="pagecache_total_pages text--align-right"></td>
-            <td>Total number of pages in pagecache</td>
-        </tr>
+            <tr>
+                <th class="table__sub-section--bold" colspan="3" scope="row">Memory Usage Details</th>
+            </tr>
+            <tr>
+                <td>Active anonymous memory <br> (active_anon)</td>
+                <td class="active_anon_pages text--align-right"></td>
+                <td>Recently used anonymous memory.<br>
+                    These memory pages are not normally swapped out.
+                </td>
+            </tr>
+            <tr>
+                <td>Inactive anonymous memory <br> (inactive_anon)</td>
+                <td class="inactive_anon_pages text--align-right"></td>
+                <td>Least recently used anonymous memory.<br>
+                    These memory pages can be swapped out.
+                </td>
+            </tr>
+            <tr>
+                <td>Isolated anonymous memory <br> (isolated_anon)</td>
+                <td class="isolated_anon_pages text--align-right"></td>
+                <td>Memory isolation is used to separate memory between different virtual machines.</td>
+            </tr>
+            <tr>
+                <td>Active Pagecache <br> (active_file)</td>
+                <td class="active_file_pages text--align-right"></td>
+                <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
+            </tr>
+            <tr>
+                <td>Inactive Pagecache <br> (inactive_file)</td>
+                <td class="inactive_file_pages text--align-right"></td>
+                <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
+            </tr>
+            <tr>
+                <td>Isolated Pagecache <br> (isolated_file)</td>
+                <td class="isolated_file_pages text--align-right"></td>
+                <td>Memory isolation is used to separate memory between different virtual machines.</td>
+            </tr>
+            <tr>
+                <td>Unevictable Pages <br> (unevictable)</td>
+                <td class="unevictable_pages text--align-right"></td>
+                <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
+                    <a href="https://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
+                    <a href="https://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
+                    Unevictable pages are managed by kernels LRU framework.
+                </td>
+            </tr>
+            <tr>
+                <td>Dirty Pages <br> (dirty)</td>
+                <td class="dirty_pages text--align-right"></td>
+                <td>Memory which is waiting to get written back to the disk.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Writeback <br> (writeback)</td>
+                <td class="writeback_pages text--align-right"></td>
+                <td>
+                    Memory which is actively being written back to the disk.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Unstable <br> (unstable)</td>
+                <td class="unstable_pages text--align-right"></td>
+                <td>Not yet committed to stable storage.</td>
+            </tr>
+            <tr>
+                <td>Slab Reclaimable <br> (slab_reclaimable)</td>
+                <td class="slab_reclaimable_pages text--align-right"></td>
+                <td>
+                    Slab is an in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <br>
+                    Additional details are listed in
+                    <a href="https://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
+                </td>
+            </tr>
+            <tr>
+                <td>Slab Unreclaimable <br> (slab_unreclaimable)</td>
+                <td class="slab_unreclaimable_pages text--align-right"></td>
+                <td>
+                    Part of Slab, that cannot be reclaimed on memory pressure.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Mapped <br> (mapped)</td>
+                <td class="mapped_pages text--align-right"></td>
+                <td>
+                    Files which have been mapped into memory (with
+                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Shared Memory <br> (shmem)</td>
+                <td class="shmem_pages text--align-right"></td>
+                <td>
+                    Amount of memory consumed in
+                    <a href="https://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
+                    filesystems.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Pagetables <br> (pagetables)</td>
+                <td class="pagetables_pages text--align-right"></td>
+                <td>
+                    Amount of memory dedicated to the lowest level of pagetables.
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Bounce <br> (bounce)</td>
+                <td class="bounce_pages text--align-right"></td>
+                <td>
+                    Memory used for block device "bounce buffers".
+                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Free pages <br> (free)</td>
+                <td class="free_pages text--align-right"></td>
+                <td>Free pages</td>
+            </tr>
+            <tr>
+                <td>Free per-CPU pages <br> (free_pcp)</td>
+                <td class="free_pcp_pages text--align-right"></td>
+                <td>Free number of pages per CPU</td>
+            </tr>
+            <tr>
+                <td>Free CMA pages <br> (free_cma)</td>
+                <td class="free_cma_pages text--align-right"></td>
+                <td>Pages reserved but not used by Contiguous Memory Allocator (CMA)</td>
+            </tr>
+            <tr>
+                <td>Total Pagecache</td>
+                <td class="pagecache_total_pages text--align-right"></td>
+                <td>Total number of pages in pagecache</td>
+            </tr>
 
-        <!-- Operating System -->
+            <!-- Operating System -->
 
-        <tr>
-            <th scope="row" colspan="3">Operating System</th>
-        </tr>
-        <tr>
-            <td>Kernel</td>
-            <td class="kernel_version text--align-right text--align-right"></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td>Distribution</td>
-            <td class="dist text--align-right text--align-right"></td>
-            <td>Guessed from the kernel version</td>
-        </tr>
-        <tr>
-            <td>Platform</td>
-            <td class="platform text--align-right text--align-right"></td>
-            <td>Guessed from the kernel version</td>
-        </tr>
-        <tr>
-            <td>Page size</td>
-            <td class="page_size_kb text--align-right"></td>
-            <td>
-                <span class="js-text--default-hide js-text--display-none js-pagesize-determined--show">
-                    Extracted from DMA zone buddyinfo
-                </span>
-                <span class="js-text--default-hide js-text--display-none js-pagesize-guessed--show">
-                    Guessed
-                </span>
-            </td>
-        </tr>
+            <tr>
+                <th scope="row" colspan="3">Operating System</th>
+            </tr>
+            <tr>
+                <td>Kernel</td>
+                <td class="kernel_version text--align-right text--align-right"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Distribution</td>
+                <td class="dist text--align-right text--align-right"></td>
+                <td>Guessed from the kernel version</td>
+            </tr>
+            <tr>
+                <td>Platform</td>
+                <td class="platform text--align-right text--align-right"></td>
+                <td>Guessed from the kernel version</td>
+            </tr>
+            <tr>
+                <td>Page size</td>
+                <td class="page_size_kb text--align-right"></td>
+                <td>
+                    <span class="js-text--default-hide js-text--display-none js-pagesize-determined--show">
+                        Extracted from DMA zone buddyinfo
+                    </span>
+                    <span class="js-text--default-hide js-text--display-none js-pagesize-guessed--show">
+                        Guessed
+                    </span>
+                </td>
+            </tr>
 
 
-        <!-- Memory Chunks -->
+            <!-- Memory Chunks -->
 
-        <tr>
-            <th colspan="3" scope="row">Available Memory Chunks</th>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2" class="terminal">
-                <pre class="mem_node_info"></pre>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Available Memory Chunks</th>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="2" class="terminal">
+                    <pre class="mem_node_info"></pre>
+                </td>
+            </tr>
 
-        <!-- Memory watermarks -->
+            <!-- Memory watermarks -->
 
-        <tr>
-            <th colspan="3" scope="row">Memory Watermarks </th>
-        </tr>
-        <tr>
-            <td></td>
-            <td class="terminal" colspan="2">
-                <pre class="mem_watermarks"></pre>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Memory Watermarks </th>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="terminal" colspan="2">
+                    <pre class="mem_watermarks"></pre>
+                </td>
+            </tr>
 
-        <tr>
-            <th colspan="3" scope="row">Process Table</th>
-        </tr>
-        <tr>
-            <td></td>
-            <td class="terminal " colspan="2">
-                <table class="pstable__table--noborder">
-                    <thead id="pstable_header">
-                        <tr>
-                            <td class="pstable__row-numeric--width"><span>pid</span>
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col0" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(0)"></a>
-                            </td>
-                            <td class="pstable__row-numeric--width">uid
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col1" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(1)"></a>
-                            </td>
-                            <td class="pstable__row-numeric--width">tgid
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col2" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(2)"></a>
-                            </td>
-                            <td class="pstable__row-pages--width">total_vm
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col3" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(3)"></a>
-                            </td>
-                            <td class="pstable__row-pages--width">rss
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col4" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(4)"></a>
-                            </td>
-                            <td class="pstable__row-pages--width">nr_ptes
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col5" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(5)"></a>
-                            </td>
-                            <td class="pstable__row-pages--width">swapents
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col6" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(6)"></a>
-                            </td>
-                            <td class="pstable__row-oom-score-adj--width">oom_score_adj
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col7" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(7)"></a>
-                            </td>
-                            <td class="pstable__row-notes--width">name
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col8" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(8)"></a>
-                            </td>
-                            <td class="pstable__row-notes--width">notes
-                                <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                   id="js-pstable_sort_col9" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(9)"></a>
-                            </td>
-                        </tr>
-                    </thead>
-                    <tbody id="pstable_content">
-                    </tbody>
-                </table>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Process Table</th>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="terminal " colspan="2">
+                    <table class="pstable__table--noborder">
+                        <thead id="pstable_header">
+                            <tr>
+                                <td class="pstable__row-numeric--width"><span>pid</span>
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col0" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(0)"></a>
+                                </td>
+                                <td class="pstable__row-numeric--width">uid
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col1" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(1)"></a>
+                                </td>
+                                <td class="pstable__row-numeric--width">tgid
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col2" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(2)"></a>
+                                </td>
+                                <td class="pstable__row-pages--width">total_vm
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col3" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(3)"></a>
+                                </td>
+                                <td class="pstable__row-pages--width">rss
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col4" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(4)"></a>
+                                </td>
+                                <td class="pstable__row-pages--width">nr_ptes
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col5" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(5)"></a>
+                                </td>
+                                <td class="pstable__row-pages--width">swapents
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col6" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(6)"></a>
+                                </td>
+                                <td class="pstable__row-oom-score-adj--width">oom_score_adj
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col7" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(7)"></a>
+                                </td>
+                                <td class="pstable__row-notes--width">name
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col8" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(8)"></a>
+                                </td>
+                                <td class="pstable__row-notes--width">notes
+                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
+                                       id="js-pstable_sort_col9" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(9)"></a>
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody id="pstable_content">
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
 
-        <!-- Hardware Details -->
+            <!-- Hardware Details -->
 
-        <tr>
-            <th colspan="3" scope="row">Hardware Details</th>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2" class="terminal">
-                <pre class="hardware_info"></pre>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Hardware Details</th>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="2" class="terminal">
+                    <pre class="hardware_info"></pre>
+                </td>
+            </tr>
 
-        <!-- Kernel Call Tree -->
+            <!-- Kernel Call Tree -->
 
-        <tr>
-            <th colspan="3" scope="row">Kernel Call Trace</th>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2" class="terminal">
-                <pre class="call_trace"></pre>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Kernel Call Trace</th>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="2" class="terminal">
+                    <pre class="call_trace"></pre>
+                </td>
+            </tr>
 
-        <!-- Initial OOM -->
+            <!-- Initial OOM -->
 
-        <tr>
-            <th colspan="3" scope="row">Entire OOM Message
-                <a class="a--small" href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
-            </th>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2" class="terminal">
-                <pre id="oom"></pre>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="3" scope="row">Entire OOM Message
+                    <a class="a--small" href="javascript:void(0);" id="oom_toogle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
+                </th>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="2" class="terminal">
+                    <pre id="oom"></pre>
+                </td>
+            </tr>
         </tbody>
     </table>
 
@@ -1308,7 +1309,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     </ol>
 </div>
 
-<hr/>
+<hr>
 
 <div class="footer">
     OOMAnalyser <span id="version"></span> |
