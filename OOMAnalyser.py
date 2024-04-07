@@ -287,7 +287,7 @@ class BaseKernelConfig:
             r"gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, "
             r"(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?"
             r"order=(?P<trigger_proc_order>-?\d+), "
-            r"oom_score_adj=(?P<trigger_proc_oomscore>\d+)",
+            r"oom_score_adj=(?P<trigger_proc_oomscore>-?\d+)",
             True,
         ),
         "Trigger process and kernel version": (
