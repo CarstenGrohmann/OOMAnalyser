@@ -3189,7 +3189,7 @@ class OOMAnalyser:
             elif is_mandatory:
                 error(
                     "Failed to extract information from OOM text. The regular "
-                    'expression "{}" (kernel {}, config {}.{}{}) '
+                    'expression "{}" for kernel {} with configuration {}.{}{} '
                     "does not find anything. This can lead to errors later on.".format(
                         k,
                         self.oom_result.kversion,
