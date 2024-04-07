@@ -2642,7 +2642,6 @@ AllKernelConfigs = [
     KernelConfig_5_8(),
     KernelConfig_5_1(),
     KernelConfig_5_0(),
-    KernelConfig_4_15(),
     KernelConfig_4_19(),
     KernelConfig_4_18(),
     KernelConfig_4_15(),
