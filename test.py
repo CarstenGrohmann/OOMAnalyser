@@ -997,7 +997,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
             ),
             (
-                OOMAnalyser.KernelConfig_5_1(),
+                OOMAnalyser.KernelConfig_5_4(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1",
             ),
             (

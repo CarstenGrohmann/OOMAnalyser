@@ -372,10 +372,9 @@ class BaseKernelConfig:
             True,
         ),
         "Details of process killed by OOM": (
-            r"^Killed process \d+ \(.*\)"
-            r"(, UID \d+,)?"
-            r" total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
-            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*",
+            r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
             True,
         ),
     }
@@ -1590,10 +1589,9 @@ class KernelConfig_4_9(KernelConfig_4_8):
 
     EXTRACT_PATTERN_OVERLAY_49 = {
         "Details of process killed by OOM": (
-            r"^(Out of memory.*|Memory cgroup out of memory): Killed process \d+ \(.*\)"
-            r"(, UID \d+,)?"
-            r" total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
-            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB.*",
+            r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
             True,
         ),
     }
@@ -2167,33 +2165,10 @@ class KernelConfig_4_19(KernelConfig_4_18):
     pstable_start = "[  pid  ]"
 
 
-class KernelConfig_5_0(KernelConfig_4_19):
-    # Supported changes:
-    #  * "mm, oom: reorganize the oom report in dump_header" (ef8444ea01d7442652f8e1b8a8b94278cb57eafd)
-
-    name = "Configuration for Linux kernel 5.0 or later"
-    release = (5, 0, "")
-
-    EXTRACT_PATTERN_OVERLAY_50 = {
-        # third last line - not integrated yet
-        # oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/,task=sed,pid=29481,uid=12345
-        "Process killed by OOM": (
-            r"^Out of memory: Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
-            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
-            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
-            r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>\d+)",
-            True,
-        ),
-    }
-
-    def __init__(self):
-        super().__init__()
-        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_50)
-
-
-class KernelConfig_5_1(KernelConfig_5_0):
+class KernelConfig_5_1(KernelConfig_4_19):
     # Supported changes:
     #  * update GFP flags
+    #  * "mm, oom: remove 'prefer children over parent' heuristic" (bbbe480)
 
     name = "Configuration for Linux kernel 5.1 or later"
     release = (5, 1, "")
@@ -2273,7 +2248,35 @@ class KernelConfig_5_1(KernelConfig_5_0):
     }
 
 
-class KernelConfig_5_8(KernelConfig_5_1):
+class KernelConfig_5_4(KernelConfig_5_1):
+    # Supported changes:
+    #  * "mm/oom: add oom_score_adj and pgtables to Killed process message" (70cb6d2)
+    #  * "mm/oom_kill.c: add task UID to info message on an oom kill" (8ac3f8f)
+
+    name = "Configuration for Linux kernel 5.4 or later"
+    release = (5, 4, "")
+
+    EXTRACT_PATTERN_OVERLAY_54 = {
+        "Details of process killed by OOM": (
+            # message pattern:
+            #  * "Out of memory (oom_kill_allocating_task)"
+            #  * "Out of memory"
+            #  * "Memory cgroup out of memory"
+            r"^([\S ]+): "
+            r"Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
+            r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>-?\d+)",
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_54)
+
+
+class KernelConfig_5_8(KernelConfig_5_4):
     # Supported changes:
     #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
 
@@ -2641,8 +2644,8 @@ AllKernelConfigs = [
     KernelConfig_5_16(),
     KernelConfig_5_14(),
     KernelConfig_5_8(),
+    KernelConfig_5_4(),
     KernelConfig_5_1(),
-    KernelConfig_5_0(),
     KernelConfig_4_19(),
     KernelConfig_4_18(),
     KernelConfig_4_15(),
