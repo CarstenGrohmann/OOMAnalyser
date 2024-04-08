@@ -2247,6 +2247,11 @@ class KernelConfig_5_1(KernelConfig_4_19):
         "___GFP_NOLOCKDEP": {"value": 0x800000},
     }
 
+    def __init__(self):
+        super().__init__()
+        # Removed with kernel 5.1 "mm, oom: remove 'prefer children over parent' heuristic" (bbbe480)
+        del self.EXTRACT_PATTERN["Process killed by OOM"]
+
 
 class KernelConfig_5_4(KernelConfig_5_1):
     # Supported changes:
