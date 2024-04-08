@@ -538,12 +538,13 @@ class BaseKernelConfig:
     """
 
     PLATFORM_DESCRIPTION = (
-        ("x86_64", "x86 64-bit"),
         ("aarch64", "ARM 64-bit"),
+        ("amd64", "x86 64-bit"),
         ("arm64", "ARM 64-bit"),
         ("armv8", "ARM 64-bit"),
         ("i386", "x86 32-bit"),
         ("i686", "x86 32-bit (6th generation)"),
+        ("x86_64", "x86 64-bit"),
     )
     """
     Brief description of some platforms based on an identifier
@@ -3728,6 +3729,10 @@ class OOMAnalyser:
             platform = "x86 64-bit"
         elif "-generic" in kernel_version:
             dist = "Ubuntu"
+            platform = "x86 64-bit"
+        elif "-amd64" in kernel_version:
+            dist = "Debian"
+            platform = "x86 64-bit"
         self.oom_result.details["dist"] = dist
         self.oom_result.details["platform"] = platform
 
