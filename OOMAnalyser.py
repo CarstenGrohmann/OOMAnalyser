@@ -757,7 +757,7 @@ class BaseKernelConfig:
 
     def _check_mandatory_gfp_flags(self):
         """
-        Check existance of mandatory flags used in
+        Check existence of mandatory flags used in
         OOMAnalyser._calc_trigger_process_values() to calculate the memory zone
         """
         if "__GFP_DMA" not in self.GFP_FLAGS:
@@ -2833,8 +2833,9 @@ class OOMEntity:
         """
         Remove the "kernel:" pattern w/o leading and tailing spaces.
 
-        Some OOM messages don't have a space between "kernel:" and the process name. _strip_needless_columns() will
-        fail in such cases. Therefore the pattern is removed.
+        Some OOM messages don't have a space between "kernel:" and the
+        process name. _strip_needless_columns() will fail in such cases.
+        Therefore, the pattern is removed.
         """
         oom_lines = [i.replace("kernel:", "") for i in oom_lines]
         return oom_lines
@@ -2892,7 +2893,7 @@ class OOMEntity:
     def find_text(self, pattern):
         """
         Search the pattern and set the position to the first found line.
-        Otherwise the position pointer won't be changed.
+        Otherwise, the position pointer won't be changed.
 
         @param pattern: Text to find
         @type pattern: str
@@ -4080,7 +4081,7 @@ class SVGChart:
 
     def generate_chart(self, title, *elements):
         """
-        Return a SVG bar chart for all elements
+        Return an SVG bar chart for all elements
 
         @param str title: Chart title
         @param elements: List of tuple with name and length of the entry (not normalized)
