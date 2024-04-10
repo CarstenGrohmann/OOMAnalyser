@@ -198,7 +198,6 @@ class TestInBrowser(TestBase):
             return first_error_msg.text
         except NoSuchElementException:
             return ""
-        return notify_box.text
 
     def insert_example(self, select_value):
         """
