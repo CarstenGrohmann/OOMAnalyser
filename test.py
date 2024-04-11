@@ -1016,7 +1016,6 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ),
         ]:
             analyser.oom_entity.text = text
-            success = analyser._identify_kernel_version()
             self.assertTrue(
                 analyser._identify_kernel_version(), analyser.oom_result.error_msg
             )
