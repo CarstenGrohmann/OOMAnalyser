@@ -93,11 +93,11 @@ venv-freeze:
 venv-clean:
 	rm -rf $(VIRTUAL_ENV_DIR)
 
-${JS_TEMP_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${PY_SOURCE}
+${JS_TEMP_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate $(PY_SOURCE)
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	$(TRANSCRYPT_BIN) $(TRANSCRYPT_OPTS) ${PY_SOURCE}
+	$(TRANSCRYPT_BIN) $(TRANSCRYPT_OPTS) $(PY_SOURCE)
 
-${JS_OUT_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_TEMP_FILE}
+${JS_OUT_FILE}: $(VIRTUAL_ENV_DIR)/bin/activate $(JS_TEMP_FILE)
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	$(ROLLUP_BIN) $(ROLLUP_OPTS)
 
