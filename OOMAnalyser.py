@@ -1393,7 +1393,7 @@ class KernelConfig_4_5(KernelConfig_4_4):
 
 class KernelConfig_4_6(KernelConfig_4_5):
     # Supported changes:
-    #  * "mm, oom_reaper: report success/failure" (bc448e897b6d24aae32701763b8a1fe15d29fa26)
+    #  * "mm, oom_reaper: report success/failure" (bc448e8)
     #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.6 or later"
@@ -1582,7 +1582,7 @@ class KernelConfig_4_8(KernelConfig_4_6):
 
 class KernelConfig_4_9(KernelConfig_4_8):
     # Supported changes:
-    #  * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f84483bd13886348edda8b3e7b799a7fdb)
+    #  * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f)
 
     name = "Configuration for Linux kernel 4.9 or later"
     release = (4, 9, "")
@@ -1958,7 +1958,7 @@ class KernelConfig_4_14(KernelConfig_4_13):
 
 class KernelConfig_4_15(KernelConfig_4_14):
     # Supported changes:
-    #  * mm: consolidate page table accounting (af5b0f6a09e42c9f4fa87735f2a366748767b686)
+    #  * mm: consolidate page table accounting (af5b0f6)
     #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.15 or later"
@@ -2157,7 +2157,7 @@ class KernelConfig_4_18(KernelConfig_4_15):
 
 class KernelConfig_4_19(KernelConfig_4_18):
     # Supported changes:
-    #  * mm, oom: describe task memory unit, larger PID pad (c3b78b11efbb2865433abf9d22c004ffe4a73f5c)
+    #  * mm, oom: describe task memory unit, larger PID pad (c3b78b1)
 
     name = "Configuration for Linux kernel 4.19 or later"
     release = (4, 19, "")
@@ -2283,7 +2283,7 @@ class KernelConfig_5_4(KernelConfig_5_1):
 
 class KernelConfig_5_8(KernelConfig_5_4):
     # Supported changes:
-    #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890bd6b8502d6aee4b37430ae6444ade7a8c)
+    #  * "mm/writeback: discard NR_UNSTABLE_NFS, use NR_WRITEBACK instead" (8d92890)
 
     name = "Configuration for Linux kernel 5.8 or later"
     release = (5, 8, "")
@@ -2399,7 +2399,7 @@ class KernelConfig_5_14(KernelConfig_5_8):
 
 class KernelConfig_5_16(KernelConfig_5_14):
     # Supported changes:
-    #  * mm/page_alloc.c: show watermark_boost of zone in zoneinfo (a6ea8b5b9f1c)
+    #  * mm/page_alloc.c: show watermark_boost of zone in zoneinfo (a6ea8b5)
 
     name = "Configuration for Linux kernel 5.16 or later"
     release = (5, 16, "")
@@ -2510,7 +2510,7 @@ class KernelConfig_5_18(KernelConfig_5_16):
 class KernelConfig_6_0(KernelConfig_5_18):
     # Supported changes:
     #  * update GFP flags
-    #  * "mm/swap: remove swap_cache_info statistics" (442701e7058b)
+    #  * "mm/swap: remove swap_cache_info statistics" (442701e)
 
     name = "Configuration for Linux kernel 6.0 or later"
     release = (6, 0, "")
@@ -2617,7 +2617,7 @@ class KernelConfig_6_0(KernelConfig_5_18):
 
 class KernelConfig_6_1(KernelConfig_6_0):
     # Supported changes:
-    #  * "mm: add NR_SECONDARY_PAGETABLE to count secondary page table uses." (ebc97a52b5d6)
+    #  * "mm: add NR_SECONDARY_PAGETABLE to count secondary page table uses." (ebc97a5)
 
     name = "Configuration for Linux kernel 6.1 or later"
     release = (6, 1, "")
