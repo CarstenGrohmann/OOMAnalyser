@@ -589,7 +589,7 @@ class BaseKernelConfig:
     """
 
     REC_FREE_MEMORY_CHUNKS = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
+        r"Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
     )
     """RE to extract free memory chunks of a memory zone"""
 
@@ -599,7 +599,7 @@ class BaseKernelConfig:
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
-    REC_PAGE_SIZE = re.compile("Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
+    REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
     """RE to extract the page size from buddyinfo DMA zone"""
 
     REC_PROCESS_LINE = re.compile(
@@ -609,12 +609,12 @@ class BaseKernelConfig:
     """Match content of process table"""
 
     REC_WATERMARK = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
-        "free:(?P<free>\d+)kB "
-        "min:(?P<min>\d+)kB "
-        "low:(?P<low>\d+)kB "
-        "high:(?P<high>\d+)kB "
-        ".*"
+        r"Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
+        r"free:(?P<free>\d+)kB "
+        r"min:(?P<min>\d+)kB "
+        r"low:(?P<low>\d+)kB "
+        r"high:(?P<high>\d+)kB "
+        r".*"
     )
     """
     RE to extract watermark information in a memory zone
@@ -2405,13 +2405,13 @@ class KernelConfig_5_16(KernelConfig_5_14):
     release = (5, 16, "")
 
     REC_WATERMARK = re.compile(
-        "Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
-        "free:(?P<free>\d+)kB "
-        "boost:(?P<boost>\d+)kB "
-        "min:(?P<min>\d+)kB "
-        "low:(?P<low>\d+)kB "
-        "high:(?P<high>\d+)kB "
-        ".*"
+        r"Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal) "
+        r"free:(?P<free>\d+)kB "
+        r"boost:(?P<boost>\d+)kB "
+        r"min:(?P<min>\d+)kB "
+        r"low:(?P<low>\d+)kB "
+        r"high:(?P<high>\d+)kB "
+        r".*"
     )
 
 
