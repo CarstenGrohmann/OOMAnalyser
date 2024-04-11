@@ -773,7 +773,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
             # add date/time prefix except for "Mem-Info:" block
             for line in example_lines:
-                if not OOMAnalyser.OOMEntity.REC_MEMINFO_INDENTED_LINES.search(line):
+                if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
                     line = f"{prefix} {line}"
                 res.append(line)
             example = "\n".join(res)
@@ -816,8 +816,17 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             "Analysis details incl. <h3>Summary</h3> should be displayed",
         )
 
-    def test_060_removal_of_leading_but_useless_columns(self):
-        """Test removal of leading but useless columns"""
+    def test_060_removal_of_leading_but_useless_columns_rhel7(self):
+        """
+        Test removal of leading but useless columns with RHEL7 example
+
+        In this test, the lines of the "Mem-Info:" block are joined
+        together with #012 to form a single line. Therefore, the prefix
+        test must handle the additional leading spaces in these lines.
+        The selected example tests this behavior.
+
+        @see: test_061_removal_of_leading_but_useless_columns_archlinux()
+        """
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
         self.check_results_rhel7()
         self.click_reset_button()
@@ -836,6 +845,43 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.analyse_oom(oom_text)
 
             self.check_results_rhel7()
+            self.click_reset_button()
+
+    def test_061_removal_of_leading_but_useless_columns_archlinux(self):
+        """
+        Test removal of leading but useless columns with ArchLinux example
+
+        In this test, the lines of the "Mem-Info:" block are not joined
+        together with #012 to form a line, but are separate lines. Therefore,
+        the prefix test must handle the additional leading spaces in these
+        lines. The selected example tests this behavior.
+
+        @see: test_060_removal_of_leading_but_useless_columns_rhel7()
+        """
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
+        self.check_results_archlinux_6_1_1()
+        self.click_reset_button()
+        for prefix in [
+            "[11686.888109] ",
+            "Apr 01 14:13:32 mysrv: ",
+            "Apr 01 14:13:32 mysrv kernel: ",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+            "kernel:",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+        ]:
+            lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
+            new_lines = []
+            for line in lines:
+                if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+                    new_line = "{}{}".format(" " * len(prefix), line)
+                else:
+                    new_line = "{}{}".format(prefix, line)
+                new_lines.append(new_line)
+            oom_text = "\n".join(new_lines)
+            self.analyse_oom(oom_text)
+
+            self.check_results_archlinux_6_1_1()
             self.click_reset_button()
 
     def test_070_manually_triggered_OOM(self):

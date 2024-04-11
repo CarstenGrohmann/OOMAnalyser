@@ -2688,14 +2688,17 @@ class OOMEntity:
     lines = []
     """OOM text as list of lines"""
 
-    REC_MEMINFO_INDENTED_LINES = re.compile(
-        r"^ (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+$"
+    REC_MEMINFO_BLOCK_SECOND_PART = re.compile(
+        r"^\s*( (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+)$"
     )
     """RE to match the second part of the "Mem-Info:" block
 
     The second part of the "Mem-Info:" block as starting with the third line
     has not a prefix like the lines before and after it. It is indented only
     by a single space.
+
+    This RE is designed to match these lines and to extract the line with a
+    single leading space.
     """
 
     state = OOMEntityState.unknown
@@ -2854,14 +2857,16 @@ class OOMEntity:
                 continue
 
             # The output of the "Mem-Info:" block contains line breaks. journalctl
-            # breaks these lines, but doesn't insert date and time.
+            # breaks these lines, but doesn't insert a prefix e.g. with date and time.
             # As a result, removing the needless columns does not work correctly.
             #
             # see: self._rsyslog_unescape_lf()
-            if not self.REC_MEMINFO_INDENTED_LINES.search(line):
-                if cols_to_strip:
-                    # [-1] slicing needs Transcrypt operator overloading
-                    line = line.split(" ", cols_to_strip)[-1]  # __:opov
+            match = self.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
+            if match:
+                line = match.group(1)
+            elif cols_to_strip:
+                # [-1] slicing needs Transcrypt operator overloading
+                line = line.split(" ", cols_to_strip)[-1]  # __:opov
             stripped_lines.append(line)
 
         return stripped_lines
