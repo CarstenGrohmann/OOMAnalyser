@@ -4819,6 +4819,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self._show_swap_usage()
         self._show_ram_usage()
         self._show_alloc_failure()
+        self._show_kernel_upgrade()
         self._show_memory_fragmentation()
         self._show_page_size()
 
@@ -4855,6 +4856,13 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             debug(
                 "Memory allocation failed: {}".format(self.oom_result.mem_alloc_failure)
             )
+
+    def _show_kernel_upgrade(self):
+        """Show hint to upgrade from 32-bit to a 64-bit kernel"""
+        if "32-bit" in self.oom_result.details["platform"]:
+            show_elements(".js-kernel-upgrade64--show")
+        else:
+            hide_elements(".js-kernel-upgrade64--show")
 
     def _show_memory_fragmentation(self):
         """Show details about memory fragmentation"""

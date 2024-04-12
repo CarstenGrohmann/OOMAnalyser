@@ -114,9 +114,14 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to hide/show details for failed memory allocations */
         }
 
+        .js-kernel-upgrade64--show {
+            /* empty - used to hide/show details for kernel upgrade to 64-bit */
+        }
+
         .js-killed-proc-score--show {
             /* empty - used to hide/show OOM score of killed process */
         }
+
         .js-memory-fragmentation--show {
             /* empty - used to hide/show details for memory fragmentation */
         }
@@ -532,9 +537,9 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>
             Improve software that causes memory fragmentation, or ask the software vendor to improve it.
         </li>
-        <li>
-            If you are using a 32-bit kernel, consider upgrading to 64-bit. Since the memory zone setup has been
-            improved.
+        <li class="js-text--default-hide js-text--display-none js-kernel-upgrade64--show">
+            The system has a 32-bit kernel. Consider upgrading to a 64-bit kernel
+            as the memory zone setup has been improved.
         </li>
         <li>
             Trigger memory compaction manually to provide more contiguous blocks of free memory.
@@ -1185,6 +1190,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Extend platform determination for amd64 Debian/Ubuntu kernels (Moritz Schlarb)</li>
         <li>Add more platforms to the determination list</li>
         <li>Various fixes for a Debian buster OOM block (reported by Alexander Stanzl)</li>
+        <li>Show kernel upgrade hint only on 32-bit kernels</li>
         <li>...</li>
     </ol>
 
