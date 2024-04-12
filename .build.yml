@@ -8,7 +8,6 @@ image: archlinux
 arch:  x86_64
 packages:
   - python3
-  - python-black
   - python-virtualenv
   - git
   - xorg-server-xvfb
