@@ -111,8 +111,7 @@ class Node:
         if self.nr_children:
             self.nr_children -= 1
             return Node(self.nr_children)
-        else:
-            return None
+        return None
 
     def removeChild(self, *args, **kwargs):
         return
@@ -772,7 +771,6 @@ class BaseKernelConfig:
                     *self.release
                 )
             )
-        return
 
 
 class KernelConfig_3_10(BaseKernelConfig):
@@ -2721,7 +2719,7 @@ class OOMEntity:
         if not text:
             self.state = OOMEntityState.empty
             return
-        elif "invoked oom-killer:" not in text:
+        if "invoked oom-killer:" not in text:
             self.state = OOMEntityState.invalid
             return
 
@@ -2801,10 +2799,9 @@ class OOMEntity:
             if killed_process:
                 if "oom_reaper" in line:
                     break
-                else:
-                    # remove this line
-                    del cleaned_lines[-1]
-                    break
+                # remove this line
+                del cleaned_lines[-1]
+                break
 
         return cleaned_lines
 
@@ -2882,7 +2879,6 @@ class OOMEntity:
         """
         if self.current_line > 0:
             self.current_line -= 1
-        return
 
     def current(self):
         """Return the current line"""
@@ -3107,7 +3103,6 @@ class OOMAnalyser:
                 self.oom_result.kconfig.release[2],
             )
         )
-        return
 
     def _check_for_empty_oom(self):
         """
@@ -3512,12 +3507,11 @@ class OOMAnalyser:
         Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
 
         @see: BaseKernelConfig.PAGE_ALLOC_COSTLY_ORDER, OOMResult.mem_fragmented
-        @rtype: None|bool
         """
         zone = self.oom_result.details["trigger_proc_mem_zone"]
         node = self.oom_result.details["trigger_proc_numa_node"]
         if zone not in self.oom_result.buddyinfo:
-            return None
+            return
         self.oom_result.mem_fragmented = not self._check_free_chunks(
             self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
         )
@@ -3805,16 +3799,16 @@ class SVGChart:
     The entries of the legend are arranged from left to right and from top to bottom.
     """
 
-    cfg = dict(
-        chart_height=150,
-        chart_width=600,
-        label_height=80,
-        legend_entry_width=160,
-        legend_margin=7,
-        title_height=20,
-        title_margin=10,
-        css_class="js-mem-usage__svg",  # CSS class for SVG diagram
-    )
+    cfg = {
+        "chart_height": 150,
+        "chart_width": 600,
+        "label_height": 80,
+        "legend_entry_width": 160,
+        "legend_margin": 7,
+        "title_height": 20,
+        "title_margin": 10,
+        "css_class": "js-mem-usage__svg",  # CSS class for SVG diagram
+    }
     """Basic chart configuration"""
 
     # generated with Colorgorical http://vrl.cs.brown.edu/color
