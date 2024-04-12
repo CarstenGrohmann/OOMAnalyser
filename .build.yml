@@ -26,11 +26,11 @@ tasks:
       # install pre-compiled Python 3.7 incl. dependencies
       #  - openssl-1.1 is required to install via pip from https sources
       #  - libffi7 is required to install Transcrypt
-      yay -Sy --noconfirm --noeditmenu openssl-1.1 libffi7 python37
+      yay -Sy --noconfirm openssl-1.1 libffi7 python37
       # install JS bundler
-      yay -Sy --noconfirm --noeditmenu rollup
+      yay -Sy --noconfirm rollup
       # install selenium helper and browser to run tests later
-      yay -Sy --noconfirm --noeditmenu chromedriver google-chrome
+      yay -Sy --noconfirm chromedriver google-chrome
   - setup_venv: |
       cd OOMAnalyser
       make venv
