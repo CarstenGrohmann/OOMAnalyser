@@ -4617,19 +4617,33 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def update_toc(self):
         """
-        Update the TOC to show current headlines only
+        Update the TOC to show visible h2/h3 headlines.
 
-        There are two conditions to show a h2 headline in TOC:
-         * the headline is visible
-         * the id attribute is set
+        Headlines without id attribute are not shown.
         """
         new_toc = ""
+        assigned_level = None
 
         toc_content = document.querySelectorAll("nav > ul")[0]
 
-        for element in document.querySelectorAll("h2"):
+        for element in document.querySelectorAll("h2, h3"):
             if not (is_visible(element) and element.id):
                 continue
+            current_level = int(element.tagName[1])
+
+            # set assigned level to level of first item
+            if assigned_level is None:
+                assigned_level = current_level
+
+            # close child list if a higher level follows
+            elif current_level < assigned_level:
+                new_toc += "</ul>"
+
+            # open child list if a lower level follows
+            elif current_level > assigned_level:
+                new_toc += "<ul>"
+
+            assigned_level = current_level
 
             new_toc += '<li><a href="#{}">{}</a></li>'.format(
                 element.id, element.textContent

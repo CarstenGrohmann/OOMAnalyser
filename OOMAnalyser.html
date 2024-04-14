@@ -310,6 +310,8 @@ THIS PROGRAM COMES WITH NO WARRANTY
         }
         .table-of-contents ul {
             padding: 0;
+            padding-right: 2em;
+            padding-left: 1em;
         }
         .table-of-contents li {
             margin: 0 0 0.25em 0;
@@ -430,7 +432,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         to run a new analysis.
     </p>
 
-    <h3>Summary</h3>
+    <h3 id="summary">Summary</h3>
     <div id="explanation">
         <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
             <p>
@@ -525,7 +527,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </div>
     </div>
 
-    <h3>Corrective Actions</h3>
+    <h3 id="corrective_actions">Corrective Actions</h3>
     <p>
         Top this list are the actions that have the greatest impact on preventing OOMs.
     </p>
@@ -567,7 +569,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </li>
     </ol>
 
-    <h3>Details of analysis</h3>
+    <h3 id="details">Details of analysis</h3>
     <p>
         The result of the analysis is displayed in three columns. The first column is used to name the property
         including the original OOM identifier in brackets. The extracted information is displayed in the second column.
@@ -1191,6 +1193,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Add more platforms to the determination list</li>
         <li>Various fixes for a Debian buster OOM block (reported by Alexander Stanzl)</li>
         <li>Show kernel upgrade hint only on 32-bit kernels</li>
+        <li>Extend table of contents to also show h3 headings</li>
         <li>...</li>
     </ol>
 
