@@ -66,6 +66,17 @@ class document:
         return [Node()]
 
     @staticmethod
+    def getElementsByTagName(tagName):
+        """
+        Returns an array-like object of all child elements which have all the given tag name.
+
+        @param tagName: A string representing the tag name(s) to match.
+        @type tagName: str
+        @rtype: List(Node)
+        """
+        return [Node()]
+
+    @staticmethod
     def getElementById(_id):
         """
         Returns an object representing the element whose id property matches
@@ -100,6 +111,7 @@ class document:
 class Node:
     classList = classList()
     id = None
+    offsetHeight = 0
     offsetWidth = 0
     textContent = ""
 
@@ -112,6 +124,15 @@ class Node:
             self.nr_children -= 1
             return Node(self.nr_children)
         return None
+
+    @property
+    def tagName(self):
+        """
+        Read-only property that returns the tag name of the element
+
+        @rtype: str
+        """
+        return ""
 
     def removeChild(self, *args, **kwargs):
         return
