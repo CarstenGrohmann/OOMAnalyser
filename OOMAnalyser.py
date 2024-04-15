@@ -319,7 +319,9 @@ class BaseKernelConfig:
         # split caused by a limited number of iterations during converting PY regex into JS regex
         # Source: mm/page_alloc.c:__show_free_areas()
         "Overall Mem-Info (part 1)": (
-            r"^Mem-Info:.*" r"(?:\n)"
+            r"^Mem-Info:.*"
+            #
+            r"(?:\n)"
             # first line (starting w/o a space)
             r"^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) "
             r"isolated_anon:(?P<isolated_anon_pages>\d+)"
@@ -699,7 +701,7 @@ class BaseKernelConfig:
         flags will be processed from left to right. Parentheses are not supported.
         """
         if flag not in self.GFP_FLAGS:
-            error("No definition for flag {} found".format(flag))
+            error("Missing definition for flag {}".format(flag))
             return 0
 
         value = self.GFP_FLAGS[flag]["value"]
@@ -970,9 +972,6 @@ class KernelConfig_3_10_EL7(KernelConfig_3_10):
         "___GFP_OTHER_NODE": {"value": 0x800000},
         "___GFP_WRITE": {"value": 0x1000000},
     }
-
-    def __init__(self):
-        super().__init__()
 
 
 class KernelConfig_3_16(KernelConfig_3_10):
@@ -1504,9 +1503,6 @@ class KernelConfig_4_6(KernelConfig_4_5):
         r"^((Out of memory.*|Memory cgroup out of memory): Killed process \d+|oom_reaper:)",
         re.MULTILINE,
     )
-
-    def __init__(self):
-        super().__init__()
 
 
 class KernelConfig_4_8(KernelConfig_4_6):
@@ -2870,21 +2866,23 @@ class OOMEntity:
         """
         stripped_lines = []
         for line in oom_lines:
-            # remove empty lines
-            if not line.strip():
+            if not line.strip():  # remove empty lines
                 continue
 
-            # The output of the "Mem-Info:" block contains line breaks. journalctl
-            # breaks these lines, but doesn't insert a prefix e.g. with date and time.
-            # As a result, removing the needless columns does not work correctly.
-            #
+            # The output of the "Mem-Info:" block contains line breaks. journalctl breaks these lines, but doesn't
+            # insert a prefix e.g. with date and time. As a result, removing the needless columns does not work
+            # correctly.
             # see: self._rsyslog_unescape_lf()
+
+            # remove all leading whitespaces from "Mem-Info:" lines, but keep exact 1 space
             match = self.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
             if match:
                 line = match.group(1)
-            elif cols_to_strip:
+
+            elif cols_to_strip:  # remove needless columns
                 # [-1] slicing needs Transcrypt operator overloading
                 line = line.split(" ", cols_to_strip)[-1]  # __:opov
+
             stripped_lines.append(line)
 
         return stripped_lines
@@ -3047,13 +3045,17 @@ class OOMAnalyser:
      - 3.10.0-514.6.1.el7.x86_64 #1
     """
 
+    oom_block_complete = OOMEntityState.unknown
+    """Completeness of the OOM block"""
+
     def __init__(self, oom):
         self.oom_entity = oom
         self.oom_result = OOMResult()
+        self.oom_block_complete = OOMEntityState.unknown
 
     def _identify_kernel_version(self):
         """
-        Identify the used kernel version and
+        Identify the used kernel version
 
         @rtype: bool
         """
@@ -3077,7 +3079,9 @@ class OOMAnalyser:
 
         if not match:
             self.oom_result.error_msg = (
-                'Failed to extract version details from version string "%s"' % kversion
+                'Failed to extract version details from version string "{}"'.format(
+                    kversion
+                )
             )
             return False
 
@@ -3132,7 +3136,7 @@ class OOMAnalyser:
         @rtype: bool
         """
         if not self.oom_entity.text:
-            self.state = OOMEntityState.empty
+            self.oom_block_complete = OOMEntityState.empty
             self.oom_result.error_msg = (
                 "Empty OOM text. Please insert an OOM message block."
             )
@@ -3141,27 +3145,24 @@ class OOMAnalyser:
 
     def _check_for_complete_oom(self):
         """
-        Check if the OOM in self.oom_entity is complete and update self.oom_state accordingly
+        Check if the OOM in self.oom_entity is complete and update self.oom_block_complete accordingly
 
         @rtype: bool
         """
-        self.oom_state = OOMEntityState.unknown
+        self.oom_block_complete = OOMEntityState.unknown
         self.oom_result.error_msg = "Unknown OOM format"
 
         if not self.oom_result.kconfig.REC_OOM_BEGIN.search(self.oom_entity.text):
-            self.state = OOMEntityState.invalid
+            self.oom_block_complete = OOMEntityState.invalid
             self.oom_result.error_msg = "The inserted text is not a valid OOM block! The initial pattern was not found!"
             return False
 
         if not self.oom_result.kconfig.REC_OOM_END.search(self.oom_entity.text):
-            self.state = OOMEntityState.started
-            self.oom_result.error_msg = (
-                "The inserted OOM is incomplete! The initial pattern was found but not the "
-                "final."
-            )
+            self.oom_block_complete = OOMEntityState.started
+            self.oom_result.error_msg = "The inserted OOM is incomplete! The initial pattern was found but not the final."
             return False
 
-        self.state = OOMEntityState.complete
+        self.oom_block_complete = OOMEntityState.complete
         self.oom_result.error_msg = None
         return True
 
