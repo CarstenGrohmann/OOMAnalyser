@@ -396,7 +396,7 @@ class BaseKernelConfig:
         "Details of process killed by OOM": (
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
-            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB",
             True,
         ),
     }
@@ -1323,6 +1323,7 @@ class KernelConfig_4_4(KernelConfig_4_1):
 class KernelConfig_4_5(KernelConfig_4_4):
     # Supported changes:
     #  * update GFP flags
+    #  * "mm, shmem: add internal shmem resident memory accounting" (eca56ff)
 
     name = "Configuration for Linux kernel 4.5 or later"
     release = (4, 5, "")
@@ -1407,6 +1408,19 @@ class KernelConfig_4_5(KernelConfig_4_4):
         "___GFP_WRITE": {"value": 0x1000000},
         "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
     }
+
+    EXTRACT_PATTERN_OVERLAY_45 = {
+        "Details of process killed by OOM": (
+            r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
+            True,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_45)
 
 
 class KernelConfig_4_6(KernelConfig_4_5):
@@ -3664,7 +3678,7 @@ class OOMAnalyser:
         self.oom_result.details["killed_proc_total_rss_kb"] = (
             self.oom_result.details["killed_proc_anon_rss_kb"]
             + self.oom_result.details["killed_proc_file_rss_kb"]
-            + self.oom_result.details["killed_proc_shmem_rss_kb"]
+            + self.oom_result.details.get("killed_proc_shmem_rss_kb", 0)
         )
 
         self.oom_result.details["killed_proc_rss_percent"] = int(
