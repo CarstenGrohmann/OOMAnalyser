@@ -9,3 +9,4 @@ selenium
 webdriver-manager
 pre-commit
 black == 23.3.0
+GitPython == 3.1

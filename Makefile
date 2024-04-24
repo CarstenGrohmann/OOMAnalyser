@@ -18,6 +18,7 @@ HTML_FILE         = $(BASE_DIR)/OOMAnalyser.html
 JS_OUT_FILE       = $(BASE_DIR)/OOMAnalyser.js
 JS_TEMP_FILE      = $(TARGET_DIR)/OOMAnalyser.js
 PY_SOURCE         = $(BASE_DIR)/OOMAnalyser.py
+PY_HELPER         = $(BASE_DIR)/extract_kernel_details.py
 TEST_FILE         = $(BASE_DIR)/test.py
 
 # e.g. 0.6.0 or 0.6.0_devel
@@ -55,11 +56,11 @@ help:
 
 #+ Run source code formatter black
 black:
-	$(BLACK_BIN) $(BLACK_OPTS) $(PY_SOURCE) $(TEST_FILE)
+	$(BLACK_BIN) $(BLACK_OPTS) $(PY_SOURCE) $(PY_HELPER) $(TEST_FILE)
 
 #+ Run source code formatter black in check-only mode
 black-check:
-	$(BLACK_BIN) --check $(BLACK_OPTS) $(PY_SOURCE) $(TEST_FILE)
+	$(BLACK_BIN) --check $(BLACK_OPTS) $(PY_SOURCE) (PY_HELPER) $(TEST_FILE)
 
 #+ Clean python compiler files and automatically generated files
 clean:
