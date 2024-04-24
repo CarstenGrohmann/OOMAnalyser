@@ -1025,6 +1025,14 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         """Test choosing the right kernel configuration"""
         for kcfg, kversion in [
             (
+                OOMAnalyser.KernelConfig_6_8(),
+                "CPU: 4 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
+            ),
+            (
+                OOMAnalyser.KernelConfig_5_18(),
+                "CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1",
+            ),
+            (
                 OOMAnalyser.KernelConfig_5_8(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.13.0-514 #1",
             ),
@@ -1033,24 +1041,16 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.8.0-514 #1",
             ),
             (
+                OOMAnalyser.KernelConfig_5_4(),
+                "CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1",
+            ),
+            (
                 OOMAnalyser.KernelConfig_4_6(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 4.6.0-514 #1",
             ),
             (
                 OOMAnalyser.KernelConfig_3_10_EL7(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
-            ),
-            (
-                OOMAnalyser.KernelConfig_5_4(),
-                "CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1",
-            ),
-            (
-                OOMAnalyser.KernelConfig_5_18(),
-                "CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1",
-            ),
-            (
-                OOMAnalyser.KernelConfig_6_1(),
-                "CPU: 4 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
             ),
             (
                 OOMAnalyser.BaseKernelConfig(),
