@@ -60,7 +60,7 @@ black:
 
 #+ Run source code formatter black in check-only mode
 black-check:
-	$(BLACK_BIN) --check $(BLACK_OPTS) $(PY_SOURCE) (PY_HELPER) $(TEST_FILE)
+	$(BLACK_BIN) --check $(BLACK_OPTS) $(PY_SOURCE) $(PY_HELPER) $(TEST_FILE)
 
 #+ Clean python compiler files and automatically generated files
 clean:
