@@ -346,7 +346,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Extract GFP flags (get free pages) from the kernel "
         "include files include/linux/gfp.h or gfp_types.h for use in "
-        "OOMAnalyser.py"
+        "OOMAnalyser.py",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "repo_dir",
@@ -363,7 +364,7 @@ if __name__ == "__main__":
         "--major",
         default=5,
         dest="minimum_major_version",
-        metavar="min major version",
+        metavar="minimum major version number",
         nargs="?",
         type=int,
         help="Major version number to start",
@@ -372,7 +373,7 @@ if __name__ == "__main__":
         "--minor",
         default=18,
         dest="minimum_minor_version",
-        metavar="min minor version",
+        metavar="minimum minor version number",
         nargs="?",
         type=int,
         help="Minor version number to start",
