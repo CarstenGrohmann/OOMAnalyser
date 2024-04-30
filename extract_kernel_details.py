@@ -20,7 +20,8 @@ import re
 import sys
 
 import git
-from _collections import OrderedDict
+from collections import OrderedDict
+from types import SimpleNamespace
 
 REC_EXCLUDE = re.compile(
     r"(__LINUX_GFP_H|GFP_ZONE_TABLE|ZONES_SHIFT|GFP_ZONE_BAD|BITS_SHIFT|THISNODE|MASK)"
@@ -207,11 +208,17 @@ def format_gfp_flags(d: Dict[str, Union[str, int]]) -> Dict[str, str]:
     return res
 
 
-def write_block(f, desc: str, flags: Dict[str, str]):
-    """Write block with the given flags"""
-    f.write(f"        #\n        #\n        # {desc}:\n")
+def format_block_gfp_flags(desc: str, flags: Dict[str, str]) -> str:
+    """Generate a block with the given flags"""
+    res = f"""\
+        #
+        #
+        # {desc}:
+"""
     for n in flags:
-        f.write(f'        "{n}": {{"value": {flags[n]}}},\n')
+        res += f'        "{n}": {{"value": {flags[n]}}},\n'
+    wo_tailing_newline = res.rstrip()
+    return wo_tailing_newline
 
 
 def extract_gfp_flags(gfp_filename: str) -> Dict[str, Dict[str, Union[str, int]]]:
@@ -298,13 +305,13 @@ def cleanup_repo() -> None:
 
 
 def write_gfp_oom_template(
-    cfg: argparse.Namespace, tag_name: str, flags: Dict[str, Dict[str, Union[str, int]]]
+    cfg: SimpleNamespace, tag: git.TagReference, changes: SimpleNamespace
 ):
     """Write prepared GFP flags to a template file"""
-    output_file = os.path.join(cfg.output_dir, f"gfp_{tag_name}")
-    logging.info("Write output file for tag %s: %s", tag_name, output_file)
+    output_file = os.path.join(cfg.output_dir, f"gfp_{tag.name}")
+    logging.info("Write output file for tag %s: %s", tag.name, output_file)
 
-    match = REC_TAG_MAJOR_MINOR_VERSION.match(tag_name)
+    match = REC_TAG_MAJOR_MINOR_VERSION.match(tag.name)
     major = match.group("major")
     minor = match.group("minor")
 
@@ -313,24 +320,24 @@ def write_gfp_oom_template(
     # write header
     of.write(f"class KernelConfig_{major}_{minor}(KernelConfig_XX_YY):\n")
     of.write("    # Supported changes:\n")
-    of.write("    #  * update GFP flags\n")
+    if changes.gfp_flags:
+        of.write("    #  * update GFP flags\n")
     of.write("\n")
     of.write(f'    name = "Configuration for Linux kernel {major}.{minor} or later"\n')
     of.write(f'    release = ({major}, {minor}, "")\n')
     of.write("\n")
-    of.write("    # NOTE: These flags are automatically extracted from a gfp.h file.\n")
-    of.write("    #       Please do not change them manually!\n")
-
-    # write flags
-    of.write("    GFP_FLAGS = {\n")
-    write_block(of, "Useful GFP flag combinations", flags["useful"])
-    write_block(of, "Modifier, mobility and placement hints", flags["modifier"])
-    write_block(
-        of,
-        "Plain integer GFP bitmasks (for internal use only)",
-        flags["plain"],
-    )
-    of.write("    }\n")
+    if changes.gfp_flags:
+        of.write(
+            f"""\
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {{
+{format_block_gfp_flags("Useful GFP flag combinations", changes.gfp_flags["useful"])}
+{format_block_gfp_flags("Modifier, mobility and placement hints", changes.gfp_flags["modifier"])}
+{format_block_gfp_flags("Plain integer GFP bitmasks (for internal use only)", changes.gfp_flags["plain"])}
+    }}
+"""
+        )
 
 
 if __name__ == "__main__":
@@ -375,7 +382,8 @@ if __name__ == "__main__":
         action="version",
         version="extract_kernel_details.py version 0.2 - Copyright (c) 2022-2024 Carsten Grohmann",
     )
-    cfg = parser.parse_args()
+    cfg = SimpleNamespace()
+    parser.parse_args(namespace=cfg)
 
     if not os.path.exists(cfg.output_dir):
         logging.error("Output directory %s does not exists", cfg.output_dir)
@@ -403,10 +411,13 @@ if __name__ == "__main__":
     logging.info("Start processing #%d tags ...", len(all_tags))
 
     details = OrderedDict()
-    last_tag: Optional[git.TagReference] = None
+    last_modified_tag = SimpleNamespace(gfp=None, page_alloc_costly_order=None)
+
     for tag in all_tags:
         logging.info("Process tag %s", tag.name)
         prepare_repo(tag)
+
+        # process GFP flags
         gfp_file = search_gfp_file(cfg.repo_dir)
         if not gfp_file:
             logging.error(
@@ -414,24 +425,25 @@ if __name__ == "__main__":
                 tag.name,
             )
             continue
-        details[tag.name] = extract_gfp_flags(gfp_file)
+        details[tag] = SimpleNamespace(gfp_flags=extract_gfp_flags(gfp_file))
+        details[tag].gfp_flags_json = json.dumps(details[tag].gfp_flags, sort_keys=True)
         logging.info("Check for differences only to keep a new details ...")
-        if last_tag:
-            last_json = json.dumps(details[last_tag.name], sort_keys=True)
-            current_json = json.dumps(details[tag.name], sort_keys=True)
+        if last_modified_tag.gfp:
+            last_json = details[last_modified_tag.gfp].gfp_flags_json
+            current_json = json.dumps(details[tag].gfp_flags, sort_keys=True)
             if last_json == current_json:
                 logging.info(
                     "No difference to last version with tag %s found - delete current one",
-                    last_tag.name,
+                    last_modified_tag.gfp.name,
                 )
-                del details[tag.name]
+                del details[tag]
                 continue
 
-        last_tag = tag
+        last_modified_tag.gfp = tag
 
     logging.info("Write output files...")
-    for tag_name in details:
-        write_gfp_oom_template(cfg, tag_name, details[tag_name])
+    for tag in details:
+        write_gfp_oom_template(cfg=cfg, tag=tag, changes=details[tag])
 
     cleanup_repo()
     logging.info("Script is done")
