@@ -23,19 +23,6 @@ import git
 from collections import OrderedDict
 from types import SimpleNamespace
 
-REC_EXCLUDE = re.compile(
-    r"(__LINUX_GFP_H|GFP_ZONE_TABLE|ZONES_SHIFT|GFP_ZONE_BAD|BITS_SHIFT|THISNODE|MASK)"
-)
-"""Regex to exclude lines that look like GFP flags but are not"""
-
-# Examples:
-#   #define ___GFP_DMA	  0x01u
-#   #define ___GFP_DMA32  0x04u
-REC_NUMERIC = re.compile(
-    r"^#define (?P<constant>_{0,3}GFP[_A-Z\d]+)\s+(?P<value>0x\d+)u"
-)
-"""Regex to GFP constants"""
-
 # Examples:
 #   #define __GFP_DMA ((__force gfp_t)___GFP_DMA)
 #   #define __GFP_KSWAPD_RECLAIM  ((__force gfp_t)___GFP_KSWAPD_RECLAIM) /* kswapd can wake */
@@ -51,6 +38,24 @@ REC_COMPOUND = re.compile(
     r"\)"  # closing ")")
 )
 """Regex to extract compound flags"""
+
+REC_EXCLUDE = re.compile(
+    r"(__LINUX_GFP_H|GFP_ZONE_TABLE|ZONES_SHIFT|GFP_ZONE_BAD|BITS_SHIFT|THISNODE|MASK)"
+)
+"""Regex to exclude lines that look like GFP flags but are not"""
+
+# Examples:
+#   #define ___GFP_DMA	  0x01u
+#   #define ___GFP_DMA32  0x04u
+REC_NUMERIC = re.compile(
+    r"^#define (?P<constant>_{0,3}GFP[_A-Z\d]+)\s+(?P<value>0x\d+)u"
+)
+"""Regex extract to GFP constants"""
+
+REC_PAGE_ALLOC_COSTLY_ORDER = re.compile(
+    r"^#define[ \t]+PAGE_ALLOC_COSTLY_ORDER[ \t]+(?P<order>\d+)", re.MULTILINE
+)
+"""Regex to extract PAGE_ALLOC_COSTLY_ORDER"""
 
 REC_TAG_MAJOR_MINOR_VERSION = re.compile(r"^v(?P<major>\d+)\.(?P<minor>\d+)(\.\d+)?$")
 """Regex to extract major and minor version number from kernel tag"""
@@ -262,6 +267,18 @@ def search_gfp_file(repo_dir: str) -> Optional[str]:
     return None
 
 
+def extract_page_alloc_costly_order(repo_dir: str) -> Optional[int]:
+    """Extract PAGE_ALLOC_COSTLY_ORDER from mmzone.h"""
+    mmzone_h = os.path.join(repo_dir, "include/linux/mmzone.h")
+    with open(mmzone_h) as f:
+        content = f.read()
+        match = REC_PAGE_ALLOC_COSTLY_ORDER.search(content)
+        if match:
+            return int(match.group("order"))
+    logging.error("Missing PAGE_ALLOC_COSTLY_ORDER definition in %s", mmzone_h)
+    return None
+
+
 def query_all_tags(
     minimum_major: int = 1, minimum_minor: int = 1
 ) -> List[git.TagReference]:
@@ -338,10 +355,21 @@ def write_gfp_oom_template(
     }}
 """
         )
+    if changes.page_order:
+        of.write(
+            f"""\
+
+    # NOTE: This value is automatically extracted from include/linux/mmzone.h.
+    #       Please do not change it manually!
+    PAGE_ALLOC_COSTLY_ORDER = {changes.page_order}
+"""
+        )
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+
+    cfg = SimpleNamespace()
 
     parser = argparse.ArgumentParser(
         description="Extract GFP flags (get free pages) from the kernel "
@@ -351,7 +379,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "repo_dir",
-        nargs="?",
         help="Linux kernel git repository",
     )
     parser.add_argument(
@@ -379,11 +406,19 @@ if __name__ == "__main__":
         help="Minor version number to start",
     )
     parser.add_argument(
+        "--paco",
+        default=3,
+        dest="page_order",
+        metavar="PAGE_ALLOC_COSTLY_ORDER",
+        nargs="?",
+        type=int,
+        help="Record changes in PAGE_ALLOC_COSTLY_ORDER if they differ from the default",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version="extract_kernel_details.py version 0.2 - Copyright (c) 2022-2024 Carsten Grohmann",
     )
-    cfg = SimpleNamespace()
     parser.parse_args(namespace=cfg)
 
     if not os.path.exists(cfg.output_dir):
@@ -409,10 +444,10 @@ if __name__ == "__main__":
         cleanup_repo()
         sys.exit(1)
 
-    logging.info("Start processing #%d tags ...", len(all_tags))
+    logging.info("Start processing %d tags ...", len(all_tags))
 
     details = OrderedDict()
-    last_modified_tag = SimpleNamespace(gfp=None, page_alloc_costly_order=None)
+    last_modified_tag = SimpleNamespace(gfp=None, page_order=None)
 
     for tag in all_tags:
         logging.info("Process tag %s", tag.name)
@@ -426,7 +461,8 @@ if __name__ == "__main__":
                 tag.name,
             )
             continue
-        details[tag] = SimpleNamespace(gfp_flags=extract_gfp_flags(gfp_file))
+        details[tag] = SimpleNamespace(gfp_flags=None, page_order=None)
+        details[tag].gfp_flags = extract_gfp_flags(gfp_file)
         details[tag].gfp_flags_json = json.dumps(details[tag].gfp_flags, sort_keys=True)
         logging.info("Check for differences only to keep a new details ...")
         if last_modified_tag.gfp:
@@ -441,6 +477,37 @@ if __name__ == "__main__":
                 continue
 
         last_modified_tag.gfp = tag
+
+        # Process PAGE_ALLOC_COSTLY_ORDER
+        logging.info("Check for differences in PAGE_ALLOC_COSTLY_ORDER ...")
+        current_value = extract_page_alloc_costly_order(cfg.repo_dir)
+        if current_value is None:
+            pass  # ignore, as error already logged
+        else:
+            # never set before
+            if not last_modified_tag.page_order:
+                if current_value == cfg.page_order:  # value is equal with default
+                    details[tag].page_order = None
+                else:  # value differs from default
+                    details[tag].page_order = current_value
+                    last_modified_tag.page_order = tag
+
+            # already set
+            else:
+                # do not compare with the default value if a value is already set,
+                # otherwise this change will be lost when changing back to
+                # default (current value) from non-default (last value).
+                last_value = details[last_modified_tag.page_order].page_order
+                if last_value == current_value:  # no changes to last value
+                    logging.info(
+                        "No differences in PAGE_ALLOC_COSTLY_ORDER to last version with tag %s "
+                        "found - delete current one",
+                        last_modified_tag.page_order.name,
+                    )
+                    details[tag].page_order = None
+                else:  # value has changed
+                    details[tag].page_order = current_value
+                    last_modified_tag.page_order = tag
 
     logging.info("Write output files...")
     for tag in details:
