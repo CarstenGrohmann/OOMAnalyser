@@ -10,18 +10,17 @@
 # THIS PROGRAM COMES WITH NO WARRANTY
 
 import argparse
-import os.path
-
-from typing import Dict, Iterable, List, Optional, Union
-
 import json
 import logging
+import os.path
 import re
 import sys
 
-import git
 from collections import OrderedDict
 from types import SimpleNamespace
+from typing import Dict, Iterable, List, Optional, Union
+
+import git
 
 # Examples:
 #   #define __GFP_DMA ((__force gfp_t)___GFP_DMA)
@@ -447,7 +446,7 @@ if __name__ == "__main__":
     logging.info("Start processing %d tags ...", len(all_tags))
 
     details = OrderedDict()
-    last_modified_tag = SimpleNamespace(gfp=None, page_order=None)
+    last_modified_tag = SimpleNamespace(gfp_flags=None, page_order=None)
 
     for tag in all_tags:
         logging.info("Process tag %s", tag.name)
@@ -462,21 +461,28 @@ if __name__ == "__main__":
             )
             continue
         details[tag] = SimpleNamespace(gfp_flags=None, page_order=None)
-        details[tag].gfp_flags = extract_gfp_flags(gfp_file)
-        details[tag].gfp_flags_json = json.dumps(details[tag].gfp_flags, sort_keys=True)
-        logging.info("Check for differences only to keep a new details ...")
-        if last_modified_tag.gfp:
-            last_json = details[last_modified_tag.gfp].gfp_flags_json
-            current_json = json.dumps(details[tag].gfp_flags, sort_keys=True)
+        current_value = extract_gfp_flags(gfp_file)
+        current_json = json.dumps(current_value, sort_keys=True)
+        logging.info("Check for differences in GFP flags ...")
+
+        if last_modified_tag.gfp_flags is None:  # set current, if never set before
+            logging.info("New GFP flags found")
+            details[tag].gfp_flags = current_value
+            details[tag].gfp_flags_json = current_json
+            last_modified_tag.gfp_flags = tag
+        else:  # already set - check for updates
+            last_json = details[last_modified_tag.gfp_flags].gfp_flags_json
             if last_json == current_json:
                 logging.info(
-                    "No difference to last version with tag %s found - delete current one",
-                    last_modified_tag.gfp.name,
+                    "No differences in GFP flags to last tag %s found - ignore it",
+                    last_modified_tag.gfp_flags.name,
                 )
-                del details[tag]
-                continue
-
-        last_modified_tag.gfp = tag
+                details[tag].gfp_flags = None
+            else:
+                logging.info("New GFP flags found")
+                details[tag].gfp_flags = current_value
+                details[tag].gfp_flags_json = current_json
+                last_modified_tag.gfp_flags = tag
 
         # Process PAGE_ALLOC_COSTLY_ORDER
         logging.info("Check for differences in PAGE_ALLOC_COSTLY_ORDER ...")
@@ -484,15 +490,18 @@ if __name__ == "__main__":
         if current_value is None:
             pass  # ignore, as error already logged
         else:
-            # never set before
-            if not last_modified_tag.page_order:
+            if last_modified_tag.page_order is None:  # set current, if never set before
                 if current_value == cfg.page_order:  # value is equal with default
+                    logging.info(
+                        "Extracted PAGE_ALLOC_COSTLY_ORDER is equal to the default value - ignore it"
+                    )
                     details[tag].page_order = None
                 else:  # value differs from default
+                    logging.info("New PAGE_ALLOC_COSTLY_ORDER value found")
                     details[tag].page_order = current_value
                     last_modified_tag.page_order = tag
 
-            # already set
+            # already set - check for updates
             else:
                 # do not compare with the default value if a value is already set,
                 # otherwise this change will be lost when changing back to
@@ -500,18 +509,19 @@ if __name__ == "__main__":
                 last_value = details[last_modified_tag.page_order].page_order
                 if last_value == current_value:  # no changes to last value
                     logging.info(
-                        "No differences in PAGE_ALLOC_COSTLY_ORDER to last version with tag %s "
-                        "found - delete current one",
+                        "No differences for PAGE_ALLOC_COSTLY_ORDER to last tag %s found",
                         last_modified_tag.page_order.name,
                     )
                     details[tag].page_order = None
                 else:  # value has changed
+                    logging.info("New PAGE_ALLOC_COSTLY_ORDER value found")
                     details[tag].page_order = current_value
                     last_modified_tag.page_order = tag
 
     logging.info("Write output files...")
     for tag in details:
-        write_gfp_oom_template(cfg=cfg, tag=tag, changes=details[tag])
+        if details[tag].gfp_flags or details[tag].page_order:
+            write_gfp_oom_template(cfg=cfg, tag=tag, changes=details[tag])
 
     cleanup_repo()
     logging.info("Script is done")
