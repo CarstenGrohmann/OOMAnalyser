@@ -183,7 +183,7 @@ for current open bugs. New bugs can be reported there also.
 
 This project is licensed under the MIT license.
 
-> Copyright (c) 2017-2024 Carsten Grohmann,  mail &lt;add at here&gt; carstengrohmann.de
+> Copyright (c) 2017-2025 Carsten Grohmann,  mail &lt;add at here&gt; carstengrohmann.de
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of
 > this software and associated documentation files (the "Software"), to deal in
