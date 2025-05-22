@@ -15,7 +15,7 @@ VERSION = "0.7.0 (devel)"
 """Version number e.g. "0.6.0" or "0.6.0 (devel)" """
 
 # __pragma__ ('skip')
-# MOC objects to satisfy statical checker and imports in unit tests
+# MOC objects to satisfy statical checkers and imports in unit tests
 js_undefined = 0
 
 
@@ -3485,7 +3485,8 @@ class OOMAnalyser:
         self.oom_result.details["trigger_proc_gfp_mask"] = "{} ({})".format(
             self.oom_result.details["trigger_proc_gfp_mask"], flags
         )
-        # already fully processed and no own element to display -> delete otherwise an error msg will be shown
+        # already fully processed and no own element to display -> delete it
+        # otherwise an error msg will be shown
         del self.oom_result.details["trigger_proc_gfp_flags"]
 
         # TODO: Add check if given trigger_proc_gfp_flags is equal with calculated flags
@@ -3709,7 +3710,7 @@ class OOMAnalyser:
         for flag in self.oom_result.kconfig.gfp_reverse_lookup:
             value = self.oom_result.kconfig.GFP_FLAGS[flag]["_value"]
             if (remaining & value) == value:
-                # delete flag by "and" with a reverted mask
+                # delete the flag by "and" with a reverted mask
                 remaining &= ~value
                 converted_flags.append(flag)
 
@@ -4903,7 +4904,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         Update the TOC to show visible h2/h3 headlines.
 
-        Headlines without id attribute are not shown.
+        Headlines without an id attribute are not shown.
         """
         new_toc = ""
         assigned_level = None
@@ -5116,7 +5117,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def load_from_form(self):
         """
-        Return the OOM text from textarea element
+        Return the OOM text from the textarea element
 
         @rtype: str
         """
@@ -5171,7 +5172,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             )
 
     def _show_kernel_upgrade(self):
-        """Show hint to upgrade from 32-bit to a 64-bit kernel"""
+        """Show the hint to upgrade from 32-bit to a 64-bit kernel"""
         if "32-bit" in self.oom_result.details["platform"]:
             show_elements(".js-kernel-upgrade64--show")
         else:
@@ -5272,7 +5273,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         Sort process table by values
 
-        @param int column_number: Number of column to sort
+        @param int column_number: Number of columns to sort
         """
         # TODO Check operator overloading
         #      Operator overloading (Pragma opov) does not work in this context.

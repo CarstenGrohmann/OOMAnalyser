@@ -515,7 +515,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     <span class="kconfig.PAGE_ALLOC_COSTLY_ORDER"></span> are in use. Allocation of larger contiguous
                     memory areas will fail.
                     <br>
-                    The amount of fragmentation depends on the software run on the system and the best fix would be
+                    The amount of fragmentation depends on the software run on the system, and the best fix would be
                     to improve the software that causes heavy fragmentation. If that's not possible, compacting the
                     memory (memory defragmentation) can be triggered more often.
                 </span>
@@ -537,7 +537,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             or configure your application to use only the available memory.
         </li>
         <li>
-            Improve software that causes memory fragmentation, or ask the software vendor to improve it.
+            Improve software that causes memory fragmentation or ask the software vendor to improve it.
         </li>
         <li class="js-text--default-hide js-text--display-none js-kernel-upgrade64--show">
             The system has a 32-bit kernel. Consider upgrading to a 64-bit kernel
@@ -549,7 +549,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </li>
         <li>
             Try different memory tunables to run memory compaction more aggressively. This may postpone the OOM
-            event until later, but of course will not prevent it.
+            event, but of course will not prevent it.
             <ol>
                 <li>
                     increase <code>/proc/sys/vm/watermark_scale_factor</code>
@@ -558,7 +558,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     increase <code>/proc/sys/vm/watermark_boost_factor</code>
                 </li>
                 <li>
-                    enable a more aggressive approaches to memory reclaim by writing <code>3</code> to
+                    enable a more aggressive approach to memory reclaim by writing <code>3</code> to
                     <code>/proc/sys/vm/zone_reclaim_mode</code>
                 </li>
                 <li>
@@ -591,7 +591,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-oom-automatic--show">
                 <td></td>
                 <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
-                <td>This process requests memory and is triggering thereby the OOM situation.</td>
+                <td>This process requested memory and triggered thereby the OOM situation.</td>
             </tr>
             <tr>
                 <td>Memory allocation flags<br>(gfp_mask)</td>
@@ -673,13 +673,13 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr>
                 <td>Virtual Memory <br> (total_vm) </td>
                 <td class="killed_proc_total_vm_kb text--align-right"></td>
-                <td>Virtual memory used by this process.</td>
+                <td>Virtual memory is used by this process.</td>
             </tr>
             <tr>
                 <td>Total resident anonymous memory <br> (rss)</td>
                 <td class="killed_proc_total_rss_kb text--align-right"></td>
                 <td>
-                    All virtual process memory mapped into RAM. Normally, a process always requests more virtual memory
+                    All virtual process memory is mapped into RAM. Normally, a process always requests more virtual memory
                     than it uses. <br>
                     <code>TotalRSS = anon-rss + file-rss + shmem-rss</code> <br>
                 </td>
@@ -751,7 +751,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-show js-swap-active--show">
                 <td>Swap Cached</td>
                 <td class="swap_cache_kb text--align-right"></td>
-                <td>Memory that once was swapped out, is swapped back in
+                <td>Memory, which once was swapped out, is swapped back in
                     but still also is in the swap file.  (If memory pressure
                     is high, these pages don't need to be swapped out
                     again because they are already in the swap file.  This
@@ -798,7 +798,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr>
                 <td>Pagetable Cache</td>
                 <td class="pagetablecache_pages text--align-right">0</td>
-                <td>Number of pages in pagetable cache</td>
+                <td>Number of pages in a pagetable cache</td>
             </tr>
             <tr>
                 <td>Number of pages with hardware errors</td>
@@ -833,12 +833,16 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr>
                 <td>Active Pagecache <br> (active_file)</td>
                 <td class="active_file_pages text--align-right"></td>
-                <td>Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.</td>
+                <td>
+                    Pagecache that has been used more recently and usually not reclaimed unless absolutely necessary.
+                </td>
             </tr>
             <tr>
                 <td>Inactive Pagecache <br> (inactive_file)</td>
                 <td class="inactive_file_pages text--align-right"></td>
-                <td>Pagecache which has been less recently used. It can be reclaimed without huge performance impact.</td>
+                <td>
+                    Pagecache which has been less recently used. It can be reclaimed without a huge performance impact.
+                </td>
             </tr>
             <tr>
                 <td>Isolated Pagecache <br> (isolated_file)</td>
@@ -851,7 +855,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
                     <a href="https://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
                     <a href="https://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
-                    Unevictable pages are managed by kernels LRU framework.
+                    Unevictable pages are managed by the kernels LRU framework.
                 </td>
             </tr>
             <tr>
@@ -1192,8 +1196,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Extend platform determination for amd64 Debian/Ubuntu kernels (Moritz Schlarb)</li>
         <li>Add more platforms to the determination list</li>
         <li>Various fixes for a Debian buster OOM block (reported by Alexander Stanzl)</li>
-        <li>Show kernel upgrade hint only on 32-bit kernels</li>
-        <li>Extend table of contents to also show h3 headings</li>
+        <li>Show a kernel upgrade hint only on 32-bit kernels</li>
+        <li>Extend the table of contents to also show h3 headings</li>
         <li>Adjust regex &quot;Killed process&quot; for kernels 3.10 and 4.5</li>
         <li>Add support for kernel 6.3 to 6.8</li>
         <li>...</li>
@@ -1209,18 +1213,18 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>General</h4>
     <ol>
-        <li>Fix memory calculation in summary section</li>
-        <li>Fix and rework calculation of GFP flags</li>
+        <li>Fix memory calculation in a summary section</li>
+        <li>Fix and rework the calculation of GFP flags</li>
         <li>Add GFP flags for more kernel releases</li>
         <li>Display missing memory chunks (buddyinfo) again</li>
         <li>Add analysis why the memory request failed</li>
         <li>Add check for heavy memory fragmentation</li>
         <li>Summary of the analysis revised</li>
-        <li>Show memory watermarks together will all details</li>
+        <li>Show memory watermarks together with all details</li>
         <li>Add support for kernel 6.0 and newer</li>
-        <li>Add new example ArchLinux, Kernel 6.1.1</li>
-        <li>Fix handling of line breaks in Mem-Info block</li>
-        <li>Add section for corrective actions (suggested by Mikko Rantalainen)</li>
+        <li>Add a new example of ArchLinux, Kernel 6.1.1</li>
+        <li>Fix handling of line breaks in the Mem-Info block</li>
+        <li>Add a section for corrective actions (suggested by Mikko Rantalainen)</li>
         <li>Bug fixes</li>
     </ol>
 
@@ -1235,7 +1239,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <h4>General</h4>
     <ol>
         <li>Improve SVG chart colour palette</li>
-        <li>Add Selenium based unit tests</li>
+        <li>Add Selenium-based unit tests</li>
         <li>Fix to allow process names with spaces</li>
         <li>Rework removal of unused information</li>
         <li>Report uncaught errors to the user</li>
@@ -1243,7 +1247,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Add support for systems w/o swap (suggested by Mikko Rantalainen)</li>
         <li>Add support for newer kernels (suggested by Mikko Rantalainen)</li>
         <li>Add support for journalctl output (suggested by Mikko Rantalainen)</li>
-        <li>Add support for newer process table format</li>
+        <li>Add support for a newer process table format</li>
         <li>Rework memory charts to show all items in legend</li>
         <li>Bug fixes</li>
     </ol>
@@ -1260,15 +1264,15 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <ol>
         <li>Add a textual summary of the analysis</li>
         <li>Fix calculation of requested memory in kBytes</li>
-        <li>Fix issue that prevents units from being copied</li>
-        <li>Show additional information in process table</li>
-        <li>Add sorting process table</li>
-        <li>Fix: Trigger process isn't part of process table</li>
+        <li>Fix the issue that prevents units from being copied</li>
+        <li>Show additional information in the process table</li>
+        <li>Add sorting of the process table</li>
+        <li>Fix: The trigger process isn't part of the process table</li>
         <li>Update to Transcrypt 3.7</li>
         <li>Line "Killed process" can contain the process UID</li>
         <li>Add drag-and-drop support for files</li>
         <li>Add missing explanations</li>
-        <li>Allow more characters in program name</li>
+        <li>Allow more characters in the program name</li>
         <li>Bug fixes</li>
     </ol>
 
@@ -1286,7 +1290,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Separate analysis and visualisation code</li>
         <li>Use CSS classes to control the visibility</li>
         <li>Strip columns left to the message automatically</li>
-        <li>Lot if internal improvements and restructuring</li>
+        <li>Lot of internal improvements and restructuring</li>
         <li>Bug fixes</li>
     </ol>
 <!--
