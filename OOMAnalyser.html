@@ -738,14 +738,14 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Swap Total</td>
                 <td class="swap_total_kb text--align-right"></td>
                 <td>Total amount of swap space available.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-show js-swap-active--show">
                 <td>Swap Free</td>
                 <td class="swap_free_kb text--align-right"></td>
                 <td>Amount of swap space that is currently unused.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-show js-swap-active--show">
@@ -756,7 +756,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     is high, these pages don't need to be swapped out
                     again because they are already in the swap file.  This
                     saves I/O).
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-show js-swap-active--show">
@@ -862,7 +862,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Dirty Pages <br> (dirty)</td>
                 <td class="dirty_pages text--align-right"></td>
                 <td>Memory which is waiting to get written back to the disk.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -870,7 +870,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="writeback_pages text--align-right"></td>
                 <td>
                     Memory which is actively being written back to the disk.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -883,7 +883,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="slab_reclaimable_pages text--align-right"></td>
                 <td>
                     Slab is an in-kernel data structures cache. Part of Slab, that might be reclaimed, such as caches.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                     <br>
                     Additional details are listed in
                     <a href="https://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
@@ -894,7 +894,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="slab_unreclaimable_pages text--align-right"></td>
                 <td>
                     Part of Slab, that cannot be reclaimed on memory pressure.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -903,7 +903,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>
                     Files which have been mapped into memory (with
                     <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -914,7 +914,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     <a href="https://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
                     filesystems, System V and POSIX shared memory, as well as
                     shared anonymous mappings (<code>MAP_SHARED|MAP_ANONYMOUS</code>).
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -922,7 +922,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="pagetables_pages text--align-right"></td>
                 <td>
                     Amount of memory dedicated to the lowest level of pagetables.
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -930,7 +930,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="bounce_pages text--align-right"></td>
                 <td>
                     Memory used for block device "bounce buffers".
-                    <a class="a__footnote" href="#footnote-proc5">[1]</a>
+                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr>
@@ -1117,8 +1117,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h2 id="h2-footnotes">Footnotes</h2>
     <ol>
-        <li id="footnote-proc5"><cite><a href="https://man7.org/linux/man-pages/man5/proc.5.html" target="_blank">
-	proc(5) - process information pseudo-filesystem</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
+        <li id="footnote-proc_meminfo5"><cite><a href="https://man7.org/linux/man-pages/man5/proc_meminfo.5.html" target="_blank">
+            proc_meminfo(5) - /proc/meminfo - memory usage</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
         </li>
     </ol>
 </div>
