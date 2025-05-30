@@ -188,6 +188,14 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to show if the swap space is not activated */
         }
 
+        .js-trigger-proc-pid-only--show {
+            /* empty - used to hide/show only PID of trigger process */
+        }
+
+        .js-trigger-proc-pid-uid--show {
+            /* empty - used to hide/show PID and UID of trigger process */
+        }
+
         .result__table {
             padding: 10px;
             table-layout: fixed;
@@ -470,7 +478,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </div>
         <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
             <p>
-                The process &quot;<span class="trigger_proc_name"></span>&quot; (PID <span class="trigger_proc_pid"></span>)
+                The process &quot;<span class="trigger_proc_name"></span>&quot;
+
+                <span class="js-text--default-show js-trigger-proc-pid-only--show">
+                    (PID <span class="trigger_proc_pid"></span>)
+                </span>
+
+                <span class="js-text--default-hide js-text--display-none js-trigger-proc-pid-uid--show">
+                    (PID <span class="trigger_proc_pid"></span>,
+                    UID <span class="trigger_proc_uid"></span>)
+                </span>
+
                 requested a memory chunk of order <span class="trigger_proc_order"></span> from the
                 &quot;<span class="trigger_proc_mem_zone"></span>&quot; memory zone.
 
@@ -590,7 +608,18 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             </tr>
             <tr class="js-oom-automatic--show">
                 <td></td>
-                <td class="text--align-right"><span class="trigger_proc_name"></span> (PID <span class="trigger_proc_pid"></span>)</td>
+                <td class="text--align-right">
+                    <span class="trigger_proc_name"></span>
+
+                    <span class="js-text--default-show js-trigger-proc-pid-only--show">
+                        (PID <span class="trigger_proc_pid"></span>)
+                    </span>
+
+                    <span class="js-text--default-hide js-text--display-none js-trigger-proc-pid-uid--show">
+                        (PID <span class="trigger_proc_pid"></span>,
+                        UID <span class="trigger_proc_uid"></span>)
+                    </span>
+                </td>
                 <td>This process requested memory and triggered thereby the OOM situation.</td>
             </tr>
             <tr>
@@ -1200,7 +1229,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <li>Show a kernel upgrade hint only on 32-bit kernels</li>
         <li>Extend the table of contents to also show h3 headings</li>
         <li>Adjust regex &quot;Killed process&quot; for kernels 3.10 and 4.5</li>
-        <li>Add support for kernel 6.3 to 6.8</li>
+        <li>Add support for kernel 6.3 to 6.15</li>
         <li>Extend shared memory description (reported by Michael Sch&ouml;nitzer)</li>
         <li>...</li>
     </ol>

@@ -310,6 +310,7 @@ class BaseKernelConfig:
             r"oom_score_adj=(?P<trigger_proc_oomscore>-?\d+)",
             True,
         ),
+        # Source: lib/dump_stack:dump_stack_print_info()
         "Trigger process and kernel version": (
             r"^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
@@ -2861,7 +2862,7 @@ class KernelConfig_6_8(KernelConfig_6_4):
     GFP_FLAGS = {
         #
         #
-        # Useful GFP flag combinations:
+        # Top-level GFP flag combinations:
         "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_KSWAPD_RECLAIM"},
         "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
         "GFP_HIGHUSER_MOVABLE": {
@@ -2937,7 +2938,208 @@ class KernelConfig_6_8(KernelConfig_6_4):
     }
 
 
+class KernelConfig_6_9(KernelConfig_6_8):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 6.9 or later"
+    release = (6, 9, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Top-level GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN"
+        },
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM | __GFP_NOWARN"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_SKIP_KASAN": {"value": "___GFP_SKIP_KASAN"},
+        "__GFP_SKIP_ZERO": {"value": "___GFP_SKIP_ZERO"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        "__GFP_ZEROTAGS": {"value": "___GFP_ZEROTAGS"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_ZERO": {"value": 0x100},
+        "___GFP_UNUSED_BIT": {"value": 0x200},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x800},
+        "___GFP_WRITE": {"value": 0x1000},
+        "___GFP_NOWARN": {"value": 0x2000},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x4000},
+        "___GFP_NOFAIL": {"value": 0x8000},
+        "___GFP_NORETRY": {"value": 0x10000},
+        "___GFP_MEMALLOC": {"value": 0x20000},
+        "___GFP_COMP": {"value": 0x40000},
+        "___GFP_NOMEMALLOC": {"value": 0x80000},
+        "___GFP_HARDWALL": {"value": 0x100000},
+        "___GFP_ACCOUNT": {"value": 0x200000},
+        "___GFP_ZEROTAGS": {"value": 0x400000},
+        "___GFP_SKIP_ZERO": {"value": 0x800000},
+        "___GFP_SKIP_KASAN": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+    }
+
+
+class KernelConfig_6_10(KernelConfig_6_9):
+    # Supported changes:
+    #  * update GFP flags
+
+    name = "Configuration for Linux kernel 6.10 or later"
+    release = (6, 10, "")
+
+    # NOTE: These flags are automatically extracted from a gfp.h file.
+    #       Please do not change them manually!
+    GFP_FLAGS = {
+        #
+        #
+        # Top-level GFP flag combinations:
+        "GFP_ATOMIC": {"value": "__GFP_HIGH | __GFP_KSWAPD_RECLAIM"},
+        "GFP_HIGHUSER": {"value": "GFP_USER | __GFP_HIGHMEM"},
+        "GFP_HIGHUSER_MOVABLE": {
+            "value": "GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN"
+        },
+        "GFP_KERNEL": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS"},
+        "GFP_KERNEL_ACCOUNT": {"value": "GFP_KERNEL | __GFP_ACCOUNT"},
+        "GFP_NOFS": {"value": "__GFP_RECLAIM | __GFP_IO"},
+        "GFP_NOIO": {"value": "__GFP_RECLAIM"},
+        "GFP_NOWAIT": {"value": "__GFP_KSWAPD_RECLAIM | __GFP_NOWARN"},
+        "GFP_TRANSHUGE": {"value": "GFP_TRANSHUGE_LIGHT | __GFP_DIRECT_RECLAIM"},
+        "GFP_TRANSHUGE_LIGHT": {
+            "value": "GFP_HIGHUSER_MOVABLE | __GFP_COMP | __GFP_NOMEMALLOC | __GFP_NOWARN & ~__GFP_RECLAIM"
+        },
+        "GFP_USER": {"value": "__GFP_RECLAIM | __GFP_IO | __GFP_FS | __GFP_HARDWALL"},
+        #
+        #
+        # Modifier, mobility and placement hints:
+        "__GFP_ACCOUNT": {"value": "___GFP_ACCOUNT"},
+        "__GFP_COMP": {"value": "___GFP_COMP"},
+        "__GFP_DIRECT_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM"},
+        "__GFP_DMA": {"value": "___GFP_DMA"},
+        "__GFP_DMA32": {"value": "___GFP_DMA32"},
+        "__GFP_FS": {"value": "___GFP_FS"},
+        "__GFP_HARDWALL": {"value": "___GFP_HARDWALL"},
+        "__GFP_HIGH": {"value": "___GFP_HIGH"},
+        "__GFP_HIGHMEM": {"value": "___GFP_HIGHMEM"},
+        "__GFP_IO": {"value": "___GFP_IO"},
+        "__GFP_KSWAPD_RECLAIM": {"value": "___GFP_KSWAPD_RECLAIM"},
+        "__GFP_MEMALLOC": {"value": "___GFP_MEMALLOC"},
+        "__GFP_MOVABLE": {"value": "___GFP_MOVABLE"},
+        "__GFP_NOFAIL": {"value": "___GFP_NOFAIL"},
+        "__GFP_NOLOCKDEP": {"value": "___GFP_NOLOCKDEP"},
+        "__GFP_NOMEMALLOC": {"value": "___GFP_NOMEMALLOC"},
+        "__GFP_NORETRY": {"value": "___GFP_NORETRY"},
+        "__GFP_NOWARN": {"value": "___GFP_NOWARN"},
+        "__GFP_NO_OBJ_EXT": {"value": "___GFP_NO_OBJ_EXT"},
+        "__GFP_RECLAIM": {"value": "___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM"},
+        "__GFP_RECLAIMABLE": {"value": "___GFP_RECLAIMABLE"},
+        "__GFP_RETRY_MAYFAIL": {"value": "___GFP_RETRY_MAYFAIL"},
+        "__GFP_SKIP_KASAN": {"value": "___GFP_SKIP_KASAN"},
+        "__GFP_SKIP_ZERO": {"value": "___GFP_SKIP_ZERO"},
+        "__GFP_WRITE": {"value": "___GFP_WRITE"},
+        "__GFP_ZERO": {"value": "___GFP_ZERO"},
+        "__GFP_ZEROTAGS": {"value": "___GFP_ZEROTAGS"},
+        #
+        #
+        # Plain integer GFP bitmasks (for internal use only):
+        "___GFP_DMA": {"value": 0x01},
+        "___GFP_HIGHMEM": {"value": 0x02},
+        "___GFP_DMA32": {"value": 0x04},
+        "___GFP_MOVABLE": {"value": 0x08},
+        "___GFP_RECLAIMABLE": {"value": 0x10},
+        "___GFP_HIGH": {"value": 0x20},
+        "___GFP_IO": {"value": 0x40},
+        "___GFP_FS": {"value": 0x80},
+        "___GFP_ZERO": {"value": 0x100},
+        "___GFP_UNUSED_BIT": {"value": 0x200},
+        "___GFP_DIRECT_RECLAIM": {"value": 0x400},
+        "___GFP_KSWAPD_RECLAIM": {"value": 0x800},
+        "___GFP_WRITE": {"value": 0x1000},
+        "___GFP_NOWARN": {"value": 0x2000},
+        "___GFP_RETRY_MAYFAIL": {"value": 0x4000},
+        "___GFP_NOFAIL": {"value": 0x8000},
+        "___GFP_NORETRY": {"value": 0x10000},
+        "___GFP_MEMALLOC": {"value": 0x20000},
+        "___GFP_COMP": {"value": 0x40000},
+        "___GFP_NOMEMALLOC": {"value": 0x80000},
+        "___GFP_HARDWALL": {"value": 0x100000},
+        "___GFP_ACCOUNT": {"value": 0x200000},
+        "___GFP_ZEROTAGS": {"value": 0x400000},
+        "___GFP_SKIP_ZERO": {"value": 0x800000},
+        "___GFP_SKIP_KASAN": {"value": 0x1000000},
+        "___GFP_NOLOCKDEP": {"value": 0x2000000},
+        "___GFP_NO_OBJ_EXT": {"value": 0x4000000},
+    }
+
+
+class KernelConfig_6_11(KernelConfig_6_10):
+    # Supported changes:
+    #  * "lib/dump_stack: report process UID in dump_stack_print_info()" (d2917ff)
+
+    name = "Configuration for Linux kernel 6.11 or later"
+    release = (6, 11, "")
+
+    EXTRACT_PATTERN_OVERLAY = {
+        # Source: lib/dump_stack:dump_stack_print_info()
+        "Trigger process and kernel version": (
+            r"^CPU: \d+ UID: (?P<trigger_proc_uid>\d+) PID: (?P<trigger_proc_pid>\d+) "
+            r"Comm: .* (Not tainted|Tainted:.*) "
+            r"(?P<kernel_version>\d[\w.-]+) #\d",
+            True,
+        ),
+    }
+
+
 AllKernelConfigs = [
+    KernelConfig_6_11(),
+    KernelConfig_6_10(),
+    KernelConfig_6_9(),
     KernelConfig_6_8(),
     KernelConfig_6_4(),
     KernelConfig_6_3(),
@@ -3304,8 +3506,9 @@ class OOMAnalyser:
     @type: OOMResult
     """
 
+    # Optional UID field added for "lib/dump_stack: report process UID in dump_stack_print_info()" (d2917ff)
     REC_KERNEL_VERSION = re.compile(
-        r"CPU: \d+ PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z- ]+) (?P<kernel_version>\d[\w.-]+) #.+"
+        r"CPU: \d+ (UID: \d+ )?PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z- ]+) (?P<kernel_version>\d[\w.-]+) #.+"
     )
     """RE to match the OOM line with kernel version"""
 
@@ -5129,9 +5332,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         Show all extracted details as well as additionally generated information
         """
-        self._show_items()
-        self._show_swap_usage()
+        self._show_all_items()
         self._show_ram_usage()
+        self._show_swap_usage()
+        self._show_trigger_process()
         self._show_alloc_failure()
         self._show_kernel_upgrade()
         self._show_memory_fragmentation()
@@ -5249,7 +5453,16 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements(".js-swap-active--show")
             show_elements(".js-swap-inactive--show")
 
-    def _show_items(self):
+    def _show_trigger_process(self):
+        """Show trigger process details w/ or w/o UID"""
+        if "trigger_proc_uid" in self.oom_result.details:
+            show_elements(".js-trigger-proc-pid-uid--show")
+            hide_elements(".js-trigger-proc-pid-only--show")
+        else:
+            hide_elements(".js-trigger-proc-pid-uid--show")
+            show_elements(".js-trigger-proc-pid-only--show")
+
+    def _show_all_items(self):
         """Switch to the output view and show most items"""
         hide_element("input")
         show_element("analysis")

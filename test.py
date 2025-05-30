@@ -1025,8 +1025,8 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         """Test choosing the right kernel configuration"""
         for kcfg, kversion in [
             (
-                OOMAnalyser.KernelConfig_6_8(),
-                "CPU: 4 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
+                OOMAnalyser.KernelConfig_6_11(),
+                "CPU: 4 UID: 123456 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
             ),
             (
                 OOMAnalyser.KernelConfig_5_18(),
@@ -1059,7 +1059,13 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         ]:
             oom = OOMAnalyser.OOMEntity(kversion)
             analyser = OOMAnalyser.OOMAnalyser(oom)
-            analyser._identify_kernel_version()
+
+            kernel_found = analyser._identify_kernel_version()
+            self.assertTrue(
+                kernel_found,
+                'Failed to identify kernel from string "%s"' % kversion,
+            )
+
             analyser._choose_kernel_config()
             result = analyser.oom_result.kconfig
             self.assertEqual(
