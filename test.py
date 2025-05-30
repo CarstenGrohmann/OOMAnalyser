@@ -63,7 +63,7 @@ class TestBase(unittest.TestCase):
 
     def get_lines(self, text, count):
         """
-        Return the number of lines specified by count from given text
+        Return the number of lines specified by count from the given text
 
         @type text: str
         @type count: int
@@ -92,7 +92,7 @@ class TestBase(unittest.TestCase):
 
     def check_meminfo_format_rhel7(self, prefix, oom_text):
         """
-        Check if the example contains a proper formatted "Mem-Info:" block
+        Check if the example contains a properly formatted "Mem-Info:" block
 
         @param str prefix: Prefix for error message
         @param str oom_text: Whole OOM block as text
@@ -185,7 +185,7 @@ class TestInBrowser(TestBase):
 
     def get_first_error_msg(self):
         """
-        Return first (oldest) error message from error notification box or an empty
+        Return the first (oldest) error message from error notification box or an empty
         string if no error message exists.
 
         @rtype: str
@@ -201,7 +201,7 @@ class TestInBrowser(TestBase):
 
     def insert_example(self, select_value):
         """
-        Select and insert example from the combobox
+        Select and insert an example from the combobox
 
         @param str select_value: Option value to specify the example
         """
@@ -695,7 +695,7 @@ class TestInBrowser(TestBase):
         self.check_results_archlinux_6_1_1()
 
     def test_033_empty_textarea(self):
-        """Test "Analyse" with empty textarea"""
+        """Test "Analyse" with an empty textarea"""
         textarea = self.driver.find_element(By.ID, "textarea_oom")
         self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
         # textarea.send_keys(text)
@@ -849,7 +849,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
     def test_061_removal_of_leading_but_useless_columns_archlinux(self):
         """
-        Test removal of leading but useless columns with ArchLinux example
+        Test removal of leading but useless columns with an ArchLinux example
 
         In this test, the lines of the "Mem-Info:" block are not joined
         together with #012 to form a line, but are separate lines. Therefore,
@@ -924,7 +924,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
 class TestPython(TestBase):
     def test_001_trigger_proc_space(self):
-        """Test RE to find name of trigger process"""
+        """Test RE to find name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
             "invoked oom-killer"
@@ -944,7 +944,7 @@ class TestPython(TestBase):
         )
 
     def test_002_killed_proc_space(self):
-        """Test RE to find name of killed process"""
+        """Test RE to find name of the killed process"""
         text = self.get_lines(OOMAnalyser.OOMDisplay.example_rhel7, -2)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
             "Process killed by OOM"
@@ -1002,7 +1002,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         self.assertEqual(text, expected)
 
     def test_005_extract_kernel_version(self):
-        """Test extracting kernel version"""
+        """Test extracting the kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         for text, kversion in [
@@ -1229,7 +1229,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             )
 
     def test_008_kversion_check(self):
-        """Test check for minimum kernel version"""
+        """Test check for the minimum kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
 
@@ -1347,7 +1347,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         )
         self.assertEqual(
             analyser.oom_result.kconfig.MAX_ORDER,
-            11,  # This is a hard coded value as extracted from kernel 6.2.0
+            11,  # This is a hard-coded value as extracted from kernel 6.2.0
             "Unexpected number of chunk sizes (got: %s, expect: 11 (kernel 6.2.0))"
             % analyser.oom_result.kconfig.MAX_ORDER,
         )

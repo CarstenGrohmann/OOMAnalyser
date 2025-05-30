@@ -91,7 +91,7 @@ class document:
         """
         Creates an element with the specified namespace URI and qualified name.
 
-        @param str namespaceURI:  Namespace URI to associate with the element
+        @param str namespaceURI: Namespace URI to associate with the element
         @param str qualifiedName: Type of element to be created
         @rtype: Node
         """
@@ -242,7 +242,7 @@ def escape_html(unsafe):
 
 
 def debug(msg):
-    """Add debug message to the notification box"""
+    """Add a debug message to the notification box"""
     add_to_notifybox("DEBUG", msg)
 
 
@@ -263,7 +263,7 @@ def warning(msg):
 
 def add_to_notifybox(prefix, msg):
     """
-    Escaped and add message to the notification box
+    Escaped and add a message to the notification box
 
     If the message has a prefix "ERROR" or "WARNING" the notification box will be shown.
     """
@@ -286,7 +286,7 @@ def add_to_notifybox(prefix, msg):
 
 
 class BaseKernelConfig:
-    """Base class for all kernel specific configuration"""
+    """Base class for all kernel-specific configuration"""
 
     name = "Base configuration for all kernels based on vanilla kernel 3.10"
     """Name/description of this kernel configuration"""
@@ -709,7 +709,7 @@ class BaseKernelConfig:
             return value
 
         tokenlist = iter(re.split("([|&])", value))
-        operator = "|"  # set to process first flag
+        operator = "|"  # set to process the first flag
         negate_rvalue = False
         lvalue = 0
         while True:
@@ -779,7 +779,7 @@ class BaseKernelConfig:
 
     def _check_mandatory_gfp_flags(self):
         """
-        Check existence of mandatory flags used in
+        Check the existence of mandatory flags used in
         OOMAnalyser._calc_trigger_process_values() to calculate the memory zone
         """
         if "__GFP_DMA" not in self.GFP_FLAGS:
@@ -2978,7 +2978,7 @@ The last entry in this list is the base configuration as a fallback.
 
 
 class OOMEntity:
-    """Hold whole OOM message block and provide access"""
+    """Hold the whole OOM message block and provide access"""
 
     current_line = 0
     """Zero based index of the current line in self.lines"""
@@ -3043,7 +3043,7 @@ class OOMEntity:
         """
         Return the index of the first line with "CPU: "
 
-        Depending on the OOM version the "CPU: " pattern is in second or third oom line.
+        Depending on the OOM version, the "CPU: " pattern is in second or third oom line.
         """
         for i in range(len(lines)):
             if "CPU: " in lines[i]:
@@ -3053,9 +3053,9 @@ class OOMEntity:
 
     def _number_of_columns_to_strip(self, line):
         """
-        Determinate number of columns left to the OOM message to strip.
+        Determinate the number of columns left to the OOM message to strip.
 
-        Sometime timestamps, hostnames and or syslog tags are left to the OOM message. This columns will be count to
+        Sometime timestamps, hostnames and or syslog tags are left to the OOM message. These columns will be count to
         strip later.
         """
         to_strip = 0
@@ -3075,7 +3075,7 @@ class OOMEntity:
         return to_strip
 
     def _remove_non_oom_lines(self, oom_lines):
-        """Remove all lines before and after OOM message block"""
+        """Remove all lines before and after the OOM message block"""
         cleaned_lines = []
         in_oom_lines = False
         killed_process = False
@@ -3095,7 +3095,7 @@ class OOMEntity:
                 killed_process = True
                 continue
 
-            # next line after "Killed process \d+ ..."
+            # the next line after "Killed process \d+ ..."
             if killed_process:
                 if "oom_reaper" in line:
                     break
@@ -3152,12 +3152,12 @@ class OOMEntity:
             if not line.strip():  # remove empty lines
                 continue
 
-            # The output of the "Mem-Info:" block contains line breaks. journalctl breaks these lines, but doesn't
+            # The output of the "Mem-Info:" block contains line breaks. journalctl breaks these lines but doesn't
             # insert a prefix e.g. with date and time. As a result, removing the needless columns does not work
             # correctly.
             # see: self._rsyslog_unescape_lf()
 
-            # remove all leading whitespaces from "Mem-Info:" lines, but keep exact 1 space
+            # remove all leading whitespaces from "Mem-Info:" lines but keep the exact 1 space
             match = self.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
             if match:
                 line = match.group(1)
@@ -3175,7 +3175,7 @@ class OOMEntity:
 
         If using in front of an iterator:
         The line pointer in self.current_line points to the first line of a block.
-        An iterator based loop starts with a next() call (as defined by the iterator
+        An iterator-based loop starts with a next() call (as defined by the iterator
         protocol). This causes the current line to be skipped. Therefore, the line
         pointer is set to the previous line.
         """
@@ -3288,7 +3288,7 @@ class OOMResult:
 
 
 class OOMAnalyser:
-    """Analyse an OOM object and calculate additional values"""
+    """Analyze an OOM object and calculate additional values"""
 
     oom_entity = None
     """
@@ -3311,7 +3311,7 @@ class OOMAnalyser:
 
     REC_SPLIT_KVERSION = re.compile(
         r"(?P<kernel_version>"
-        r"(?P<major>\d+)\.(?P<minor>\d+)"  # major . minor
+        r"(?P<major>\d+)\.(?P<minor>\d+)"  # major.minor
         r"(\.\d+)?"  # optional: patch level
         r"(-[\w.-]+)?"  # optional: -rc6, -arch-1, -19-generic
         r")"
@@ -3492,7 +3492,7 @@ class OOMAnalyser:
         # TODO: Add check if given trigger_proc_gfp_flags is equal with calculated flags
 
     def _extract_from_oom_text(self):
-        """Extract details from OOM message text"""
+        """Extract details from the OOM message text"""
 
         self.oom_result.details = {}
         # __pragma__ ('jsiter')
@@ -3623,7 +3623,7 @@ class OOMAnalyser:
                     node
                 ]
 
-        # MAX_ORDER is actually maximum order plus one. For example,
+        # MAX_ORDER is actually the maximum order plus one. For example,
         # a value of 11 means that the largest free memory block is 2^10 pages.
         # __pragma__ ('jsiter')
         max_order = 0
@@ -3666,7 +3666,7 @@ class OOMAnalyser:
                 and node is not None
             ):
                 # REC_WATERMARK may not match for newer/unknown kernels,
-                # "lowmem_reserve[]:" would match first in such cases but zone and
+                # "lowmem_reserve[]:" would match first in such cases, but zone and
                 # node are not set, because both are set with the information from
                 # REC_WATERMARK.
                 watermark_info[zone][node]["lowmem_reserve"] = [
@@ -3743,7 +3743,7 @@ class OOMAnalyser:
         # __pragma__ ('nojsiter')
 
     def _convert_pstable_values_to_integer(self):
-        """Convert numeric values in process table to integer values"""
+        """Convert numeric values in the process table to integer values"""
         ps = self.oom_result.details["_pstable"]
         ps_index = []
         # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
@@ -3781,7 +3781,7 @@ class OOMAnalyser:
     def _check_free_chunks(self, start_with_order, zone, node):
         """Check for at least one free chunk in the current or any higher order.
 
-        Returns True, if at lease one suitable chunk is free.
+        Returns True, if at least one suitable chunk is free.
         Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
 
         @param int start_with_order: Start checking with this order
@@ -3808,8 +3808,8 @@ class OOMAnalyser:
     def _check_for_memory_fragmentation(self):
         """Check for heavy memory fragmentation. This means that the higher order has no free chunks.
 
-        Returns True, all high order chunk are in use.
-        Returns False, if high order chunks are available.
+        Returns True, all high-order chunks are in use.
+        Returns False, if high-order chunks are available.
         Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
 
         @see: BaseKernelConfig.PAGE_ALLOC_COSTLY_ORDER, OOMResult.mem_fragmented
@@ -3827,7 +3827,7 @@ class OOMAnalyser:
 
     def _analyse_alloc_failure(self):
         """
-        Analyse why the memory allocation could be failed.
+        Analyze why the memory allocation could be failed.
 
         The code in this function is inspired by mm/page_alloc.c:__zone_watermark_ok()
         """
@@ -3877,7 +3877,7 @@ class OOMAnalyser:
         lowmem_reserve = watermark_info[zone][node]["lowmem_reserve"]
         min_kb = watermark_info[zone][node]["low"]
 
-        # reduce minimum watermark for high priority calls
+        # reduce the minimum watermark for high-priority calls
         # ALLOC_HIGH == __GFP_HIGH
         gfp_mask_decimal = self.oom_result.details["_trigger_proc_gfp_mask_decimal"]
         gfp_flag_high = self.oom_result.kconfig.GFP_FLAGS["__GFP_DMA"]["_value"]
@@ -3923,7 +3923,7 @@ class OOMAnalyser:
             self.oom_result.details["_pstable"][kpid]["notes"] = "killed process"
 
     def _calc_trigger_process_values(self):
-        """Calculate all values related with the trigger process"""
+        """Calculate all values related to the trigger process"""
         self.oom_result.details["trigger_proc_requested_memory_pages"] = (
             2 ** self.oom_result.details["trigger_proc_order"]
         )
@@ -3944,7 +3944,7 @@ class OOMAnalyser:
         self.oom_result.details["trigger_proc_mem_zone"] = zone
 
     def _calc_killed_process_values(self):
-        """Calculate all values related with the killed process"""
+        """Calculate all values related to the killed process"""
         self.oom_result.details["killed_proc_total_rss_kb"] = (
             self.oom_result.details["killed_proc_anon_rss_kb"]
             + self.oom_result.details["killed_proc_file_rss_kb"]
@@ -4218,7 +4218,7 @@ class SVGChart:
     # __pragma__ ('nokwargs')
 
     def create_element_svg(self, height, width, css_class=None):
-        """Return a SVG element"""
+        """Return an SVG element"""
         svg = self.create_element(
             "svg",
             version="1.1",
@@ -4264,7 +4264,7 @@ class SVGChart:
         desc_element.textContent = desc
         label_group.appendChild(desc_element)
 
-        # move group to right position
+        # move the group to right position
         x, y = self.legend_calc_xy(pos)
         label_group.setAttribute("transform", "translate({}, {})".format(x, y))
 
@@ -4366,7 +4366,7 @@ class SVGChart:
 
     def generate_legend(self, elements):
         """
-        Generate a legend for all elements. All entries are group within a g-element.
+        Generate a legend for all elements. All entries are grouped within a g-element.
 
         @rtype: Node
         """
@@ -5231,7 +5231,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         elem_svg_ram.appendChild(svg_ram)
 
     def _show_swap_usage(self):
-        """Show/hide swap space and generate usage diagram"""
+        """Show/hide swap space and generate a usage diagram"""
         if self.oom_result.swap_active:
             # generate swap usage diagram
             svg = SVGChart()
@@ -5250,7 +5250,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             show_elements(".js-swap-inactive--show")
 
     def _show_items(self):
-        """Switch to output view and show most items"""
+        """Switch to the output view and show most items"""
         hide_element("input")
         show_element("analysis")
         if self.oom_result.oom_type == OOMEntityType.manual:
