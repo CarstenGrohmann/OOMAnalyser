@@ -198,13 +198,19 @@ def is_visible(element):
 def hide_element(element_id):
     """Hide the given HTML element"""
     element = document.getElementById(element_id)
-    element.classList.add("js-text--display-none")
+    if element:
+        element.classList.add("js-text--display-none")
+    else:
+        internal_error("Element with id '{}' not found".format(element_id))
 
 
 def show_element(element_id):
     """Show the given HTML element"""
     element = document.getElementById(element_id)
-    element.classList.remove("js-text--display-none")
+    if element:
+        element.classList.remove("js-text--display-none")
+    else:
+        internal_error("Element with id '{}' not found".format(element_id))
 
 
 def hide_elements(selector):
