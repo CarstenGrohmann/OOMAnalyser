@@ -78,7 +78,7 @@ distclean: clean venv-clean
 	@(RM) --force .git .gitignore
 
 $(VIRTUAL_ENV_DIR)/bin/activate: requirements.txt
-	test -d $(VIRTUAL_ENV_DIR) || virtualenv -p $(PYTHON3_BIN) $(VIRTUAL_ENV_DIR)
+	test -d $(VIRTUAL_ENV_DIR) || virtualenv --pip 23.2 --setuptools 60.1.0 --wheel 0.37.1 -p $(PYTHON3_BIN) $(VIRTUAL_ENV_DIR)
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	$(VIRTUAL_ENV_DIR)/bin/pip install -Ur requirements.txt
 	touch $(VIRTUAL_ENV_DIR)/bin/activate
