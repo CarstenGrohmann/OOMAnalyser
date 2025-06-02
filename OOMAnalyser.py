@@ -320,7 +320,7 @@ class BaseKernelConfig:
         "Trigger process and kernel version": (
             r"^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
-            r"(?P<kernel_version>\d[\w.-]+) #\d",
+            r"(?P<kernel_version>\d[\w.+-]+) #\d",
             True,
         ),
         # split caused by a limited number of iterations during converting PY regex into JS regex
@@ -3136,7 +3136,7 @@ class KernelConfig_6_11(KernelConfig_6_10):
         "Trigger process and kernel version": (
             r"^CPU: \d+ UID: (?P<trigger_proc_uid>\d+) PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
-            r"(?P<kernel_version>\d[\w.-]+) #\d",
+            r"(?P<kernel_version>\d[\w.+-]+) #\d",
             True,
         ),
     }
@@ -3514,7 +3514,7 @@ class OOMAnalyser:
 
     # Optional UID field added for "lib/dump_stack: report process UID in dump_stack_print_info()" (d2917ff)
     REC_KERNEL_VERSION = re.compile(
-        r"CPU: \d+ (UID: \d+ )?PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z- ]+) (?P<kernel_version>\d[\w.-]+) #.+"
+        r"CPU: \d+ (UID: \d+ )?PID: \d+ Comm: .* (Not tainted|Tainted: [A-Z- ]+) (?P<kernel_version>\d[\w.+-]+) #.+"
     )
     """RE to match the OOM line with kernel version"""
 
@@ -3522,7 +3522,7 @@ class OOMAnalyser:
         r"(?P<kernel_version>"
         r"(?P<major>\d+)\.(?P<minor>\d+)"  # major.minor
         r"(\.\d+)?"  # optional: patch level
-        r"(-[\w.-]+)?"  # optional: -rc6, -arch-1, -19-generic
+        r"(-[\w.+-]+)?"  # optional: -rc6, -arch-1, -19-generic
         r")"
     )
     """
