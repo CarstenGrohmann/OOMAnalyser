@@ -5067,44 +5067,89 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         element = document.getElementById("version")
         element.textContent = "v{}".format(VERSION)
 
+    @staticmethod
+    def size_to_human_readable(value: int) -> str:
+        """Convert a size in bytes to a human-readable format (e.g., kB or GB)."""
+        units = ["Bytes", "kB", "MB", "GB", "TB", "PB"]
+        size = float(value)
+        unit_index = 0
+
+        while size >= 1024 and unit_index < len(units) - 1:
+            size /= 1024
+            unit_index += 1
+
+        if unit_index == 0:
+            return "{} {}".format(int(size), units[unit_index])
+        else:
+            return "{:.1f} {}".format(size, units[unit_index])
+
     def _set_item(self, item):
         """
         Paste the content into HTML elements with the ID / Class that matches the item name.
 
-        The content won't be formatted. Only suffixes for pages and kbytes are added in the singular or plural.
+        The content won't be formatted. Only suffixes for pages and kilobytes are added in the singular or plural.
         """
         elements = document.getElementsByClassName(item)
+        pages_in_bytes = self.oom_result.details.get("page_size_kb") * 1024
+        element: Node
         for element in elements:
             content = self.oom_result.details.get(item, "")
             if isinstance(content, str):
                 content = content.strip()
 
+            size = None
+            # Funktion in kuerzere Einheiten aufteilen
+
+            # Hide table rows if the element has no content
             if content == "<not found>":
-                row = element.parentNode
-                row.classList.add("js-text--display-none")
+                row = element.closest("tr")
+                if row:
+                    row.classList.add("js-text--display-none")
+                    continue
 
             if item.endswith("_pages") and isinstance(content, int):
+                size = content * pages_in_bytes
                 if content == 1:
                     content = "{}&nbsp;page".format(content)
                 else:
                     content = "{}&nbsp;pages".format(content)
 
-            if item.endswith("_bytes") and isinstance(content, int):
+            elif item.endswith("_bytes") and isinstance(content, int):
+                size = content
                 if content == 1:
                     content = "{}&nbsp;Byte".format(content)
                 else:
                     content = "{}&nbsp;Bytes".format(content)
 
-            if item.endswith("_kb") and isinstance(content, int):
+            elif item.endswith("_kb") and isinstance(content, int):
+                size = content * 1024
                 if content == 1:
                     content = "{}&nbsp;kByte".format(content)
                 else:
                     content = "{}&nbsp;kBytes".format(content)
 
-            if item.endswith("_percent") and isinstance(content, int):
+            elif item.endswith("_percent") and isinstance(content, int):
                 content = "{}&nbsp;%".format(content)
 
             element.innerHTML = content
+
+            if (
+                size is not None
+                and (
+                    (item.endswith("_bytes") and size >= 1024)
+                    or (item.endswith("_kb") and size >= 1024 * 1024)
+                    or (item.endswith("_pages"))
+                )
+                and not element.classList.contains("js-dont-add-human-readable-sizes")
+            ):
+                human_readable_size = self.size_to_human_readable(size)
+                element.classList.add("js-human-readable-sizes")
+                tooltip = document.createElement("span")
+                tooltip.className = "js-human-readable-sizes__tooltip"
+                tooltip.textContent = human_readable_size
+                element.appendChild(tooltip)
+            # An else-branch with removal of the tooltip is not necessary, because
+            # they are already removed by during the initialization in set_html_defaults().
 
         if DEBUG:
             show_element("notify_box")
@@ -5243,6 +5288,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         # show all elements marked to be shown by default
         show_elements(".js-text--default-show")
+
+        # remove tooltips human-readable sizes
+        for element in document.querySelectorAll(".js-human-readable-sizes__tooltip"):
+            element.remove()
 
         # clear notification box
         element = document.getElementById("notify_box")

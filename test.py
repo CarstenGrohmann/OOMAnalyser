@@ -112,6 +112,27 @@ class TestBase(unittest.TestCase):
             f'{prefix}: Missing content "active_file:1263 " in "Mem-Info:" block of\n{oom_text}',
         )
 
+    def to_continuous_text(self, text: str) -> str:
+        """
+        Convert the given text into a single continuous line.
+
+        This function removes all line breaks and any whitespace before or after them,
+        replacing them with a single space. Additionally, it corrects formatting issues
+        where a space may be introduced before a closing parenthesis due to the replacement.
+
+        @param text: The input string to be converted.
+        @type text: str
+        @return: The text as a single continuous line.
+        @rtype: str
+        """
+        continuous = re.sub(r"\s*\n\s*", " ", text)
+        # If a line ends with a closing parenthesis, the replacement of
+        # LF by space character will add a space before the closing
+        # parenthesis.
+        # Remove this space character to match the original text.
+        continuous = continuous.replace(" )", ")")
+        return continuous
+
 
 class TestInBrowser(TestBase):
     """Test OOM web page in a browser"""
@@ -247,7 +268,7 @@ class TestInBrowser(TestBase):
         self.click_analyse_button()
 
     def check_results_archlinux_6_1_1(self):
-        """Check the results of the analysis of the ArchLinux 6.1.1 example"""
+        """Check the analysis results of the ArchLinux 6.1.1 example"""
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertTrue(
@@ -307,6 +328,7 @@ class TestInBrowser(TestBase):
         self.assertEqual(swap_total_kb.text, "25165820 kBytes")
 
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         for expected in [
             self.text_alloc_failed_below_low_watermark,
             self.text_mem_not_heavily_fragmented,
@@ -314,7 +336,7 @@ class TestInBrowser(TestBase):
             self.text_swap_space_are_in_use,
         ]:
             self.assertTrue(
-                expected in explanation.text,
+                expected in continuous_text,
                 'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
@@ -326,7 +348,7 @@ class TestInBrowser(TestBase):
             self.text_with_an_oom_score_of,
         ]:
             self.assertTrue(
-                unexpected not in explanation.text,
+                unexpected not in continuous_text,
                 'Unexpected statement in OOM summary: "%s"' % unexpected,
             )
 
@@ -346,23 +368,24 @@ class TestInBrowser(TestBase):
                 'Unexpected statement in result table: "%s"' % unexpected,
             )
 
+        continuous_text = self.to_continuous_text(continuous_text)
         self.assertTrue(
             "system has 16461600 kBytes physical memory and 25165820 kBytes swap space."
-            in explanation.text,
-            "Physical and swap memory in summary not found",
+            in continuous_text,
+            "Physical and swap memory in summary not found:: >{continuous_text}<",
         )
         self.assertTrue(
-            "That's 41627420 kBytes total." in explanation.text,
+            "That's 41627420 kBytes total." in continuous_text,
             "Total memory in summary not found",
         )
         self.assertTrue(
             "69 % (11513452 kBytes out of 16461600 kBytes) physical memory"
-            in explanation.text,
+            in continuous_text,
             "Used physical memory in summary not found",
         )
         self.assertTrue(
             "99 % (25066284 kBytes out of 25165820 kBytes) swap space"
-            in explanation.text,
+            in continuous_text,
             "Used swap space in summary not found",
         )
 
@@ -399,7 +422,7 @@ class TestInBrowser(TestBase):
         self.check_swap_active()
 
     def check_results_rhel7(self):
-        """Check the results of the analysis of the RHEL7 example"""
+        """Check the analysis results of the RHEL7 example"""
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         self.assertTrue(
@@ -450,6 +473,7 @@ class TestInBrowser(TestBase):
         self.assertEqual(swap_total_kb.text, "8388604 kBytes")
 
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         for expected in [
             self.text_alloc_failed_below_low_watermark,
             self.text_mem_not_heavily_fragmented,
@@ -458,7 +482,7 @@ class TestInBrowser(TestBase):
             self.text_with_an_oom_score_of,
         ]:
             self.assertTrue(
-                expected in explanation.text,
+                expected in continuous_text,
                 'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
@@ -469,7 +493,7 @@ class TestInBrowser(TestBase):
             self.text_swap_space_not_in_use,
         ]:
             self.assertTrue(
-                unexpected not in explanation.text,
+                unexpected not in continuous_text,
                 'Unexpected statement in OOM summary: "%s"' % unexpected,
             )
 
@@ -489,24 +513,24 @@ class TestInBrowser(TestBase):
                 'Unexpected statement in result table: "%s"' % unexpected,
             )
 
+        explanation = self.to_continuous_text(explanation.text)
         self.assertTrue(
             "system has 33519336 kBytes physical memory and 8388604 kBytes swap space."
-            in explanation.text,
-            "Physical and swap memory in summary not found",
+            in explanation,
+            f"Physical and swap memory in summary not found:: >{explanation}<",
         )
         self.assertTrue(
-            "That's 41907940 kBytes total." in explanation.text,
-            "Total memory in summary not found",
+            "That's 41907940 kBytes total." in explanation,
+            f"Total memory in summary not found:: >{explanation}<",
         )
         self.assertTrue(
             "94 % (31705788 kBytes out of 33519336 kBytes) physical memory"
-            in explanation.text,
-            "Used physical memory in summary not found",
+            in explanation,
+            f"Used physical memory in summary not found:: >{explanation}<",
         )
         self.assertTrue(
-            "99 % (8343236 kBytes out of 8388604 kBytes) swap space"
-            in explanation.text,
-            "Used swap space in summary not found",
+            "99 % (8343236 kBytes out of 8388604 kBytes) swap space" in explanation,
+            f"Used swap space in summary not found:: >{explanation}<",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -542,7 +566,7 @@ class TestInBrowser(TestBase):
         self.check_swap_active()
 
     def check_results_ubuntu2110(self):
-        """Check the results of the analysis of the Ubuntu example"""
+        """Check the analysis results of the Ubuntu example"""
         trigger_proc_gfp_mask = self.driver.find_element(
             By.CLASS_NAME, "trigger_proc_gfp_mask"
         )
@@ -569,12 +593,13 @@ class TestInBrowser(TestBase):
         )
 
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         for expected in [
             self.text_oom_triggered_manually,
             self.text_swap_space_not_in_use,
         ]:
             self.assertTrue(
-                expected in explanation.text,
+                expected in continuous_text,
                 'Missing statement in OOM summary: "%s"' % expected,
             )
         for unexpected in [
@@ -587,7 +612,7 @@ class TestInBrowser(TestBase):
             self.text_with_an_oom_score_of,
         ]:
             self.assertTrue(
-                unexpected not in explanation.text,
+                unexpected not in continuous_text,
                 'Unexpected statement in OOM summary: "%s"' % unexpected,
             )
 
@@ -608,13 +633,13 @@ class TestInBrowser(TestBase):
             )
 
         self.assertTrue(
-            "system has 2096632 kBytes physical memory" in explanation.text,
-            "Physical memory in summary not found",
+            "system has 2096632 kBytes physical memory" in continuous_text,
+            f"Physical memory in summary not found:: >{continuous_text}<",
         )
         self.assertTrue(
             "9 % (209520 kBytes out of 2096632 kBytes) physical memory"
-            in explanation.text,
-            "Used physical memory in summary not found",
+            in continuous_text,
+            f"Used physical memory in summary not found:: >{continuous_text}<",
         )
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
@@ -651,19 +676,21 @@ class TestInBrowser(TestBase):
 
     def check_swap_inactive(self):
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
-            self.text_swap_space_not_in_use in explanation.text,
+            self.text_swap_space_not_in_use in continuous_text,
             'Missing statement "%s"' % self.text_swap_space_not_in_use,
         )
         self.assertTrue(
-            self.text_swap_space_are_in_use not in explanation.text,
+            self.text_swap_space_are_in_use not in continuous_text,
             'Unexpected statement "%s"' % self.text_swap_space_are_in_use,
         )
 
     def check_swap_active(self):
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
-            self.text_swap_space_are_in_use in explanation.text,
+            self.text_swap_space_are_in_use in continuous_text,
             'Missing statement "%s"' % self.text_swap_space_are_in_use,
         )
 
@@ -892,12 +919,13 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self.assert_on_warn_error()
 
         explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
-            self.text_oom_triggered_manually in explanation.text,
+            self.text_oom_triggered_manually in continuous_text,
             'Missing statement "%s"' % self.text_oom_triggered_manually,
         )
         self.assertTrue(
-            self.text_oom_triggered_automatically not in explanation.text,
+            self.text_oom_triggered_automatically not in continuous_text,
             'Unexpected statement "%s"' % self.text_oom_triggered_automatically,
         )
 
@@ -1457,8 +1485,25 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         self.assertEqual(
             analyser.oom_result.details["_page_size_guessed"],
             False,
-            "Page size guessed and not determinated",
+            "Page size is guessed and not determined",
         )
+
+    def test_014_size_to_human_readable(self):
+        """Test convertion of size in bytes to a human-readable value"""
+        for value, expected in [
+            (0, "0 Bytes"),
+            (123, "123 Bytes"),
+            (1234567, "1.2 MB"),
+            (9876543210, "9.2 GB"),
+            (12345678901234, "11.2 TB"),
+        ]:
+            formatted = OOMAnalyser.OOMDisplay._size_to_human_readable(value)
+            self.assertEqual(
+                formatted,
+                expected,
+                "Unexpected human readable output of size %s (got %s, expect: %s)"
+                % (value, formatted, expected),
+            )
 
 
 if __name__ == "__main__":
