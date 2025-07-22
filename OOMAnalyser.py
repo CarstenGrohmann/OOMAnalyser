@@ -15,137 +15,137 @@ VERSION = "0.7.0 (devel)"
 """Version number e.g. "0.6.0" or "0.6.0 (devel)" """
 
 # __pragma__ ('skip')
+from typing import List, Optional, Any
+
 # MOC objects to satisfy statical checkers and imports in unit tests
 js_undefined = 0
 
 
-class classList:
-    def add(self, *args, **kwargs):
+class DOMTokenList:
+    def add(self, *tokens: str) -> None:
         pass
 
-    def remove(self, *args, **kwargs):
+    def contains(self, token: str) -> bool:
+        return False
+
+    def remove(self, *tokens: str) -> None:
         pass
 
-    def toggle(self, *args, **kwargs):
+    def toggle(self, token: str, force: Optional[bool] = None) -> bool:
+        return False
+
+
+class Console:
+    @staticmethod
+    def log(*messages: Any) -> None:
+        pass
+
+    @staticmethod
+    def clear() -> None:
+        pass
+
+    @staticmethod
+    def js_clear() -> None:
         pass
 
 
-class console:
-    @staticmethod
-    def log(message):
-        """Log message on JS console"""
+class EventTarget:
+    def addEventListener(
+        self, type: str, listener: callable, options: Optional[dict] = None
+    ) -> None:
         pass
 
-    @staticmethod
-    def js_clear():
-        """
-        Clear JS console
-
-        clear is an alias and converted by Transcrypt to py_clear. Instead, we use
-        JS alias js_clear(), that will be converted to clear().
-        """
+    def removeEventListener(
+        self, type: str, listener: callable, options: Optional[dict] = None
+    ) -> None:
         pass
 
 
-class document:
-    def querySelectorAll(
-        self,
-        *args,
-    ):
-        return [Node()]
+class Node(EventTarget):
+    classList: DOMTokenList = DOMTokenList()
+    id: Optional[str] = None
+    offsetHeight: int = 0
+    offsetWidth: int = 0
+    textContent: Optional[str] = ""
+    innerHTML: str = ""
 
-    @staticmethod
-    def getElementsByClassName(names):
-        """
-        Returns an array-like object of all child elements which have all the given class name(s).
-
-        @param names: A string representing the class name(s) to match; multiple class names are separated by whitespace.
-        @type names: List(str)
-        @rtype: List(Node)
-        """
-        return [Node()]
-
-    @staticmethod
-    def getElementsByTagName(tagName):
-        """
-        Returns an array-like object of all child elements which have all the given tag name.
-
-        @param tagName: A string representing the tag name(s) to match.
-        @type tagName: str
-        @rtype: List(Node)
-        """
-        return [Node()]
-
-    @staticmethod
-    def getElementById(_id):
-        """
-        Returns an object representing the element whose id property matches
-
-        @type _id: str
-        @rtype: Node
-        """
-        return Node()
-
-    @staticmethod
-    def createElementNS(namespaceURI, qualifiedName, *arg):
-        """
-        Creates an element with the specified namespace URI and qualified name.
-
-        @param str namespaceURI: Namespace URI to associate with the element
-        @param str qualifiedName: Type of element to be created
-        @rtype: Node
-        """
-        return Node()
-
-    @staticmethod
-    def createElement(tagName, *args):
-        """
-        Creates the HTML element specified by tagName.
-
-        @param str tagName: Type of element to be created
-        @rtype: Node
-        """
-        return Node()
-
-
-class Node:
-    classList = classList()
-    id = None
-    offsetHeight = 0
-    offsetWidth = 0
-    textContent = ""
-
-    def __init__(self, nr_children=1):
+    def __init__(self, nr_children=1, *args: Any, **kwargs: Any) -> None:
         self.nr_children = nr_children
 
+    def closest(self, selector: str) -> Optional["Node"]:
+        return None
+
     @property
-    def firstChild(self):
-        if self.nr_children:
+    def firstChild(self) -> Optional["Node"]:
+        if self.nr_children:  # prevent infinite recursion in while loops
             self.nr_children -= 1
             return Node(self.nr_children)
         return None
 
     @property
-    def tagName(self):
-        """
-        Read-only property that returns the tag name of the element
+    def parentNode(self) -> Optional["Node"]:
+        return Node()
 
-        @rtype: str
-        """
-        return ""
+    def querySelector(self, selector: str) -> Optional["Element"]:
+        return Element()
 
-    def removeChild(self, *args, **kwargs):
+    def remove(self) -> None:
+        pass
+
+    def removeChild(self, child: "Node") -> Optional["Node"]:
         return
 
-    def appendChild(self, *args, **kwargs):
-        return
+    def appendChild(self, child: "Node") -> "Node":
+        return child
 
-    def setAttribute(self, *args, **kwargs):
-        return
+    def removeAttribute(self, name: str) -> None:
+        pass
+
+    def setAttribute(self, name: str, value: str) -> None:
+        pass
 
     @property
-    def parentNode(self):
-        return super().__new__(self)
+    def tagName(self) -> str:
+        return ""
+
+
+class Element(Node):
+    value: Optional[str] = None
+
+
+class Document(Node):
+    def querySelectorAll(self, selector: str) -> List[Element]:
+        return [Element()]
+
+    @staticmethod
+    def getElementsByClassName(names: str) -> List[Element]:
+        return [Element()]
+
+    @staticmethod
+    def getElementsByTagName(tagName: str) -> List[Element]:
+        return [Element()]
+
+    @staticmethod
+    def getElementById(element_id: str) -> Optional[Element]:
+        return Element()
+
+    @staticmethod
+    def createElementNS(namespaceURI: str, qualifiedName: str, *args: Any) -> Element:
+        return Element()
+
+    @staticmethod
+    def createElement(tagName: str, *args: Any) -> Element:
+        return Element()
+
+
+class Window(EventTarget):
+    def scrollTo(self, *args, **kwargs) -> None:
+        pass
+
+
+document = Document()
+console = Console()
+window = Window()
 
 
 # __pragma__ ('noskip')
