@@ -5067,8 +5067,82 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         element = document.getElementById("version")
         element.textContent = "v{}".format(VERSION)
 
+    def _add_tooltip_size(self, element: Node, item: str, size_in_bytes: int):
+        """Add tooltip with human-readable size"""
+        if (
+            size_in_bytes is not None
+            and (
+                (item.endswith("_bytes") and size_in_bytes >= 1024)
+                or (item.endswith("_kb") and size_in_bytes >= 1024 * 1024)
+                or (item.endswith("_pages"))
+            )
+            and not element.classList.contains("js-dont-add-human-readable-sizes")
+        ):
+            element.classList.add("js-human-readable-sizes")
+            tooltip = document.createElement("span")
+            tooltip.className = "js-human-readable-sizes__tooltip"
+            tooltip.textContent = self._size_to_human_readable(size_in_bytes)
+            element.appendChild(tooltip)
+        # An else-branch with removal of the tooltip is not necessary, because
+        # they are already removed by during the initialization in set_html_defaults().
+
+    def _calc_size_in_bytes(self, item: str) -> Optional[int]:
+        """Return item size in bytes"""
+        content = self.oom_result.details.get(item, "")
+        assert isinstance(content, int)
+        size = None
+        if item.endswith("_pages"):
+            pages_in_bytes = self.oom_result.details.get("page_size_kb") * 1024
+            size = content * pages_in_bytes
+        elif item.endswith("_bytes"):
+            size = content
+        elif item.endswith("_kb"):
+            size = content * 1024
+        elif item.endswith("_percent"):
+            size = None
+        return size
+
+    def _is_numeric_item(self, item) -> bool:
+        """
+        Check if the item is numeric, it's an integer, and it ends with _bytes, _kb, _pages, or _percent.
+        """
+        content = self.oom_result.details.get(item, "")
+        return (
+            item.endswith("_bytes")
+            or item.endswith("_kb")
+            or item.endswith("_pages")
+            or item.endswith("_percent")
+        ) and isinstance(content, int)
+
+    def _prepare_numeric_value(self, item: str) -> str:
+        """Return formatted numeric item value"""
+        content = self.oom_result.details.get(item, "")
+        assert isinstance(content, int)
+        formatted = ""
+        if item.endswith("_pages"):
+            if content == 1:
+                formatted = "{}&nbsp;page".format(content)
+            else:
+                formatted = "{}&nbsp;pages".format(content)
+        elif item.endswith("_bytes"):
+            if content == 1:
+                formatted = "{}&nbsp;Byte".format(content)
+            else:
+                formatted = "{}&nbsp;Bytes".format(content)
+        elif item.endswith("_kb"):
+            if content == 1:
+                formatted = "{}&nbsp;kByte".format(content)
+            else:
+                formatted = "{}&nbsp;kBytes".format(content)
+        elif item.endswith("_percent"):
+            formatted = "{}&nbsp;%".format(content)
+        else:
+            internal_error('Unknown item "{}" in _prepare_numeric_value()'.format(item))
+
+        return formatted
+
     @staticmethod
-    def size_to_human_readable(value: int) -> str:
+    def _size_to_human_readable(value: int) -> str:
         """Convert a size in bytes to a human-readable format (e.g., kB or GB)."""
         units = ["Bytes", "kB", "MB", "GB", "TB", "PB"]
         size = float(value)
@@ -5085,71 +5159,29 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def _set_item(self, item):
         """
-        Paste the content into HTML elements with the ID / Class that matches the item name.
-
-        The content won't be formatted. Only suffixes for pages and kilobytes are added in the singular or plural.
+        Insert the item content into all HTML elements whose class matches the item name.
         """
         elements = document.getElementsByClassName(item)
-        pages_in_bytes = self.oom_result.details.get("page_size_kb") * 1024
-        element: Node
+        content = self.oom_result.details.get(item, "")
+        size_in_bytes = None
+        if isinstance(content, str):
+            content = content.strip()
+        is_numeric = self._is_numeric_item(item)
+        if is_numeric:
+            content = self._prepare_numeric_value(item)
+            size_in_bytes = self._calc_size_in_bytes(item)
+
         for element in elements:
-            content = self.oom_result.details.get(item, "")
-            if isinstance(content, str):
-                content = content.strip()
-
-            size = None
-            # Funktion in kuerzere Einheiten aufteilen
-
             # Hide table rows if the element has no content
-            if content == "<not found>":
+            if isinstance(content, str) and content == "<not found>":
                 row = element.closest("tr")
                 if row:
                     row.classList.add("js-text--display-none")
                     continue
 
-            if item.endswith("_pages") and isinstance(content, int):
-                size = content * pages_in_bytes
-                if content == 1:
-                    content = "{}&nbsp;page".format(content)
-                else:
-                    content = "{}&nbsp;pages".format(content)
-
-            elif item.endswith("_bytes") and isinstance(content, int):
-                size = content
-                if content == 1:
-                    content = "{}&nbsp;Byte".format(content)
-                else:
-                    content = "{}&nbsp;Bytes".format(content)
-
-            elif item.endswith("_kb") and isinstance(content, int):
-                size = content * 1024
-                if content == 1:
-                    content = "{}&nbsp;kByte".format(content)
-                else:
-                    content = "{}&nbsp;kBytes".format(content)
-
-            elif item.endswith("_percent") and isinstance(content, int):
-                content = "{}&nbsp;%".format(content)
-
             element.innerHTML = content
-
-            if (
-                size is not None
-                and (
-                    (item.endswith("_bytes") and size >= 1024)
-                    or (item.endswith("_kb") and size >= 1024 * 1024)
-                    or (item.endswith("_pages"))
-                )
-                and not element.classList.contains("js-dont-add-human-readable-sizes")
-            ):
-                human_readable_size = self.size_to_human_readable(size)
-                element.classList.add("js-human-readable-sizes")
-                tooltip = document.createElement("span")
-                tooltip.className = "js-human-readable-sizes__tooltip"
-                tooltip.textContent = human_readable_size
-                element.appendChild(tooltip)
-            # An else-branch with removal of the tooltip is not necessary, because
-            # they are already removed by during the initialization in set_html_defaults().
+            if is_numeric:
+                self._add_tooltip_size(element, item, size_in_bytes)
 
         if DEBUG:
             show_element("notify_box")
