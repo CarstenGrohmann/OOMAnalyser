@@ -110,7 +110,7 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to hide/show details for failed memory allocations */
         }
 
-        .js-alloc-failure-unknown-reason-show {
+        .js-alloc-failure-unknown-reason--show {
             /* empty - used to hide/show details for failed memory allocations */
         }
 
@@ -556,7 +556,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     If this requirement was satisfied, the free memory would still be above the low memory watermark.
                     The request failed because there is no free chunk in the current or higher order.
                 </span>
-                <span class="js-text--default-hide js-text--display-none js-alloc-failure-unknown-reason-show">
+                <span class="js-text--default-hide js-text--display-none js-alloc-failure-unknown-reason--show">
                     The request failed, but the reason is unknown.
                 </span>
                     This memory shortage triggers the OOM process.

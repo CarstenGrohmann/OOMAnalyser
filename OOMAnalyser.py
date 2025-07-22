@@ -5456,7 +5456,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             == OOMMemoryAllocFailureType.failed_unknown_reason
         ):
             show_elements(".js-alloc-failure--show")
-            show_elements(".js-alloc-failure-unknown-reason-show")
+            show_elements(".js-alloc-failure-unknown-reason--show")
         else:
             debug(
                 "Memory allocation failed: {}".format(self.oom_result.mem_alloc_failure)
