@@ -5405,6 +5405,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.show_oom_details()
             self.update_toc()
 
+        # scroll to the top to show the results
+        window.scrollTo({"top": 0, "behavior": "smooth"})
+
     def load_from_form(self):
         """
         Return the OOM text from the textarea element

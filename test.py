@@ -9,6 +9,7 @@ import os
 import re
 import socketserver
 import threading
+import time
 import unittest
 
 from selenium.webdriver.support.ui import Select
@@ -949,10 +950,26 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         self.assert_on_warn_error()
         self.check_swap_inactive()
 
+    def test_090_scroll_to_top(self):
+        """Test scrolling to the top of the page"""
+        # scroll to the bottom of the page
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
+
+        # Check if the page is scrolled to the top
+        time.sleep(3)  # to ensure that the smooth scroll is finished
+        scroll_position = self.driver.execute_script("return window.scrollY;")
+        self.assertEqual(
+            0,
+            scroll_position,
+            f"Page should be scrolled to the top, but is currently on position {scroll_position}",
+        )
+
 
 class TestPython(TestBase):
     def test_001_trigger_proc_space(self):
-        """Test RE to find name of the trigger process"""
+        """Test RE to find the name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
             "invoked oom-killer"
