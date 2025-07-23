@@ -683,15 +683,14 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="trigger_proc_nodemask"></span></td>
                 <td>Bit mask indicating the cores on which the process can run.</td>
             </tr>
-
-            <tr class="js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
                 <td>Requested memory: order</td>
                 <td class="text--align-right">
                     <span class="trigger_proc_order"></span>
                 </td>
                 <td>The kernel specifies the requested number of pages as an exponent of a power of two.</td>
             </tr>
-            <tr class="js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
                 <td>Requested memory: number of pages</td>
                 <td class="text--align-right">
                     <span class="js-dont-add-human-readable-sizes trigger_proc_requested_memory_pages"></span>
@@ -700,17 +699,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 </td>
                 <td>Requested memory in number of pages.</td>
             </tr>
-            <tr class="js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
                 <td>Requested memory: size</td>
                 <td class="text--align-right"><span class="trigger_proc_requested_memory_pages_kb"></span></td>
                 <td>Requested memory in kBytes.</td>
             </tr>
-            <tr class="js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
                 <td>Requested memory: zone</td>
                 <td class="text--align-right"><span class="trigger_proc_mem_zone"></span></td>
                 <td>Memory zone from which the requested storage chunk should come.</td>
             </tr>
-            <tr class="js-text--default-hide js-oom-automatic--show js-memory-shortage-node--hide">
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show js-memory-shortage-node--hide">
                 <td>Requested memory: node</td>
                 <td class="text--align-right"><span class="trigger_proc_numa_node"></span></td>
                 <td>
@@ -720,7 +719,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     Assumption that this is the node where the OOM was triggered.
                 </td>
             </tr>
-            <tr>
+            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show js-memory-shortage-node--hide">
                 <td>Adjust oom-killer score<br>(oom_score_adj)</td>
                 <td class="text--align-right"><span class="trigger_proc_oomscore"></span></td>
                 <td>
