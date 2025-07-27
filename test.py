@@ -205,6 +205,19 @@ class TestInBrowser(TestBase):
             new_analysis.click()
         self.assert_on_warn_error()
 
+    def clear_notification_box(self):
+        """Clear notification box"""
+        # Selenium doesn't provide an interface to delete objects.
+        # Remove all notification entries with JS.
+        self.driver.execute_script(
+            """
+            var element = document.getElementById ('notify_box');
+            while (element.firstChild) {
+                element.removeChild (element.firstChild);
+            }
+            """
+        )
+
     def get_first_error_msg(self):
         """
         Return the first (oldest) error message from error notification box or an empty
@@ -266,6 +279,7 @@ class TestInBrowser(TestBase):
             "Analysis details incl. <h3>Summary</h3> should be not displayed",
         )
 
+        self.clear_notification_box()
         self.click_analyse_button()
 
     def check_results_archlinux_6_1_1(self):
@@ -706,18 +720,21 @@ class TestInBrowser(TestBase):
 
     def test_030_insert_and_analyse_rhel7_example(self):
         """Test loading and analysing RHEL7 example"""
+        self.clear_notification_box()
         self.insert_example("RHEL7")
         self.click_analyse_button()
         self.check_results_rhel7()
 
     def test_031_insert_and_analyse_ubuntu_example(self):
         """Test loading and analysing Ubuntu 21.10 example"""
+        self.clear_notification_box()
         self.insert_example("Ubuntu_2110")
         self.click_analyse_button()
         self.check_results_ubuntu2110()
 
     def test_032_insert_and_analyse_archlinux_example(self):
         """Test loading and analysing ArchLinux 6.1.1 example"""
+        self.clear_notification_box()
         self.insert_example("ArchLinux")
         self.click_analyse_button()
         self.check_results_archlinux_6_1_1()
@@ -740,6 +757,7 @@ class TestInBrowser(TestBase):
             "Analysis details incl. <h3>Summary</h3> should be not displayed",
         )
 
+        self.clear_notification_box()
         self.click_analyse_button()
         self.assertEqual(
             self.get_first_error_msg(),
