@@ -195,8 +195,8 @@ def is_visible(element):
     return element.offsetWidth > 0 and element.offsetHeight > 0
 
 
-def hide_element(element_id):
-    """Hide the given HTML element"""
+def hide_element_by_id(element_id):
+    """Hide the specified HTML element"""
     element = document.getElementById(element_id)
     if element:
         element.classList.add("js-text--display-none")
@@ -204,8 +204,8 @@ def hide_element(element_id):
         internal_error("Element with id '{}' not found".format(element_id))
 
 
-def show_element(element_id):
-    """Show the given HTML element"""
+def show_element_by_id(element_id):
+    """Show the specified HTML element"""
     element = document.getElementById(element_id)
     if element:
         element.classList.remove("js-text--display-none")
@@ -213,20 +213,20 @@ def show_element(element_id):
         internal_error("Element with id '{}' not found".format(element_id))
 
 
-def hide_elements(selector):
+def hide_elements_by_selector(selector):
     """Hide all matching elements by adding class js-text--display-none"""
     for element in document.querySelectorAll(selector):
         element.classList.add("js-text--display-none")
 
 
-def show_elements(selector):
+def show_elements_by_selector(selector):
     """Show all matching elements by removing class js-text--display-none"""
     for element in document.querySelectorAll(selector):
         element.classList.remove("js-text--display-none")
 
 
-def toggle(element_id):
-    """Toggle the visibility of the given HTML element"""
+def toggle_visibility_by_id(element_id):
+    """Toggle the visibility of the specified HTML element"""
     element = document.getElementById(element_id)
     element.classList.toggle("js-text--display-none")
 
@@ -280,7 +280,7 @@ def add_to_notifybox(prefix, msg):
     else:
         css_class = "js-notify_box__msg--error"
     if prefix != "DEBUG":
-        show_element("notify_box")
+        show_element_by_id("notify_box")
     notify_box = document.getElementById("notify_box")
     notification = document.createElement("div")
     notification.classList.add(css_class)
@@ -5184,7 +5184,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 self._add_tooltip_size(element, item, size_in_bytes)
 
         if DEBUG:
-            show_element("notify_box")
+            show_element_by_id("notify_box")
 
     def update_toc(self):
         """
@@ -5313,13 +5313,13 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         console.js_clear()
 
         # show all hidden elements in the result table
-        show_elements("table .js-text--display-none")
+        show_elements_by_selector("table .js-text--display-none")
 
         # hide all elements marked to be hidden by default
-        hide_elements(".js-text--default-hide")
+        hide_elements_by_selector(".js-text--default-hide")
 
         # show all elements marked to be shown by default
-        show_elements(".js-text--default-show")
+        show_elements_by_selector(".js-text--default-show")
 
         # remove tooltips human-readable sizes
         for element in document.querySelectorAll(".js-human-readable-sizes__tooltip"):
@@ -5446,20 +5446,20 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.oom_result.mem_alloc_failure
             == OOMMemoryAllocFailureType.failed_below_low_watermark
         ):
-            show_elements(".js-alloc-failure--show")
-            show_elements(".js-alloc-failure-below-low-watermark--show")
+            show_elements_by_selector(".js-alloc-failure--show")
+            show_elements_by_selector(".js-alloc-failure-below-low-watermark--show")
         elif (
             self.oom_result.mem_alloc_failure
             == OOMMemoryAllocFailureType.failed_no_free_chunks
         ):
-            show_elements(".js-alloc-failure--show")
-            show_elements(".js-alloc-failure-no-free-chunks--show")
+            show_elements_by_selector(".js-alloc-failure--show")
+            show_elements_by_selector(".js-alloc-failure-no-free-chunks--show")
         elif (
             self.oom_result.mem_alloc_failure
             == OOMMemoryAllocFailureType.failed_unknown_reason
         ):
-            show_elements(".js-alloc-failure--show")
-            show_elements(".js-alloc-failure-unknown-reason--show")
+            show_elements_by_selector(".js-alloc-failure--show")
+            show_elements_by_selector(".js-alloc-failure-unknown-reason--show")
         else:
             debug(
                 "Memory allocation failed: {}".format(self.oom_result.mem_alloc_failure)
@@ -5468,28 +5468,28 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     def _show_kernel_upgrade(self):
         """Show the hint to upgrade from 32-bit to a 64-bit kernel"""
         if "32-bit" in self.oom_result.details["platform"]:
-            show_elements(".js-kernel-upgrade64--show")
+            show_elements_by_selector(".js-kernel-upgrade64--show")
         else:
-            hide_elements(".js-kernel-upgrade64--show")
+            hide_elements_by_selector(".js-kernel-upgrade64--show")
 
     def _show_memory_fragmentation(self):
         """Show details about memory fragmentation"""
         if self.oom_result.mem_fragmented is None:
             return
-        show_elements(".js-memory-fragmentation--show")
+        show_elements_by_selector(".js-memory-fragmentation--show")
         if self.oom_result.mem_fragmented:
-            show_elements(".js-memory-heavy-fragmentation--show")
+            show_elements_by_selector(".js-memory-heavy-fragmentation--show")
         else:
-            show_elements(".js-memory-no-heavy-fragmentation--show")
+            show_elements_by_selector(".js-memory-no-heavy-fragmentation--show")
         if self.oom_result.details["trigger_proc_numa_node"] is None:
-            hide_elements(".js-memory-shortage-node--hide")
+            hide_elements_by_selector(".js-memory-shortage-node--hide")
 
     def _show_page_size(self):
         """Show page size"""
         if self.oom_result.details.get("_page_size_guessed", True):
-            show_elements(".js-pagesize-guessed--show")
+            show_elements_by_selector(".js-pagesize-guessed--show")
         else:
-            show_elements(".js-pagesize-determined--show")
+            show_elements_by_selector(".js-pagesize-determined--show")
 
     def _show_ram_usage(self):
         """Generate RAM usage diagram"""
@@ -5537,29 +5537,29 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             )
             elem_svg_swap = document.getElementById("svg_swap")
             elem_svg_swap.appendChild(svg_swap)
-            show_elements(".js-swap-active--show")
-            hide_elements(".js-swap-inactive--show")
+            show_elements_by_selector(".js-swap-active--show")
+            hide_elements_by_selector(".js-swap-inactive--show")
         else:
-            hide_elements(".js-swap-active--show")
-            show_elements(".js-swap-inactive--show")
+            hide_elements_by_selector(".js-swap-active--show")
+            show_elements_by_selector(".js-swap-inactive--show")
 
     def _show_trigger_process(self):
         """Show trigger process details w/ or w/o UID"""
         if "trigger_proc_uid" in self.oom_result.details:
-            show_elements(".js-trigger-proc-pid-uid--show")
-            hide_elements(".js-trigger-proc-pid-only--show")
+            show_elements_by_selector(".js-trigger-proc-pid-uid--show")
+            hide_elements_by_selector(".js-trigger-proc-pid-only--show")
         else:
-            hide_elements(".js-trigger-proc-pid-uid--show")
-            show_elements(".js-trigger-proc-pid-only--show")
+            hide_elements_by_selector(".js-trigger-proc-pid-uid--show")
+            show_elements_by_selector(".js-trigger-proc-pid-only--show")
 
     def _show_all_items(self):
         """Switch to the output view and show most items"""
-        hide_element("input")
-        show_element("analysis")
+        hide_element_by_id("input")
+        show_element_by_id("analysis")
         if self.oom_result.oom_type == OOMEntityType.manual:
-            show_elements(".js-oom-manual--show")
+            show_elements_by_selector(".js-oom-manual--show")
         else:
-            show_elements(".js-oom-automatic--show")
+            show_elements_by_selector(".js-oom-automatic--show")
 
         for item in self.oom_result.details.keys():
             # ignore internal items
@@ -5570,7 +5570,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # Hide "OOM Score" if not available
         # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
         if "killed_proc_score" in self.oom_result.details:
-            show_elements(".js-killed-proc-score--show")
+            show_elements_by_selector(".js-killed-proc-score--show")
 
     def sort_pstable(self, column_number):
         """
