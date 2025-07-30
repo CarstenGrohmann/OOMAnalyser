@@ -3435,6 +3435,11 @@ class OOMResult:
     details = {}
     """Extracted result"""
 
+    default_values = {
+        "killed_proc_shmem_rss_kb": 0,  # set to 0 to show all values to calculate TotalRSS
+    }
+    """Predefined values used to populate details dictionary"""
+
     error_msg = ""
     """
     Error message
@@ -3545,6 +3550,7 @@ class OOMAnalyser:
     def __init__(self, oom):
         self.oom_entity = oom
         self.oom_result = OOMResult()
+        self._set_oom_result_default_details()
         self.oom_block_complete = OOMEntityState.unknown
 
     def _identify_kernel_version(self):
@@ -3704,8 +3710,7 @@ class OOMAnalyser:
 
     def _extract_from_oom_text(self):
         """Extract details from the OOM message text"""
-
-        self.oom_result.details = {}
+        self._set_oom_result_default_details()
         # __pragma__ ('jsiter')
         for k in self.oom_result.kconfig.EXTRACT_PATTERN:
             pattern, is_mandatory = self.oom_result.kconfig.EXTRACT_PATTERN[k]
@@ -4279,6 +4284,13 @@ class OOMAnalyser:
         self._search_node_with_memory_shortage()
         self._analyse_alloc_failure()
         self._check_for_memory_fragmentation()
+
+    def _set_oom_result_default_details(self):
+        """Set default values for OOM results"""
+        # TODO replace with self.EXTRACT_PATTERN = self.EXTRACT_PATTERN.copy() after
+        #      https://github.com/QQuick/Transcrypt/issues/716 "dict does not have a copy method" is fixed
+        self.oom_result.details = {}
+        self.oom_result.details.update(self.oom_result.default_values)
 
     def analyse(self):
         """
@@ -5175,13 +5187,15 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         for element in elements:
             # Hide table rows if the element has no content
+            row = element.closest("tr")
             if isinstance(content, str) and content == "<not found>":
-                row = element.closest("tr")
                 if row:
                     row.classList.add("js-text--display-none")
                     continue
 
             element.innerHTML = content
+            if row:
+                row.classList.remove("js-text--display-none")
             if is_numeric:
                 self._add_tooltip_size(element, item, size_in_bytes)
 
@@ -5569,8 +5583,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 continue
             self._set_item(item)
 
-        # Hide "OOM Score" if not available
-        # since KernelConfig_5_0.EXTRACT_PATTERN_OVERLAY_50['Process killed by OOM']
+        # Show "OOM Score" only if it's available
         if "killed_proc_score" in self.oom_result.details:
             show_elements_by_selector(".js-killed-proc-score--show")
 
