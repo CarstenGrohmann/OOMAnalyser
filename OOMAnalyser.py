@@ -675,6 +675,8 @@ class BaseKernelConfig:
     def __init__(self):
         super().__init__()
 
+        # Initialise pattern only once in the base class constructor and
+        # not in every derived class constructor
         if self.EXTRACT_PATTERN is None:
             # Create a copy to prevent modifications on the class dictionary
             # TODO replace with self.EXTRACT_PATTERN = self.EXTRACT_PATTERN.copy() after
@@ -3694,7 +3696,7 @@ class OOMAnalyser:
         self.oom_result.details["trigger_proc_gfp_mask"] = "{} ({})".format(
             self.oom_result.details["trigger_proc_gfp_mask"], flags
         )
-        # already fully processed and no own element to display -> delete it
+        # already fully processed and no own element to display -> delete it,
         # otherwise an error msg will be shown
         del self.oom_result.details["trigger_proc_gfp_flags"]
 
