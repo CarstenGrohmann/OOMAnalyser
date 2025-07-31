@@ -321,7 +321,10 @@ def cleanup_repo() -> None:
 
 
 def write_gfp_oom_template(
-    cfg: SimpleNamespace, tag: git.TagReference, changes: SimpleNamespace
+    cfg: SimpleNamespace,
+    tag: git.TagReference,
+    changes: SimpleNamespace,
+    gfp_filename: str,
 ):
     """Write prepared GFP flags to a template file"""
     output_file = os.path.join(cfg.output_dir, f"gfp_{tag.name}")
@@ -345,7 +348,7 @@ def write_gfp_oom_template(
     if changes.gfp_flags:
         of.write(
             f"""\
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the {gfp_filename} file.
     #       Please do not change them manually!
     GFP_FLAGS = {{
 {format_block_gfp_flags("Useful GFP flag combinations", changes.gfp_flags["useful"])}
@@ -446,7 +449,9 @@ if __name__ == "__main__":
     logging.info("Start processing %d tags ...", len(all_tags))
 
     details = OrderedDict()
-    last_modified_tag = SimpleNamespace(gfp_flags=None, page_order=None)
+    last_modified_tag = SimpleNamespace(
+        gfp_flags=None, page_order=None, gfp_filename=""
+    )
 
     for tag in all_tags:
         logging.info("Process tag %s", tag.name)
@@ -460,7 +465,11 @@ if __name__ == "__main__":
                 tag.name,
             )
             continue
-        details[tag] = SimpleNamespace(gfp_flags=None, page_order=None)
+        details[tag] = SimpleNamespace(
+            gfp_flags=None,
+            page_order=None,
+            gfp_filename=os.path.basename(gfp_file),
+        )
         current_value = extract_gfp_flags(gfp_file)
         current_json = json.dumps(current_value, sort_keys=True)
         logging.info("Check for differences in GFP flags ...")
@@ -521,7 +530,12 @@ if __name__ == "__main__":
     logging.info("Write output files...")
     for tag in details:
         if details[tag].gfp_flags or details[tag].page_order:
-            write_gfp_oom_template(cfg=cfg, tag=tag, changes=details[tag])
+            write_gfp_oom_template(
+                cfg=cfg,
+                tag=tag,
+                changes=details[tag],
+                gfp_filename=details[tag].gfp_filename,
+            )
 
     cleanup_repo()
     logging.info("Script is done")

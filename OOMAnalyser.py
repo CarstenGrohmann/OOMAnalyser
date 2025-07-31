@@ -426,7 +426,7 @@ class BaseKernelConfig:
     @see: EXTRACT_PATTERN
     """
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -809,7 +809,7 @@ class KernelConfig_3_10(BaseKernelConfig):
     name = "Configuration for Linux kernel 3.10 or later"
     release = (3, 10, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -899,7 +899,7 @@ class KernelConfig_3_10_EL7(KernelConfig_3_10):
     name = "Configuration for RHEL 7 / CentOS 7 specific Linux kernel (3.10)"
     release = (3, 10, ".el7.")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -990,7 +990,7 @@ class KernelConfig_3_16(KernelConfig_3_10):
     name = "Configuration for Linux kernel 3.16 or later"
     release = (3, 16, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1078,7 +1078,7 @@ class KernelConfig_3_19(KernelConfig_3_16):
     name = "Configuration for Linux kernel 3.19 or later"
     release = (3, 19, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1162,7 +1162,7 @@ class KernelConfig_4_1(KernelConfig_3_19):
     name = "Configuration for Linux kernel 4.1 or later"
     release = (4, 1, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1248,7 +1248,7 @@ class KernelConfig_4_4(KernelConfig_4_1):
     name = "Configuration for Linux kernel 4.4 or later"
     release = (4, 4, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1337,7 +1337,7 @@ class KernelConfig_4_5(KernelConfig_4_4):
     name = "Configuration for Linux kernel 4.5 or later"
     release = (4, 5, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1440,7 +1440,7 @@ class KernelConfig_4_6(KernelConfig_4_5):
     name = "Configuration for Linux kernel 4.6 or later"
     release = (4, 6, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1535,7 +1535,7 @@ class KernelConfig_4_8(KernelConfig_4_6):
     name = "Configuration for Linux kernel 4.8 or later"
     release = (4, 8, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1646,7 +1646,7 @@ class KernelConfig_4_10(KernelConfig_4_9):
     name = "Configuration for Linux kernel 4.10 or later"
     release = (4, 10, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1734,7 +1734,7 @@ class KernelConfig_4_12(KernelConfig_4_10):
     name = "Configuration for Linux kernel 4.12 or later"
     release = (4, 12, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1824,7 +1824,7 @@ class KernelConfig_4_13(KernelConfig_4_12):
     name = "Configuration for Linux kernel 4.13 or later"
     release = (4, 13, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -1914,7 +1914,7 @@ class KernelConfig_4_14(KernelConfig_4_13):
     name = "Configuration for Linux kernel 4.14 or later"
     release = (4, 14, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2002,7 +2002,7 @@ class KernelConfig_4_15(KernelConfig_4_14):
     name = "Configuration for Linux kernel 4.15 or later"
     release = (4, 15, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2118,7 +2118,7 @@ class KernelConfig_4_18(KernelConfig_4_15):
     name = "Configuration for Linux kernel 4.18 or later"
     release = (4, 18, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2211,7 +2211,7 @@ class KernelConfig_5_1(KernelConfig_4_19):
     name = "Configuration for Linux kernel 5.1 or later"
     release = (5, 1, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2354,7 +2354,7 @@ class KernelConfig_5_14(KernelConfig_5_8):
     name = "Configuration for Linux kernel 5.14 or later"
     release = (5, 14, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2460,7 +2460,7 @@ class KernelConfig_5_18(KernelConfig_5_16):
     name = "Configuration for Linux kernel 5.18 or later"
     release = (5, 18, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2553,7 +2553,7 @@ class KernelConfig_6_0(KernelConfig_5_18):
     name = "Configuration for Linux kernel 6.0 or later"
     release = (6, 0, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2687,7 +2687,7 @@ class KernelConfig_6_3(KernelConfig_6_1):
     name = "Configuration for Linux kernel 6.3 or later"
     release = (6, 3, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2777,7 +2777,7 @@ class KernelConfig_6_4(KernelConfig_6_3):
     name = "Configuration for Linux kernel 6.4 or later"
     release = (6, 4, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2865,7 +2865,7 @@ class KernelConfig_6_8(KernelConfig_6_4):
     name = "Configuration for Linux kernel 6.8 or later"
     release = (6, 8, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -2953,7 +2953,7 @@ class KernelConfig_6_9(KernelConfig_6_8):
     name = "Configuration for Linux kernel 6.9 or later"
     release = (6, 9, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
@@ -3042,7 +3042,7 @@ class KernelConfig_6_10(KernelConfig_6_9):
     name = "Configuration for Linux kernel 6.10 or later"
     release = (6, 10, "")
 
-    # NOTE: These flags are automatically extracted from a gfp.h file.
+    # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!
     GFP_FLAGS = {
         #
