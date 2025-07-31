@@ -260,7 +260,7 @@ def search_gfp_file(repo_dir: str) -> Optional[str]:
         os.path.join(repo_dir, "include/linux/gfp_types.h"),
         os.path.join(repo_dir, "include/linux/gfp.h"),
     ]:
-        full = os.path.join(repo_dir, gfp_filename)
+        full = os.path.join(gfp_filename)
         if os.path.exists(full):
             return full
     return None
