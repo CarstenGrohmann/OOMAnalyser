@@ -5186,16 +5186,17 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             size_in_bytes = self._calc_size_in_bytes(item)
 
         for element in elements:
+            row_in_result_table = element.closest("#result_table tr")
+
             # Hide table rows if the element has no content
-            row = element.closest("tr")
             if isinstance(content, str) and content == "<not found>":
-                if row:
-                    row.classList.add("js-text--display-none")
+                if row_in_result_table:
+                    row_in_result_table.classList.add("js-text--display-none")
                     continue
 
             element.innerHTML = content
-            if row:
-                row.classList.remove("js-text--display-none")
+            if row_in_result_table:
+                row_in_result_table.classList.remove("js-text--display-none")
             if is_numeric:
                 self._add_tooltip_size(element, item, size_in_bytes)
 
