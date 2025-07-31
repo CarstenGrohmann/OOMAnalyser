@@ -161,12 +161,12 @@ class OOMEntityState:
     complete = 4
 
 
-class OOMEntityType:
+class OOMType:
     """Enum for the type of the OOM"""
 
-    unknown = 0
-    automatic = 1
-    manual = 2
+    UNKNOWN = 0
+    KERNEL_AUTOMATIC = 1
+    KERNEL_MANUAL = 2
 
 
 class OOMMemoryAllocFailureType:
@@ -3484,7 +3484,7 @@ class OOMResult:
     @type: str
     """
 
-    oom_type = OOMEntityType.unknown
+    oom_type = OOMType.UNKNOWN
     """
     Type of this OOM (manually or automatically triggered)
 
@@ -3740,9 +3740,9 @@ class OOMAnalyser:
         # __pragma__ ('nojsiter')
 
         if self.oom_result.details["trigger_proc_order"] == "-1":
-            self.oom_result.oom_type = OOMEntityType.manual
+            self.oom_result.oom_type = OOMType.KERNEL_MANUAL
         else:
-            self.oom_result.oom_type = OOMEntityType.automatic
+            self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC
 
         self.oom_result.details["hardware_info"] = self._extract_block_from_next_pos(
             "Hardware name:"
@@ -4049,7 +4049,7 @@ class OOMAnalyser:
         """
         self.oom_result.mem_alloc_failure = OOMMemoryAllocFailureType.not_started
 
-        if self.oom_result.oom_type == OOMEntityType.manual:
+        if self.oom_result.oom_type == OOMType.KERNEL_MANUAL:
             debug("OOM triggered manually - skip memory analysis")
             return
         if not self.oom_result.buddyinfo:
@@ -5573,7 +5573,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """Switch to the output view and show most items"""
         hide_element_by_id("input")
         show_element_by_id("analysis")
-        if self.oom_result.oom_type == OOMEntityType.manual:
+        if self.oom_result.oom_type == OOMType.KERNEL_MANUAL:
             show_elements_by_selector(".js-oom-manual--show")
         else:
             show_elements_by_selector(".js-oom-automatic--show")
