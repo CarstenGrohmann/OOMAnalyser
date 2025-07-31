@@ -1430,7 +1430,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 
         self.assertEqual(
             analyser.oom_result.oom_type,
-            OOMAnalyser.OOMEntityType.automatic,
+            OOMAnalyser.OOMType.KERNEL_AUTOMATIC,
             "OOM triggered manually",
         )
         self.assertTrue(analyser.oom_result.buddyinfo, "Missing buddyinfo")
