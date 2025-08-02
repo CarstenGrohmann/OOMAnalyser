@@ -5,6 +5,7 @@
 # THIS PROGRAM COMES WITH NO WARRANTY
 
 import http.server
+import inspect
 import os
 import re
 import socketserver
@@ -986,6 +987,22 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
 
 
 class TestPython(TestBase):
+    def test_000_configured(self):
+        """Check if all kernel classes are instantiated in OOMAnalyser.AllKernelConfigs"""
+        all_kernel_classes = {
+            cls.__name__
+            for name, cls in inspect.getmembers(OOMAnalyser, inspect.isclass)
+            if issubclass(cls, OOMAnalyser.BaseKernelConfig)
+        }
+        all_configured_kernels = {
+            inst.__class__.__name__ for inst in OOMAnalyser.AllKernelConfigs
+        }
+        missing = all_kernel_classes - all_configured_kernels
+        self.assertFalse(
+            missing,
+            f"Missing kernel instances in AllKernelConfigs: {missing}",
+        )
+
     def test_001_trigger_proc_space(self):
         """Test RE to find the name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
