@@ -184,11 +184,14 @@ THIS PROGRAM COMES WITH NO WARRANTY
             /* empty - used to show the NUMA node with memory shortage */
         }
 
-        .js-oom-automatic--show {
-            /* empty - used to show sections for automatically triggered OOMs */
+        .js-oom-kernel-automatic--show {
+            /* empty - used to show sections for automatically triggered kernel OOMs */
         }
-        .js-oom-manual--show {
-            /* empty - used to show sections for manually triggered OOMs */
+        .js-oom-kernel-manual--show {
+            /* empty - used to show sections for manually triggered kernel OOMs */
+        }
+        .js-oom-cgroup-automatic--show {
+            /* empty - used to show sections for automatically triggered cgroup OOMs */
         }
 
         .js-pagesize-guessed--show {
@@ -490,20 +493,28 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h3 id="summary">Summary</h3>
     <div id="explanation">
-        <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-cgroup-automatic--show">
             <p>
-                The OOM killer was automatically triggered to free memory, because the system couldn't satisfy the
-                memory request.
-                The OOM killer calculates a score for each process and terminates the process with the highest score
-                to satisfy the original memory request.
+                A cgroup-local OOM killer was automatically triggered because the memory usage inside a specific
+                control group exceeded its configured limit. Unlike a global OOM event, the system itself still had
+                free memory available. The cgroup-local OOM killer evaluates the tasks within that cgroup, assigns
+                scores, and terminates the process with the highest score in order to bring the group’s memory
+                consumption back within limits.
             </p>
         </div>
-        <div class="js-text--default-hide js-text--display-none js-oom-manual--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
             <p>
-                The OOM killer was manually triggered (e.g. with &quot;<code>echo f > /proc/sysrq-trigger</code>&quot;)
-                by a user with root privileges. There is no demand to free memory but the OOM killer started
-                nevertheless. The OOM killer calculates a score for each process and terminates the process with the
-                highest score.
+                The global OOM killer was automatically triggered to free memory because the system couldn't
+                satisfy the memory request.
+                It evaluates all running processes, assigns each a score based on their memory footprint and
+                importance, and terminates the process with the highest score in order to free memory.
+            </p>
+        </div>
+        <div class="js-text--default-hide js-text--display-none js-oom-kernel-manual--show">
+            <p>
+                The global OOM killer was manually triggered (e.g., with <code>echo f > /proc/sysrq-trigger</code>)
+                by a user with root privileges. Even though there was no immediate memory shortage, it still
+                evaluated all processes, calculated their scores, and terminated the process with the highest score.
             </p>
         </div>
         <div class="js-text--default-hide js-text--display-none js-swap-active--show">
@@ -524,7 +535,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 physical memory is in use.
             </p>
         </div>
-        <div class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
             <p>
                 The process &quot;<span class="trigger_proc_name"></span>&quot;
 
@@ -654,7 +665,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr>
                 <th colspan="3" scope="row">Trigger Process</th>
             </tr>
-            <tr class="js-oom-automatic--show">
+            <tr class="js-oom-kernel-automatic--show">
                 <td></td>
                 <td class="text--align-right">
                     <span class="trigger_proc_name"></span>
@@ -684,14 +695,14 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="trigger_proc_nodemask"></span></td>
                 <td>Bit mask indicating the cores on which the process can run.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
                 <td>Requested memory: order</td>
                 <td class="text--align-right">
                     <span class="trigger_proc_order"></span>
                 </td>
                 <td>The kernel specifies the requested number of pages as an exponent of a power of two.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
                 <td>Requested memory: number of pages</td>
                 <td class="text--align-right">
                     <span class="js-dont-add-human-readable-sizes trigger_proc_requested_memory_pages"></span>
@@ -700,17 +711,17 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 </td>
                 <td>Requested memory in number of pages.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
                 <td>Requested memory: size</td>
                 <td class="text--align-right"><span class="trigger_proc_requested_memory_pages_kb"></span></td>
                 <td>Requested memory in kBytes.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">
                 <td>Requested memory: zone</td>
                 <td class="text--align-right"><span class="trigger_proc_mem_zone"></span></td>
                 <td>Memory zone from which the requested storage chunk should come.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show js-memory-shortage-node--hide">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show js-memory-shortage-node--hide">
                 <td>Requested memory: node</td>
                 <td class="text--align-right"><span class="trigger_proc_numa_node"></span></td>
                 <td>
@@ -720,7 +731,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     Assumption that this is the node where the OOM was triggered.
                 </td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-automatic--show js-memory-shortage-node--hide">
+            <tr class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show js-memory-shortage-node--hide">
                 <td>Adjust oom-killer score<br>(oom_score_adj)</td>
                 <td class="text--align-right"><span class="trigger_proc_oomscore"></span></td>
                 <td>

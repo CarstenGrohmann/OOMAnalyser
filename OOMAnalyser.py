@@ -164,9 +164,22 @@ class OOMEntityState:
 class OOMType:
     """Enum for the type of the OOM"""
 
-    UNKNOWN = 0
-    KERNEL_AUTOMATIC = 1
-    KERNEL_MANUAL = 2
+    UNKNOWN = "UNKNOWN"
+    KERNEL_AUTOMATIC_OR_MANUAL = "KERNEL_AUTOMATIC_OR_MANUAL"
+    KERNEL_AUTOMATIC = "KERNEL_AUTOMATIC"
+    KERNEL_MANUAL = "KERNEL_MANUAL"
+    CGROUP_AUTOMATIC = "CGROUP_AUTOMATIC"
+
+
+class OOMPatternType:
+    """Enum for the type of the RE pattern to extract information from an OOM block"""
+
+    ALL_OPTIONAL = "ALL_OPTIONAL"
+    ALL_MANDATORY = "ALL_MANDATORY"
+    KERNEL_MANDATORY = "KERNEL_MANDATORY"
+    KERNEL_OPTIONAL = "KERNEL_OPTIONAL"
+    CGROUP_MANDATORY = "CGROUP_MANDATORY"
+    CGROUP_OPTIONAL = "CGROUP_OPTIONAL"
 
 
 class OOMMemoryAllocFailureType:
@@ -314,14 +327,14 @@ class BaseKernelConfig:
             r"(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?"
             r"order=(?P<trigger_proc_order>-?\d+), "
             r"oom_score_adj=(?P<trigger_proc_oomscore>-?\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         # Source: lib/dump_stack:dump_stack_print_info()
         "Trigger process and kernel version": (
             r"^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         # split caused by a limited number of iterations during converting PY regex into JS regex
         # Source: mm/page_alloc.c:__show_free_areas()
@@ -339,7 +352,7 @@ class BaseKernelConfig:
             r"(?:\n)"
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+) "
             r"unstable:(?P<unstable_pages>\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         "Overall Mem-Info (part 2)": (
             r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
@@ -348,19 +361,19 @@ class BaseKernelConfig:
             r"bounce:(?P<bounce_pages>\d+)"
             r"(?:\n)"
             r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         "Available memory chunks": (
             r"(?P<mem_node_info>(^Node \d+ ((DMA|DMA32|Normal):|(hugepages)).+(\n|$))+)",
-            False,
+            OOMPatternType.ALL_OPTIONAL,
         ),
         "Memory watermarks": (
             r"(?P<mem_watermarks>(^(Node \d+ (DMA|DMA32|Normal) free:|lowmem_reserve\[\]:).+(\n|$))+)",
-            False,
+            OOMPatternType.ALL_OPTIONAL,
         ),
         "Page cache": (
             r"^(?P<pagecache_total_pages>\d+) total pagecache pages.*$",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         # Source:mm/swap_state.c:show_swap_cache_info()
         "Swap usage information": (
@@ -371,7 +384,7 @@ class BaseKernelConfig:
             r"^Free swap  = (?P<swap_free_kb>\d+)kB"
             r"(?:\n)"
             r"^Total swap = (?P<swap_total_kb>\d+)kB",
-            False,
+            OOMPatternType.ALL_OPTIONAL,
         ),
         "Page information": (
             r"^(?P<ram_pages>\d+) pages RAM"
@@ -393,18 +406,18 @@ class BaseKernelConfig:
             r"(?:\n)"
             r"^(?P<hwpoisoned_pages>\d+) pages hwpoisoned"
             r")?",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         "Process killed by OOM": (
             r"^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"score (?P<killed_proc_score>\d+) or sacrifice child",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
         "Details of process killed by OOM": (
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
     """
@@ -627,6 +640,11 @@ class BaseKernelConfig:
 
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
+
+    REC_OOM_CGROUP = re.compile(
+        r"^memory: usage \d+kB, limit \d+kB, failcnt \d+", re.MULTILINE
+    )
+    """RE to match if the OOM is a cgroup OOM"""
 
     REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
     """RE to extract the page size from buddyinfo DMA zone"""
@@ -1423,7 +1441,7 @@ class KernelConfig_4_5(KernelConfig_4_4):
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -1630,7 +1648,7 @@ class KernelConfig_4_9(KernelConfig_4_8):
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -2310,7 +2328,7 @@ class KernelConfig_5_4(KernelConfig_5_1):
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
             r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>-?\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -2338,7 +2356,7 @@ class KernelConfig_5_8(KernelConfig_5_4):
             r"isolated_file:(?P<isolated_file_pages>\d+)"
             r"(?:\n)"
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -2644,7 +2662,7 @@ class KernelConfig_6_0(KernelConfig_5_18):
             r"^Free swap  = (?P<swap_free_kb>\d+)kB"
             r"(?:\n)"
             r"^Total swap = (?P<swap_total_kb>\d+)kB",
-            False,
+            OOMPatternType.ALL_OPTIONAL,
         ),
     }
 
@@ -2671,7 +2689,7 @@ class KernelConfig_6_1(KernelConfig_6_0):
             r"^ kernel_misc_reclaimable:(?P<kernel_misc_reclaimable>\d+)"
             r"(?:\n)"
             r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -3139,7 +3157,7 @@ class KernelConfig_6_11(KernelConfig_6_10):
             r"^CPU: \d+ UID: (?P<trigger_proc_uid>\d+) PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
-            True,
+            OOMPatternType.KERNEL_MANDATORY,
         ),
     }
 
@@ -3643,6 +3661,25 @@ class OOMAnalyser:
             return False
         return True
 
+    def _distinguish_between_cgroup_and_kernel_oom_type(self):
+        """Set OOM type depending on CGROUP and KERNEL OOM"""
+        if self.oom_result.kconfig.REC_OOM_CGROUP.search(self.oom_entity.text):
+            debug("OOM triggered by cgroup memory limit")
+            self.oom_result.oom_type = OOMType.CGROUP_AUTOMATIC
+        else:
+            debug("OOM triggered by kernel memory allocation failure")
+            self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC_OR_MANUAL
+
+    def _distinguish_between_automatic_and_manual_kernel_oom(self):
+        """Set OOM type depending on automatic or manual kernel OOM"""
+        if self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC_OR_MANUAL:
+            if self.oom_result.details["trigger_proc_order"] == "-1":
+                debug("OOM triggered by manual user action - order = -1")
+                self.oom_result.oom_type = OOMType.KERNEL_MANUAL
+            else:
+                debug("OOM triggered automatically")
+                self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC
+
     def _check_for_complete_oom(self):
         """
         Check if the OOM in self.oom_entity is complete and update self.oom_block_complete accordingly
@@ -3684,6 +3721,83 @@ class OOMAnalyser:
             block += "{}\n".format(line)
         return block
 
+    def _extract_details_with_re_pattern(self):
+        """Extract details from the OOM text using regular expressions in kconfig.EXTRACT_PATTERN"""
+        # __pragma__ ('jsiter')
+        for k in self.oom_result.kconfig.EXTRACT_PATTERN:
+            pattern, pattern_type = self.oom_result.kconfig.EXTRACT_PATTERN[k]
+            if (
+                self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC
+                and pattern_type
+                in [OOMPatternType.KERNEL_MANDATORY, OOMPatternType.KERNEL_OPTIONAL]
+            ) or (
+                self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC_OR_MANUAL
+                and pattern_type
+                in [OOMPatternType.CGROUP_MANDATORY, OOMPatternType.CGROUP_OPTIONAL]
+            ):
+                debug(
+                    "Ignore pattern {} for OOM type {} as pattern type is different {}".format(
+                        k,
+                        self.oom_result.oom_type,
+                        pattern_type,
+                    )
+                )
+                continue
+
+            rec = re.compile(pattern, re.MULTILINE)
+            match = rec.search(self.oom_entity.text)
+            if match and (
+                (
+                    (
+                        pattern_type
+                        in [OOMPatternType.ALL_MANDATORY, OOMPatternType.ALL_OPTIONAL]
+                    )
+                    or (
+                        self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC
+                        and pattern_type
+                        in [
+                            OOMPatternType.CGROUP_MANDATORY,
+                            OOMPatternType.CGROUP_OPTIONAL,
+                        ]
+                    )
+                    or (
+                        self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC_OR_MANUAL
+                        and pattern_type
+                        in [
+                            OOMPatternType.KERNEL_MANDATORY,
+                            OOMPatternType.KERNEL_OPTIONAL,
+                        ]
+                    )
+                )
+            ):
+                self.oom_result.details.update(match.groupdict())
+                debug('Matched pattern "{}" for OOM type {}'.format(k, pattern_type))
+            elif pattern_type in [
+                OOMPatternType.ALL_MANDATORY,
+                OOMPatternType.KERNEL_MANDATORY,
+                OOMPatternType.CGROUP_MANDATORY,
+            ]:
+                error(
+                    "Failed to extract information from OOM text. The regular "
+                    'expression "{}" for kernel {} and OOM type "{}" with kernel '
+                    "configuration {}.{}{} does not find anything. This can "
+                    "lead to errors later on.".format(
+                        k,
+                        self.oom_result.kversion,
+                        pattern_type,
+                        self.oom_result.kconfig.release[0],
+                        self.oom_result.kconfig.release[1],
+                        self.oom_result.kconfig.release[2],
+                    )
+                )
+            else:
+                debug(
+                    'Regular expression "{}" for OOM type {} does not match with current OOM text.'.format(
+                        k, self.oom_result.oom_type
+                    )
+                )
+        # __pragma__ ('nojsiter')
+
     def _extract_gpf_mask(self):
         """Extract the GFP (Get Free Pages) mask"""
         if self.oom_result.details["trigger_proc_gfp_flags"] is not None:
@@ -3711,44 +3825,16 @@ class OOMAnalyser:
     def _extract_from_oom_text(self):
         """Extract details from the OOM message text"""
         self._set_oom_result_default_details()
-        # __pragma__ ('jsiter')
-        for k in self.oom_result.kconfig.EXTRACT_PATTERN:
-            pattern, is_mandatory = self.oom_result.kconfig.EXTRACT_PATTERN[k]
-            rec = re.compile(pattern, re.MULTILINE)
-            match = rec.search(self.oom_entity.text)
-            if match:
-                self.oom_result.details.update(match.groupdict())
-            elif is_mandatory:
-                error(
-                    "Failed to extract information from OOM text. The regular "
-                    'expression "{}" for kernel {} with configuration {}.{}{} '
-                    "does not find anything. This can lead to errors later on.".format(
-                        k,
-                        self.oom_result.kversion,
-                        self.oom_result.kconfig.release[0],
-                        self.oom_result.kconfig.release[1],
-                        self.oom_result.kconfig.release[2],
-                    )
-                )
-            else:
-                debug(
-                    'Regular expression "{}" does not match with current OOM text.'.format(
-                        k,
-                    )
-                )
 
-        # __pragma__ ('nojsiter')
-
-        if self.oom_result.details["trigger_proc_order"] == "-1":
-            self.oom_result.oom_type = OOMType.KERNEL_MANUAL
-        else:
-            self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC
+        self._distinguish_between_cgroup_and_kernel_oom_type()
+        self._extract_details_with_re_pattern()
+        self._distinguish_between_automatic_and_manual_kernel_oom()
 
         self.oom_result.details["hardware_info"] = self._extract_block_from_next_pos(
             "Hardware name:"
         )
 
-        # strip "Call Trace" line at beginning and remove leading spaces
+        # strip "Call Trace" line at the beginning and remove leading spaces
         call_trace = ""
         block = self._extract_block_from_next_pos("Call Trace:")
         for line in block.split("\n"):
@@ -5573,14 +5659,16 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """Switch to the output view and show most items"""
         hide_element_by_id("input")
         show_element_by_id("analysis")
-        if self.oom_result.oom_type == OOMType.KERNEL_MANUAL:
-            show_elements_by_selector(".js-oom-manual--show")
-        else:
-            show_elements_by_selector(".js-oom-automatic--show")
+
+        if self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC:
+            show_elements_by_selector(".js-oom-kernel-automatic--show")
+        elif self.oom_result.oom_type == OOMType.KERNEL_MANUAL:
+            show_elements_by_selector(".js-oom-kernel-manual--show")
+        elif self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC:
+            show_elements_by_selector(".js-oom-cgroup-automatic--show")
 
         for item in self.oom_result.details.keys():
-            # ignore internal items
-            if item.startswith("_"):
+            if item.startswith("_"):  # ignore internal items
                 continue
             self._set_item(item)
 
