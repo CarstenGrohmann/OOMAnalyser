@@ -15,7 +15,7 @@ VERSION = "0.8.0_devel"
 """Version number e.g. "0.6.0" or "0.6.0 (devel)" """
 
 # __pragma__ ('skip')
-from typing import List, Optional, Any
+from typing import List, Optional, Tuple, Any
 
 # MOC objects to satisfy statical checkers and imports in unit tests
 js_undefined = 0
@@ -3585,13 +3585,11 @@ class OOMAnalyser:
         debug("Found kernel version: {}".format(self.oom_result.kversion))
         return True
 
-    def _check_kversion_greater_equal(self, kversion, min_version):
+    def _check_kversion_greater_equal(
+        self, kversion: str, min_version: Tuple[int, int, str]
+    ) -> bool:
         """
         Returns True if the kernel version is greater or equal to the minimum version
-
-        @param str kversion: Kernel version
-        @param (int, int, str) min_version: Minimum version
-        @rtype: bool
         """
         match = self.REC_SPLIT_KVERSION.match(kversion)
 
@@ -4356,7 +4354,7 @@ class OOMAnalyser:
         """
         Calculate values from already extracted details
 
-        @see: self.details
+        @see: self.oom_result.details
         """
         self._convert_numeric_results_to_integer()
         self._convert_pstable_values_to_integer()
