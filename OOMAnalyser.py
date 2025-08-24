@@ -4347,6 +4347,9 @@ class OOMAnalyser:
         elif "-amd64" in kernel_version:
             dist = "Debian"
             platform = "x86 64-bit"
+        elif "-pve" in kernel_version:
+            dist = "Proxmox (Debian)"
+            platform = "x86 64-bit"
         self.oom_result.details["dist"] = dist
         self.oom_result.details["platform"] = platform
 
