@@ -1,4 +1,4 @@
-# -*- coding: Latin-1 -*-
+# -*- coding: UTF-8 -*-
 #
 # Linux OOMAnalyser
 #
