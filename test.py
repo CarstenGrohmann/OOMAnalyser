@@ -1025,22 +1025,26 @@ class TestPython(TestBase):
 
     def test_002_killed_proc_space(self):
         """Test RE to find name of the killed process"""
+        pattern_key = "global oom: kill process - pid, name and score"
+        process_name = "sed"
         text = self.get_lines(OOMAnalyser.OOMDisplay.example_rhel7, -2)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
-            "Process killed by OOM"
+            pattern_key
         ][0]
         rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(text)
         self.assertTrue(
             match,
-            "Error: re.search('Process killed by OOM') failed for simple process name",
+            f'Error: Search for process names failed for process name "{process_name}"',
         )
 
-        text = text.replace("sed", "VM Monitoring Task")
+        old_name = process_name
+        process_name = "VM Monitoring Task"
+        text = text.replace(old_name, process_name)
         match = rec.search(text)
         self.assertTrue(
             match,
-            "Error: re.search('Process killed by OOM') failed for process name with space",
+            f'Error: Search for process names failed for process name "{process_name}"',
         )
 
     def test_003_OOMEntity_number_of_columns_to_strip(self):
@@ -1113,7 +1117,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1",
             ),
             (
-                OOMAnalyser.KernelConfig_5_8(),
+                OOMAnalyser.KernelConfig_5_12(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.13.0-514 #1",
             ),
             (
@@ -1213,10 +1217,12 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         success = analyser.analyse()
         self.assertTrue(success, "OOM analysis failed")
 
+        current_kernel_version = analyser.oom_result.kconfig.release
+        expected_kernel_version = (5, 12, "")
         self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (5, 8, ""),
-            "Wrong KernelConfig release",
+            current_kernel_version,
+            expected_kernel_version,
+            f"Wrong KernelConfig release: got {current_kernel_version}, expected {expected_kernel_version}",
         )
 
         for flag, hex_value in [

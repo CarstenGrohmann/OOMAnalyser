@@ -334,7 +334,7 @@ class BaseKernelConfig:
             r"^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
-            OOMPatternType.KERNEL_MANDATORY,
+            OOMPatternType.ALL_MANDATORY,
         ),
         # split caused by a limited number of iterations during converting PY regex into JS regex
         # Source: mm/page_alloc.c:__show_free_areas()
@@ -408,16 +408,56 @@ class BaseKernelConfig:
             r")?",
             OOMPatternType.KERNEL_MANDATORY,
         ),
-        "Process killed by OOM": (
-            r"^Out of memory: Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+        "global oom: kill process - pid, name and score": (
+            # prefix:
+            #  * "Out of memory (oom_kill_allocating_task)"
+            #  * "Out of memory"
+            #  * "Memory cgroup out of memory"
+            r"^(Out of memory.*|Memory cgroup out of memory): "
+            r"Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"score (?P<killed_proc_score>\d+) or sacrifice child",
             OOMPatternType.KERNEL_MANDATORY,
         ),
-        "Details of process killed by OOM": (
+        "global oom: killed process - memory details": (
+            # 3.4 mm, oom: fold oom_kill_task() into oom_kill_process() (647f2bdf4a00dbcaa8964286501d68e7d2e6da93)
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB",
             OOMPatternType.KERNEL_MANDATORY,
+        ),
+        "cgroup oom: killed process - memory details": (
+            # 2.6.25 Memory controller: OOM handling (c7ba5c9e8176704bfac0729875fa62798037584d)
+            r"^Memory cgroup out of memory: "
+            r"Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: memory usage": (
+            # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
+            r"^memory: usage (?P<cgroup_memory_usage_kb>\d+)kB, "
+            r"limit (?P<cgroup_memory_limit_kb>\d+)kB, "
+            r"failcnt (?P<cgroup_memory_failcnt>\d+)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup v1 oom: kmem usage": (
+            # 3.8: memcg: kmem accounting basic infrastructure (510fc4e11b772fd60f2c545c64d4c55abd07ce36)
+            r"^kmem: usage (?P<cgroup_kmem_usage_kb>\d+)kB, "
+            r"limit (?P<cgroup_kmem_limit_kb>\d+)kB, "
+            r"failcnt (?P<cgroup_kmem_failcnt>\d+)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: path": (
+            # 3.9: memcg, oom: provide more precise dump info while memcg oom happening (58cf188ed649b6570dfdc9c62156cdf396c2e395)
+            r"^Memory cgroup stats for (?P<cgroup_path>\S+):",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup v1 oom: swap usage": (
+            # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
+            r"^memory+swap: usage (?P<cgroup_memory_swap_usage_kb>\d+)kB, "
+            r"limit (?P<cgroup_memory_swap_limit_kb>\d+)kB, "
+            r"failcnt (?P<cgroup_memory_swap_failcnt>\d+)",
+            OOMPatternType.CGROUP_MANDATORY,
         ),
     }
     """
@@ -641,9 +681,7 @@ class BaseKernelConfig:
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
-    REC_OOM_CGROUP = re.compile(
-        r"^memory: usage \d+kB, limit \d+kB, failcnt \d+", re.MULTILINE
-    )
+    REC_OOM_CGROUP = re.compile(r"^Memory cgroup stats for", re.MULTILINE)
     """RE to match if the OOM is a cgroup OOM"""
 
     REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
@@ -1351,6 +1389,7 @@ class KernelConfig_4_5(KernelConfig_4_4):
     # Supported changes:
     #  * update GFP flags
     #  * "mm, shmem: add internal shmem resident memory accounting" (eca56ff)
+    #  * add/update cgroup pattern
 
     name = "Configuration for Linux kernel 4.5 or later"
     release = (4, 5, "")
@@ -1437,11 +1476,48 @@ class KernelConfig_4_5(KernelConfig_4_4):
     }
 
     EXTRACT_PATTERN_OVERLAY_45 = {
-        "Details of process killed by OOM": (
+        "global oom: killed process - memory details": (
+            # 4.5 mm, shmem: add internal shmem resident memory accounting (eca56ff906bdd0239485e8b47154a6e73dd9a2f3)
             r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
             OOMPatternType.KERNEL_MANDATORY,
+        ),
+        "cgroup oom: mem info block (check first two lines)": (
+            # first line (starting w/o a space)
+            # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
+            r"^anon (?P<cgroup_memory_anon_bytes>\d+)(?:\n)"
+            # remaining lines (w/ leading space)
+            # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
+            r"^\s+file (?P<cgroup_memory_file_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (basic memory stats 1)": (
+            # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
+            r"^\s+file_mapped (?P<cgroup_memory_file_mapped_bytes>\d+)(?:\n)"
+            r"^\s+file_dirty (?P<cgroup_memory_file_dirty_bytes>\d+)(?:\n)"
+            r"^\s+file_writeback (?P<cgroup_memory_file_writeback_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (basic memory stats 2)": (
+            # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
+            r"^\s+inactive_anon (?P<cgroup_memory_inactive_anon_bytes>\d+)(?:\n)"
+            r"^\s+active_anon (?P<cgroup_memory_active_anon_bytes>\d+)(?:\n)"
+            r"^\s+inactive_file (?P<cgroup_memory_inactive_file_bytes>\d+)(?:\n)"
+            r"^\s+active_file (?P<cgroup_memory_active_file_bytes>\d+)(?:\n)"
+            r"^\s+unevictable (?P<cgroup_memory_unevictable_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (page stats 1)": (
+            # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
+            r"^\s+pgfault (?P<cgroup_memory_pgfault_bytes>\d+)(?:\n)"
+            r"^\s+pgmajfault (?P<cgroup_memory_pgmajfault_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (sock)": (
+            # 4.5 mm: memcontrol: add "sock" to cgroup2 memory.stat (b2807f07f4f87362925b8a5b8cbb7b624da10f03)
+            r"^\s+sock (?P<cgroup_memory_sock_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
         ),
     }
 
@@ -1539,11 +1615,30 @@ class KernelConfig_4_6(KernelConfig_4_5):
         "___GFP_KSWAPD_RECLAIM": {"value": 0x2000000},
     }
 
+    EXTRACT_PATTERN_OVERLAY_46 = {
+        "cgroup oom: mem info block (kernel_stack)": (
+            # 4.6 mm: memcontrol: report kernel stack usage in cgroup2 memory.stat (12580e4b54ba8a1b22ec977c200be0174ca42348)
+            r"^\s+kernel_stack (?P<cgroup_memory_kernel_stack_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (slab)": (
+            # 4.6 mm: memcontrol: report slab usage in cgroup2 memory.stat (27ee57c93ff00b8a2d6c6dd6b0b3dddda7b43b77)
+            r"^\s+slab_reclaimable (?P<cgroup_memory_slab_reclaimable_bytes>\d+)(?:\n)"
+            r"^\s+slab_unreclaimable (?P<cgroup_memory_slab_unreclaimable_bytes>\d+)(?:\n)"
+            r"^\s+slab (?P<cgroup_memory_slab_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
     # The "oom_reaper" line is optionally
     REC_OOM_END = re.compile(
         r"^((Out of memory.*|Memory cgroup out of memory): Killed process \d+|oom_reaper:)",
         re.MULTILINE,
     )
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_46)
 
 
 class KernelConfig_4_8(KernelConfig_4_6):
@@ -1636,28 +1731,7 @@ class KernelConfig_4_8(KernelConfig_4_6):
     }
 
 
-class KernelConfig_4_9(KernelConfig_4_8):
-    # Supported changes:
-    #  * "mm: oom: deduplicate victim selection code for memcg and global oom" (7c5f64f)
-
-    name = "Configuration for Linux kernel 4.9 or later"
-    release = (4, 9, "")
-
-    EXTRACT_PATTERN_OVERLAY_49 = {
-        "Details of process killed by OOM": (
-            r"^Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
-            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
-            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
-            OOMPatternType.KERNEL_MANDATORY,
-        ),
-    }
-
-    def __init__(self):
-        super().__init__()
-        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_49)
-
-
-class KernelConfig_4_10(KernelConfig_4_9):
+class KernelConfig_4_10(KernelConfig_4_8):
     # Supported changes:
     #  * update GFP flags
 
@@ -1748,6 +1822,7 @@ class KernelConfig_4_10(KernelConfig_4_9):
 class KernelConfig_4_12(KernelConfig_4_10):
     # Supported changes:
     #  * update GFP flags
+    #  * add/update cgroup pattern
 
     name = "Configuration for Linux kernel 4.12 or later"
     release = (4, 12, "")
@@ -1834,10 +1909,30 @@ class KernelConfig_4_12(KernelConfig_4_10):
         "___GFP_NOLOCKDEP": {"value": 0x2000000},
     }
 
+    EXTRACT_PATTERN_OVERLAY_412 = {
+        "cgroup oom: mem info block (shmem)": (
+            # 4.12 mm: memcontrol: provide shmem statistics (9a4caf1e9fa4864ce21ba9584a2c336bfbc72740)
+            r"^\s+shmem (?P<cgroup_memory_shmem_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (workingset)": (
+            # 4.12  mm: vmscan: fix IO/refault regression in cache workingset transition (2a2e48854d704214dac7546e87ae0e4daa0e61a0)
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)"
+            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_412)
+
 
 class KernelConfig_4_13(KernelConfig_4_12):
     # Supported changes:
     #  * update GFP flags
+    #  * add/update cgroup pattern
 
     name = "Configuration for Linux kernel 4.13 or later"
     release = (4, 13, "")
@@ -1923,6 +2018,24 @@ class KernelConfig_4_13(KernelConfig_4_12):
         "___GFP_KSWAPD_RECLAIM": {"value": 0x1000000},
         "___GFP_NOLOCKDEP": {"value": 0x2000000},
     }
+
+    EXTRACT_PATTERN_OVERLAY_413 = {
+        "cgroup oom: mem info block (page stats 2)": (
+            # 4.13 mm: per-cgroup memory reclaim stats (2262185c5b287f2758afda79c149b7cf6bee165c)
+            r"^\s+pgrefill (?P<cgroup_memory_pgrefill_bytes>\d+)(?:\n)"
+            r"^\s+pgscan (?P<cgroup_memory_pgscan_bytes>\d+)(?:\n)"
+            r"^\s+pgsteal (?P<cgroup_memory_pgsteal_bytes>\d+)(?:\n)"
+            r"^\s+pgactivate (?P<cgroup_memory_pgactivate_bytes>\d+)(?:\n)"
+            r"^\s+pgdeactivate (?P<cgroup_memory_pgdeactivate_bytes>\d+)(?:\n)"
+            r"^\s+pglazyfree (?P<cgroup_memory_pglazyfree_bytes>\d+)(?:\n)"
+            r"^\s+pglazyfreed (?P<cgroup_memory_pglazyfreed_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_413)
 
 
 class KernelConfig_4_14(KernelConfig_4_13):
@@ -2303,13 +2416,57 @@ class KernelConfig_5_1(KernelConfig_4_19):
         "___GFP_NOLOCKDEP": {"value": 0x800000},
     }
 
+    EXTRACT_PATTERN_OVERLAY_51 = {
+        "cgroup oom: mem info block (anon_thp)": (
+            # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
+            r"^\s+anon_thp (?P<cgroup_memory_anon_thp_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (Transparent Huge Pages)": (
+            # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
+            r"^\s+thp_fault_alloc (?P<cgroup_memory_thp_fault_alloc_bytes>\d+)(?:\n)"
+            r"^\s+thp_collapse_alloc (?P<cgroup_memory_thp_collapse_alloc_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
     def __init__(self):
         super().__init__()
-        # Removed with kernel 5.1 "mm, oom: remove 'prefer children over parent' heuristic" (bbbe480)
-        del self.EXTRACT_PATTERN["Process killed by OOM"]
+        # pattern removed with kernel 5.1 "mm, oom: remove 'prefer children over parent' heuristic" (bbbe48029720d2c6b6733f78d02571a281511adb)
+        del self.EXTRACT_PATTERN["global oom: kill process - pid, name and score"]
+
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_51)
 
 
-class KernelConfig_5_4(KernelConfig_5_1):
+class KernelConfig_5_3(KernelConfig_5_1):
+    # Supported changes:
+    #  * add/update cgroup pattern
+
+    name = "Configuration for Linux kernel 5.3 or later"
+    release = (5, 3, "")
+
+    EXTRACT_PATTERN_OVERLAY_53 = {
+        "cgroup v2 oom: swap usage": (
+            # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
+            r"^swap: usage (?P<cgroup_swap_usage_kb>\d+)kB, "
+            r"limit (?P<cgroup_swap_limit_kb>\d+)kB, "
+            r"failcnt (?P<cgroup_swap_failcnt>\d+)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (workingset)": (
+            # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_53)
+
+
+class KernelConfig_5_4(KernelConfig_5_3):
     # Supported changes:
     #  * "mm/oom: add oom_score_adj and pgtables to Killed process message" (70cb6d2)
     #  * "mm/oom_kill.c: add task UID to info message on an oom kill" (8ac3f8f)
@@ -2318,17 +2475,30 @@ class KernelConfig_5_4(KernelConfig_5_1):
     release = (5, 4, "")
 
     EXTRACT_PATTERN_OVERLAY_54 = {
-        "Details of process killed by OOM": (
-            # message pattern:
+        "global oom: killed process - memory details": (
+            # 5.4 mm/oom_kill.c: add task UID to info message on an oom kill (8ac3f8fe91a2119522a73fbc41d354057054e6ed)
+            # 5.4 mm/oom: add oom_score_adj and pgtables to Killed process message (70cb6d2677905121bfc7fdf5babfd8444218edd9)
+            # prefix:
             #  * "Out of memory (oom_kill_allocating_task)"
             #  * "Out of memory"
-            #  * "Memory cgroup out of memory"
-            r"^([\S ]+): "
+            r"^Out of memory.*: "
             r"Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
             r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>-?\d+)",
             OOMPatternType.KERNEL_MANDATORY,
+        ),
+        "cgroup oom: killed process - memory details": (
+            # 5.4 mm/oom_kill.c: add task UID to info message on an oom kill (8ac3f8fe91a2119522a73fbc41d354057054e6ed)
+            # 5.4 mm/oom: add oom_score_adj and pgtables to Killed process message (70cb6d2677905121bfc7fdf5babfd8444218edd9)
+            # prefix:
+            #  * "Memory cgroup out of memory" (3.6 mm, memcg: introduce own oom handler to iterate only over its own threads (9cbb78bb314360a860a8b23723971cb6fcb54176))
+            r"^Memory cgroup out of memory: "
+            r"Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
+            r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
+            r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>-?\d+)",
+            OOMPatternType.CGROUP_MANDATORY,
         ),
     }
 
@@ -2358,6 +2528,11 @@ class KernelConfig_5_8(KernelConfig_5_4):
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
+        "cgroup oom: mem info block (workingset_restore)": (
+            # 5.8 mm, memcg: add workingset_restore in memory.stat (a6f5576bb195c3b7508e3e1c98d2dcf6691f96e8)
+            r"^\s+workingset_restore (?P<cgroup_memory_workingset_restore_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
     }
 
     def __init__(self):
@@ -2365,7 +2540,84 @@ class KernelConfig_5_8(KernelConfig_5_4):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_58)
 
 
-class KernelConfig_5_14(KernelConfig_5_8):
+class KernelConfig_5_9(KernelConfig_5_8):
+    # Supported changes:
+    #  * add/update cgroup pattern
+
+    name = "Configuration for Linux kernel 5.9 or later"
+    release = (5, 9, "")
+
+    EXTRACT_PATTERN_OVERLAY_59 = {
+        "cgroup oom: mem info block (workingset)": (
+            # 5.9 mm/workingset: prepare the workingset detection infrastructure for anon LRU (170b04b7ae49634df103810dad67b22cf8a99aa6)
+            r"^\s+workingset_refault_anon (?P<cgroup_memory_workingset_refault_anon_bytes>\d+)(?:\n)"
+            r"^\s+workingset_refault_file (?P<cgroup_memory_workingset_refault_file_bytes>\d+)(?:\n)"
+            r"^\s+workingset_activate_anon (?P<cgroup_memory_workingset_activate_anon_bytes>\d+)(?:\n)"
+            r"^\s+workingset_activate_file (?P<cgroup_memory_workingset_activate_file_bytes>\d+)(?:\n)"
+            # 5.9 mm: memcontrol: fix missing suffix of workingset_restore (8d3fe09d8d6645dcbbe2413cde58f51ceb6545a6)
+            r"^\s+workingset_restore_anon (?P<cgroup_memory_workingset_restore_anon_bytes>\d+)(?:\n)"
+            r"^\s+workingset_restore_file (?P<cgroup_memory_workingset_restore_file_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (percpu)": (
+            # 5.9 mm: memcg/percpu: per-memcg percpu memory statistics (772616b031f06e05846488b01dab46a7c832da13)
+            r"^\s+percpu (?P<cgroup_memory_percpu_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_59)
+
+
+class KernelConfig_5_11(KernelConfig_5_9):
+    # Supported changes:
+    #  * add/update cgroup pattern
+
+    name = "Configuration for Linux kernel 5.11 or later"
+    release = (5, 11, "")
+
+    EXTRACT_PATTERN_OVERLAY_511 = {
+        "cgroup oom: mem info block (pagetables)": (
+            # 5.11 mm: memcontrol: account pagetables per node (f0c0c115fb81940f4dba0644ac2a8a43b39c83f3)
+            r"^\s+pagetables (?P<cgroup_memory_pagetables_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+        "cgroup oom: mem info block (file_thp, shmem_thp)": (
+            # 5.11 mm: memcontrol: add file_thp, shmem_thp to memory.stat (b8eddff8886b173b0a0f21a3bb1a594cc6d974d1)
+            r"^\s+file_thp (?P<cgroup_memory_file_thp_bytes>\d+)(?:\n)"
+            r"^\s+shmem_thp (?P<cgroup_memory_shmem_thp_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_511)
+
+
+class KernelConfig_5_12(KernelConfig_5_11):
+    # Supported changes:
+    #  * add/update cgroup pattern
+
+    name = "Configuration for Linux kernel 5.12 or later"
+    release = (5, 12, "")
+
+    EXTRACT_PATTERN_OVERLAY_512 = {
+        "cgroup oom: mem info block (swapcached)": (
+            # 5.12 mm: memcg: add swapcache stat for memcg v2 (b6038942480e574c697ea1a80019bbe586c1d654)
+            r"^\s+swapcached (?P<cgroup_memory_swapcached_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_MANDATORY,
+        ),
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_512)
+
+
+class KernelConfig_5_14(KernelConfig_5_9):
     # Supported changes:
     #  * update GFP flags
 
@@ -3157,7 +3409,7 @@ class KernelConfig_6_11(KernelConfig_6_10):
             r"^CPU: \d+ UID: (?P<trigger_proc_uid>\d+) PID: (?P<trigger_proc_pid>\d+) "
             r"Comm: .* (Not tainted|Tainted:.*) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
-            OOMPatternType.KERNEL_MANDATORY,
+            OOMPatternType.ALL_MANDATORY,
         ),
     }
 
@@ -3174,8 +3426,12 @@ AllKernelConfigs = [
     KernelConfig_5_18(),
     KernelConfig_5_16(),
     KernelConfig_5_14(),
+    KernelConfig_5_12(),
+    KernelConfig_5_11(),
+    KernelConfig_5_9(),
     KernelConfig_5_8(),
     KernelConfig_5_4(),
+    KernelConfig_5_3(),
     KernelConfig_5_1(),
     KernelConfig_4_19(),
     KernelConfig_4_18(),
@@ -3184,7 +3440,6 @@ AllKernelConfigs = [
     KernelConfig_4_13(),
     KernelConfig_4_12(),
     KernelConfig_4_10(),
-    KernelConfig_4_9(),
     KernelConfig_4_8(),
     KernelConfig_4_6(),
     KernelConfig_4_5(),
@@ -3843,9 +4098,13 @@ class OOMAnalyser:
 
         self._extract_page_size()
         self._extract_pstable()
-        self._extract_gpf_mask()
-        self._extract_buddyinfo()
-        self._extract_watermarks()
+        if self.oom_result.oom_type in [
+            OOMType.KERNEL_AUTOMATIC,
+            OOMType.KERNEL_MANUAL,
+        ]:
+            self._extract_gpf_mask()
+            self._extract_buddyinfo()
+            self._extract_watermarks()
 
     def _extract_page_size(self):
         """Extract page size from buddyinfo DMZ zone"""
@@ -4243,14 +4502,16 @@ class OOMAnalyser:
             zone = "Normal"
         self.oom_result.details["trigger_proc_mem_zone"] = zone
 
-    def _calc_killed_process_values(self):
-        """Calculate all values related to the killed process"""
+    def _calc_killed_process_values_all(self):
+        """Calculate all values related to the killed process for cgroup and kernel OOMs"""
         self.oom_result.details["killed_proc_total_rss_kb"] = (
             self.oom_result.details["killed_proc_anon_rss_kb"]
             + self.oom_result.details["killed_proc_file_rss_kb"]
             + self.oom_result.details.get("killed_proc_shmem_rss_kb", 0)
         )
 
+    def _calc_killed_process_values_kernel(self):
+        """Calculate all values related to the killed process only for kernel OOMs"""
         self.oom_result.details["killed_proc_rss_percent"] = int(
             100
             * self.oom_result.details["killed_proc_total_rss_kb"]
@@ -4365,12 +4626,19 @@ class OOMAnalyser:
 
         self._determinate_platform_and_distribution()
         self._calc_swap_values()
-        self._calc_system_values()
-        self._calc_trigger_process_values()
-        self._calc_killed_process_values()
-        self._search_node_with_memory_shortage()
-        self._analyse_alloc_failure()
-        self._check_for_memory_fragmentation()
+        self._calc_killed_process_values_all()
+
+        # calculate values only for kernel OOMs
+        if self.oom_result.oom_type in [
+            OOMType.KERNEL_AUTOMATIC,
+            OOMType.KERNEL_MANUAL,
+        ]:
+            self._calc_system_values()
+            self._calc_trigger_process_values()
+            self._calc_killed_process_values_kernel()
+            self._search_node_with_memory_shortage()
+            self._analyse_alloc_failure()
+            self._check_for_memory_fragmentation()
 
     def _set_oom_result_default_details(self):
         """Set default values for OOM results"""
@@ -5528,7 +5796,11 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """
         self._show_all_items()
         self._show_ram_usage()
-        self._show_swap_usage()
+        if self.oom_result.oom_type in [
+            OOMType.KERNEL_MANUAL,
+            OOMType.KERNEL_AUTOMATIC,
+        ]:
+            self._show_swap_usage()
         self._show_trigger_process()
         self._show_alloc_failure()
         self._show_kernel_upgrade()
