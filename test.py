@@ -39,7 +39,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 
-class TestBase(unittest.TestCase):
+class BaseTests(unittest.TestCase):
     text_alloc_failed_below_low_watermark = (
         "The request failed because the free memory would be below the memory low "
         "watermark after its completion."
@@ -136,8 +136,175 @@ class TestBase(unittest.TestCase):
         return continuous
 
 
-class TestInBrowserBase(TestBase):
+class BaseInBrowserTests(BaseTests):
     """Base class for all tests that run in a browser"""
+
+    # --- Begin: generic result check configuration ---
+    # For each test variant, set these in the child class
+    check_results_expected = None
+    check_results_gfp_mask = None
+    check_results_proc_name = None
+    check_results_proc_pid = None
+    check_results_killed_proc_score = None
+    check_results_swap_cache_kb = None
+    check_results_swap_used_kb = None
+    check_results_swap_free_kb = None
+    check_results_swap_total_kb = None
+    check_results_explanation_expected = None
+    check_results_explanation_unexpected = None
+    check_results_result_table_expected = None
+    check_results_result_table_unexpected = None
+    check_results_mem_node_info_start = None
+    check_results_mem_node_info_end = None
+    check_results_mem_watermarks_start = None
+    check_results_mem_watermarks_end = None
+    check_results_header_text = None
+    check_results_swap_active = None
+    check_results_swap_inactive = None
+    # --- End: generic result check configuration ---
+
+    def check_results(self):
+        """
+        Generic result checker for OOM analysis results.
+        Skips tests if the corresponding class variable is None.
+        """
+        self.assert_on_warn_error()
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
+        self.assertTrue(
+            h3_summary.is_displayed(),
+            "Analysis details incl. <h3>Summary</h3> should be displayed",
+        )
+
+        if self.check_results_proc_name is not None:
+            trigger_proc_name = self.driver.find_element(
+                By.CLASS_NAME, "trigger_proc_name"
+            )
+            self.assertEqual(
+                trigger_proc_name.text,
+                self.check_results_proc_name,
+                "Unexpected trigger process name",
+            )
+        if self.check_results_proc_pid is not None:
+            trigger_proc_pid = self.driver.find_element(
+                By.CLASS_NAME, "trigger_proc_pid"
+            )
+            self.assertEqual(
+                trigger_proc_pid.text,
+                self.check_results_proc_pid,
+                f"Unexpected trigger process pid: --{trigger_proc_pid.text}--",
+            )
+        if self.check_results_gfp_mask is not None:
+            trigger_proc_gfp_mask = self.driver.find_element(
+                By.CLASS_NAME, "trigger_proc_gfp_mask"
+            )
+            mask = trigger_proc_gfp_mask.text
+            self.assertEqual(
+                trigger_proc_gfp_mask.text,
+                self.check_results_gfp_mask,
+                f'Unexpected GFP Mask: got: "{mask}", expect: "{self.check_results_gfp_mask}"',
+            )
+        if self.check_results_killed_proc_score is not None:
+            killed_proc_score = self.driver.find_element(
+                By.CLASS_NAME, "killed_proc_score"
+            )
+            self.assertEqual(
+                killed_proc_score.text,
+                self.check_results_killed_proc_score,
+                "Unexpected OOM score of killed process",
+            )
+        if self.check_results_swap_cache_kb is not None:
+            swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
+            self.assertEqual(swap_cache_kb.text, self.check_results_swap_cache_kb)
+        if self.check_results_swap_used_kb is not None:
+            swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
+            self.assertEqual(swap_used_kb.text, self.check_results_swap_used_kb)
+        if self.check_results_swap_free_kb is not None:
+            swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
+            self.assertEqual(swap_free_kb.text, self.check_results_swap_free_kb)
+        if self.check_results_swap_total_kb is not None:
+            swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
+            self.assertEqual(swap_total_kb.text, self.check_results_swap_total_kb)
+
+        if self.check_results_explanation_expected is not None:
+            explanation = self.driver.find_element(By.ID, "explanation")
+            continuous_text = self.to_continuous_text(explanation.text)
+            for expected in self.check_results_explanation_expected:
+                self.assertTrue(
+                    expected in continuous_text,
+                    f'Missing statement in OOM summary: "{expected}"',
+                )
+            if self.check_results_explanation_unexpected is not None:
+                for unexpected in self.check_results_explanation_unexpected:
+                    self.assertTrue(
+                        unexpected not in continuous_text,
+                        f'Unexpected statement in OOM summary: "{unexpected}"',
+                    )
+
+        if self.check_results_result_table_expected is not None:
+            result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+            for expected in self.check_results_result_table_expected:
+                self.assertTrue(
+                    expected in result_table.text,
+                    f'Missing statement in result table: "{expected}"',
+                )
+            if self.check_results_result_table_unexpected is not None:
+                for unexpected in self.check_results_result_table_unexpected:
+                    self.assertTrue(
+                        unexpected not in result_table.text,
+                        f'Unexpected statement in result table: "{unexpected}"',
+                    )
+
+        if self.check_results_explanation_expected is not None:
+            continuous_text = self.to_continuous_text(
+                self.driver.find_element(By.ID, "explanation").text
+            )
+            # Die folgenden Checks sind spezifisch für die Beispiele, daher optional:
+            if hasattr(self, "check_results_physical_swap_texts"):
+                for txt, msg in self.check_results_physical_swap_texts:
+                    self.assertTrue(
+                        txt in continuous_text,
+                        msg,
+                    )
+
+        if self.check_results_mem_node_info_start is not None:
+            mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+            self.assertEqual(
+                mem_node_info.text[: len(self.check_results_mem_node_info_start)],
+                self.check_results_mem_node_info_start,
+                "Unexpected memory chunks",
+            )
+            if self.check_results_mem_node_info_end is not None:
+                self.assertEqual(
+                    mem_node_info.text[-len(self.check_results_mem_node_info_end) :],
+                    self.check_results_mem_node_info_end,
+                    "Unexpected memory information about hugepages",
+                )
+
+        if self.check_results_mem_watermarks_start is not None:
+            mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+            self.assertEqual(
+                mem_watermarks.text[: len(self.check_results_mem_watermarks_start)],
+                self.check_results_mem_watermarks_start,
+                "Unexpected memory watermarks",
+            )
+            if self.check_results_mem_watermarks_end is not None:
+                self.assertEqual(
+                    mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :],
+                    self.check_results_mem_watermarks_end,
+                    "Unexpected lowmem_reserve values",
+                )
+
+        if self.check_results_header_text is not None:
+            header = self.driver.find_element(By.ID, "pstable_header")
+            self.assertTrue(
+                self.check_results_header_text in header.text,
+                f'Missing column header "{self.check_results_header_text}"',
+            )
+
+        if self.check_results_swap_active:
+            self.check_swap_active()
+        if self.check_results_swap_inactive:
+            self.check_swap_inactive()
 
     def setUp(self):
         warnings.simplefilter("ignore", ResourceWarning)
@@ -283,413 +450,6 @@ class TestInBrowserBase(TestBase):
         self.clear_notification_box()
         self.click_analyse_button()
 
-    def check_results_archlinux_6_1_1(self):
-        """Check the analysis results of the ArchLinux 6.1.1 example"""
-        self.assert_on_warn_error()
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
-        trigger_proc_name = self.driver.find_element(By.CLASS_NAME, "trigger_proc_name")
-        self.assertEqual(
-            trigger_proc_name.text, "doxygen", "Unexpected trigger process name"
-        )
-        trigger_proc_pid = self.driver.find_element(By.CLASS_NAME, "trigger_proc_pid")
-        self.assertEqual(
-            trigger_proc_pid.text,
-            "473206",
-            "Unexpected trigger process pid: --%s--" % trigger_proc_pid.text,
-        )
-        trigger_proc_gfp_mask = self.driver.find_element(
-            By.CLASS_NAME, "trigger_proc_gfp_mask"
-        )
-        # 0x140dca will split into
-        #  GFP_HIGHUSER_MOVABLE -> 0x100cca
-        #                         (GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN_POISON | __GFP_SKIP_KASAN_UNPOISON)
-        #      GFP_HIGHUSER
-        #          GFP_USER
-        #              __GFP_RECLAIM
-        #                   ___GFP_DIRECT_RECLAIM       0x400
-        #                   ___GFP_KSWAPD_RECLAIM       0x800
-        #              __GFP_IO                          0x40
-        #              __GFP_FS                          0x80
-        #              __GFP_HARDWALL                0x100000
-        #          __GFP_HIGHMEM                         0x02
-        #      __GFP_MOVABLE                             0x08
-        #      __GFP_SKIP_KASAN_POISON                   0x00
-        #      __GFP_SKIP_KASAN_UNPOISON                 0x00
-        #  __GFP_COMP                                 0x40000
-        #  __GFP_ZERO                                   0x100
-        #                                       sum: 0x140dca
-        self.assertEqual(
-            trigger_proc_gfp_mask.text,
-            "0x140dca (GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO)",
-            "Unexpected GFP Mask",
-        )
-
-        killed_proc_score = self.driver.find_element(By.CLASS_NAME, "killed_proc_score")
-        self.assertTrue(
-            not killed_proc_score.text,
-            "Unexpected statement for OOM score of killed process",
-        )
-
-        swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
-        self.assertEqual(swap_cache_kb.text, "99452 kBytes")
-        swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
-        self.assertEqual(swap_used_kb.text, "25066284 kBytes")
-        swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
-        self.assertEqual(swap_free_kb.text, "84 kBytes")
-        swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
-        self.assertEqual(swap_total_kb.text, "25165820 kBytes")
-
-        explanation = self.driver.find_element(By.ID, "explanation")
-        continuous_text = self.to_continuous_text(explanation.text)
-        for expected in [
-            self.text_alloc_failed_below_low_watermark,
-            self.text_mem_not_heavily_fragmented,
-            self.text_oom_triggered_automatically,
-            self.text_swap_space_are_in_use,
-        ]:
-            self.assertTrue(
-                expected in continuous_text,
-                'Missing statement in OOM summary: "%s"' % expected,
-            )
-        for unexpected in [
-            self.text_alloc_failed_no_free_chunks,
-            self.text_alloc_failed_unknown_reason,
-            self.text_mem_heavily_fragmented,
-            self.text_oom_triggered_manually,
-            self.text_swap_space_not_in_use,
-            self.text_with_an_oom_score_of,
-        ]:
-            self.assertTrue(
-                unexpected not in continuous_text,
-                'Unexpected statement in OOM summary: "%s"' % unexpected,
-            )
-
-        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
-        for expected in [
-            self.test_swap_swap_total,
-        ]:
-            self.assertTrue(
-                expected in result_table.text,
-                'Missing statement in result table: "%s"' % expected,
-            )
-        for unexpected in [
-            self.test_swap_no_space,
-        ]:
-            self.assertTrue(
-                unexpected not in result_table.text,
-                'Unexpected statement in result table: "%s"' % unexpected,
-            )
-
-        continuous_text = self.to_continuous_text(continuous_text)
-        self.assertTrue(
-            "system has 16461600 kBytes physical memory and 25165820 kBytes swap space."
-            in continuous_text,
-            "Physical and swap memory in summary not found:: >{continuous_text}<",
-        )
-        self.assertTrue(
-            "That's 41627420 kBytes total." in continuous_text,
-            "Total memory in summary not found",
-        )
-        self.assertTrue(
-            "69 % (11513452 kBytes out of 16461600 kBytes) physical memory"
-            in continuous_text,
-            "Used physical memory in summary not found",
-        )
-        self.assertTrue(
-            "99 % (25066284 kBytes out of 25165820 kBytes) swap space"
-            in continuous_text,
-            "Used swap space in summary not found",
-        )
-
-        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
-        self.assertEqual(
-            mem_node_info.text[:44],
-            "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB",
-            "Unexpected memory chunks",
-        )
-        self.assertEqual(
-            mem_node_info.text[-80:],
-            "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
-            "Unexpected memory information about hugepages",
-        )
-
-        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
-        self.assertEqual(
-            mem_watermarks.text[:51],
-            "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB",
-            "Unexpected memory watermarks",
-        )
-        self.assertEqual(
-            mem_watermarks.text[-27:],
-            "lowmem_reserve[]: 0 0 0 0 0",
-            "Unexpected lowmem_reserve values",
-        )
-
-        header = self.driver.find_element(By.ID, "pstable_header")
-        self.assertTrue(
-            "Page Table Bytes" in header.text,
-            'Missing column header "Page Table Bytes"',
-        )
-
-        self.check_swap_active()
-
-    def check_results_rhel7(self):
-        """Check the analysis results of the RHEL7 example"""
-        self.assert_on_warn_error()
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
-
-        trigger_proc_name = self.driver.find_element(By.CLASS_NAME, "trigger_proc_name")
-        self.assertEqual(
-            trigger_proc_name.text, "sed", "Unexpected trigger process name"
-        )
-        trigger_proc_pid = self.driver.find_element(By.CLASS_NAME, "trigger_proc_pid")
-        self.assertEqual(
-            trigger_proc_pid.text, "29481", "Unexpected trigger process pid"
-        )
-        trigger_proc_gfp_mask = self.driver.find_element(
-            By.CLASS_NAME, "trigger_proc_gfp_mask"
-        )
-        # 0x201da will split into
-        #  GFP_HIGHUSER_MOVABLE   0x200da
-        #                         (__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE)
-        #    __GFP_WAIT              0x10
-        #    __GFP_IO                0x40
-        #    __GFP_FS                0x80
-        #    __GFP_HARDWALL       0x20000
-        #    __GFP_HIGHMEM           0x02
-        #    __GFP_MOVABLE           0x08
-        #  __GFP_COLD               0x100
-        #                    sum: 0x201da
-        self.assertEqual(
-            trigger_proc_gfp_mask.text,
-            "0x201da (GFP_HIGHUSER_MOVABLE | __GFP_COLD)",
-            "Unexpected GFP Mask",
-        )
-
-        killed_proc_score = self.driver.find_element(By.CLASS_NAME, "killed_proc_score")
-        self.assertEqual(
-            killed_proc_score.text, "651", "Unexpected OOM score of killed process"
-        )
-
-        swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
-        self.assertEqual(swap_cache_kb.text, "45368 kBytes")
-        swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
-        self.assertEqual(swap_used_kb.text, "8343236 kBytes")
-        swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
-        self.assertEqual(swap_free_kb.text, "0 kBytes")
-        swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
-        self.assertEqual(swap_total_kb.text, "8388604 kBytes")
-
-        explanation = self.driver.find_element(By.ID, "explanation")
-        continuous_text = self.to_continuous_text(explanation.text)
-        for expected in [
-            self.text_alloc_failed_below_low_watermark,
-            self.text_mem_not_heavily_fragmented,
-            self.text_oom_triggered_automatically,
-            self.text_swap_space_are_in_use,
-            self.text_with_an_oom_score_of,
-        ]:
-            self.assertTrue(
-                expected in continuous_text,
-                'Missing statement in OOM summary: "%s"' % expected,
-            )
-        for unexpected in [
-            self.text_alloc_failed_no_free_chunks,
-            self.text_alloc_failed_unknown_reason,
-            self.text_mem_heavily_fragmented,
-            self.text_oom_triggered_manually,
-            self.text_swap_space_not_in_use,
-        ]:
-            self.assertTrue(
-                unexpected not in continuous_text,
-                'Unexpected statement in OOM summary: "%s"' % unexpected,
-            )
-
-        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
-        for expected in [
-            self.test_swap_swap_total,
-        ]:
-            self.assertTrue(
-                expected in result_table.text,
-                'Missing statement in result table: "%s"' % expected,
-            )
-        for unexpected in [
-            self.test_swap_no_space,
-        ]:
-            self.assertTrue(
-                unexpected not in result_table.text,
-                'Unexpected statement in result table: "%s"' % unexpected,
-            )
-
-        explanation = self.to_continuous_text(explanation.text)
-        self.assertTrue(
-            "system has 33519336 kBytes physical memory and 8388604 kBytes swap space."
-            in explanation,
-            f"Physical and swap memory in summary not found:: >{explanation}<",
-        )
-        self.assertTrue(
-            "That's 41907940 kBytes total." in explanation,
-            f"Total memory in summary not found:: >{explanation}<",
-        )
-        self.assertTrue(
-            "94 % (31705788 kBytes out of 33519336 kBytes) physical memory"
-            in explanation,
-            f"Used physical memory in summary not found:: >{explanation}<",
-        )
-        self.assertTrue(
-            "99 % (8343236 kBytes out of 8388604 kBytes) swap space" in explanation,
-            f"Used swap space in summary not found:: >{explanation}<",
-        )
-
-        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
-        self.assertEqual(
-            mem_node_info.text[:44],
-            "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB",
-            "Unexpected memory chunks",
-        )
-        self.assertEqual(
-            mem_node_info.text[-80:],
-            "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
-            "Unexpected memory information about hugepages",
-        )
-
-        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
-        self.assertEqual(
-            mem_watermarks.text[:51],
-            "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB",
-            "Unexpected memory watermarks",
-        )
-        self.assertEqual(
-            mem_watermarks.text[-25:],
-            "lowmem_reserve[]: 0 0 0 0",
-            "Unexpected lowmem_reserve values",
-        )
-
-        header = self.driver.find_element(By.ID, "pstable_header")
-        self.assertTrue(
-            "Page Table Entries" in header.text,
-            'Missing column header "Page Table Entries"',
-        )
-
-        self.check_swap_active()
-
-    def check_results_ubuntu2110(self):
-        """Check the analysis results of the Ubuntu example"""
-        trigger_proc_gfp_mask = self.driver.find_element(
-            By.CLASS_NAME, "trigger_proc_gfp_mask"
-        )
-        # 0xcc0 will split into
-        #  GFP_KERNEL             (__GFP_RECLAIM | __GFP_IO | __GFP_FS)
-        #    __GFP_RECLAIM        (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM)
-        #        ___GFP_DIRECT_RECLAIM   0x400
-        #        ___GFP_KSWAPD_RECLAIM   0x800
-        #    __GFP_IO                    0x40
-        #    __GFP_FS                    0x80
-        #                  sum:          0xCC0
-        self.assertEqual(
-            trigger_proc_gfp_mask.text, "0xcc0 (GFP_KERNEL)", "Unexpected GFP Mask"
-        )
-
-        dirty_pages = self.driver.find_element(By.CLASS_NAME, "dirty_pages")
-        self.assertEqual(
-            dirty_pages.text, "633 pages", "Unexpected number of dirty pages"
-        )
-
-        ram_pages = self.driver.find_element(By.CLASS_NAME, "ram_pages")
-        self.assertEqual(
-            ram_pages.text, "524158 pages", "Unexpected number of RAM pages"
-        )
-
-        explanation = self.driver.find_element(By.ID, "explanation")
-        continuous_text = self.to_continuous_text(explanation.text)
-        for expected in [
-            self.text_oom_triggered_manually,
-            self.text_swap_space_not_in_use,
-        ]:
-            self.assertTrue(
-                expected in continuous_text,
-                'Missing statement in OOM summary: "%s"' % expected,
-            )
-        for unexpected in [
-            self.text_alloc_failed_below_low_watermark,
-            self.text_alloc_failed_no_free_chunks,
-            self.text_alloc_failed_unknown_reason,
-            self.text_mem_heavily_fragmented,
-            self.text_mem_not_heavily_fragmented,
-            self.text_oom_triggered_automatically,
-            self.text_with_an_oom_score_of,
-        ]:
-            self.assertTrue(
-                unexpected not in continuous_text,
-                'Unexpected statement in OOM summary: "%s"' % unexpected,
-            )
-
-        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
-        for expected in [
-            self.test_swap_no_space,
-        ]:
-            self.assertTrue(
-                expected in result_table.text,
-                'Missing statement in result table: "%s"' % expected,
-            )
-        for unexpected in [
-            self.test_swap_swap_total,
-        ]:
-            self.assertTrue(
-                unexpected not in result_table.text,
-                'Unexpected statement in result table: "%s"' % unexpected,
-            )
-
-        self.assertTrue(
-            "system has 2096632 kBytes physical memory" in continuous_text,
-            f"Physical memory in summary not found:: >{continuous_text}<",
-        )
-        self.assertTrue(
-            "9 % (209520 kBytes out of 2096632 kBytes) physical memory"
-            in continuous_text,
-            f"Used physical memory in summary not found:: >{continuous_text}<",
-        )
-
-        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
-        self.assertEqual(
-            mem_node_info.text[:49],
-            "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB",
-            "Unexpected memory chunks",
-        )
-        self.assertEqual(
-            mem_node_info.text[-80:],
-            "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
-            "Unexpected memory information about hugepages",
-        )
-
-        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
-        self.assertEqual(
-            mem_watermarks.text[:54],
-            "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB",
-            "Unexpected memory watermarks",
-        )
-        self.assertEqual(
-            mem_watermarks.text[-27:],
-            "lowmem_reserve[]: 0 0 0 0 0",
-            "Unexpected lowmem_reserve values",
-        )
-
-        header = self.driver.find_element(By.ID, "pstable_header")
-        self.assertTrue(
-            "Page Table Bytes" in header.text,
-            'Missing column header "Page Table Bytes"',
-        )
-
-        self.check_swap_inactive()
-
     def check_swap_inactive(self):
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
@@ -711,7 +471,7 @@ class TestInBrowserBase(TestBase):
         )
 
 
-class TestInBrowser(TestInBrowserBase):
+class TestInBrowser(BaseInBrowserTests):
     """Test OOM web page in a browser"""
 
     def test_010_load_page(self):
@@ -777,113 +537,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         )
         self.click_reset_button()
 
-    def test_036_loading_journalctl_input(self):
-        """Test loading input from journalctl
-
-        The second part of the "Mem-Info:" block as starting with the third
-        line has not a prefix like the lines before and after it. It is
-        indented only by a single space.
-        """
-        for prefix in [
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-            "[1234567.654321]",
-        ]:
-            # prepare example
-            example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            res = []
-
-            # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
-            for line in example_lines:
-                if "#012" in line:
-                    res.extend(line.split("#012"))
-                else:
-                    res.append(line)
-            example_lines = res
-            res = []
-
-            # add date/time prefix except for "Mem-Info:" block
-            for line in example_lines:
-                if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                    line = f"{prefix} {line}"
-                res.append(line)
-            example = "\n".join(res)
-
-            self.check_meminfo_format_rhel7(
-                f'Unprocessed example with prefix "{prefix}"', example
-            )
-            oom = OOMAnalyser.OOMEntity(example)
-            self.check_meminfo_format_rhel7(
-                f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
-            )
-
-            self.analyse_oom(example)
-            self.check_results_rhel7()
-            self.click_reset_button()
-
-    def test_040_trigger_proc_space(self):
-        """Test trigger process name contains a space"""
-        example = OOMAnalyser.OOMDisplay.example_rhel7
-        example = example.replace("sed", "VM Monitoring Task")
-
-        self.analyse_oom(example)
-        self.assert_on_warn_error()
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
-
-    def test_050_kill_proc_space(self):
-        """Test killed process name contains a space"""
-        example = OOMAnalyser.OOMDisplay.example_rhel7
-        example = example.replace("mysqld", "VM Monitoring Task")
-
-        self.analyse_oom(example)
-        self.assert_on_warn_error()
-        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
-
-    def test_070_manually_triggered_OOM(self):
-        """Test for manually triggered OOM"""
-        example = OOMAnalyser.OOMDisplay.example_rhel7
-        example = example.replace("order=0", "order=-1")
-        self.analyse_oom(example)
-        self.assert_on_warn_error()
-
-        explanation = self.driver.find_element(By.ID, "explanation")
-        continuous_text = self.to_continuous_text(explanation.text)
-        self.assertTrue(
-            self.text_oom_triggered_manually in continuous_text,
-            'Missing statement "%s"' % self.text_oom_triggered_manually,
-        )
-        self.assertTrue(
-            self.text_oom_triggered_automatically not in continuous_text,
-            'Unexpected statement "%s"' % self.text_oom_triggered_automatically,
-        )
-
-    def test_080_swap_deactivated(self):
-        """Test w/o swap or with deactivated swap"""
-        example = OOMAnalyser.OOMDisplay.example_rhel7
-        example = example.replace("Total swap = 8388604kB", "Total swap = 0kB")
-        self.analyse_oom(example)
-        self.assert_on_warn_error()
-
-        self.check_swap_inactive()
-        self.click_reset_button()
-
-        example = OOMAnalyser.OOMDisplay.example_rhel7
-        example = re.sub(r"\d+ pages in swap cac.*\n*", "", example, re.MULTILINE)
-        example = re.sub(r"Swap cache stats.*\n*", "", example)
-        example = re.sub(r"Free swap.*\n*", "", example)
-        example = re.sub(r"Total swap.*\n*", "", example)
-
-        self.analyse_oom(example)
-        self.assert_on_warn_error()
-        self.check_swap_inactive()
-
     def test_090_scroll_to_top(self):
         """Test scrolling to the top of the page"""
         # scroll to the bottom of the page
@@ -901,7 +554,7 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         )
 
 
-class TestPython(TestBase):
+class TestPython(BaseTests):
     def test_000_configured(self):
         """Check if all kernel classes are instantiated in OOMAnalyser.AllKernelConfigs"""
         all_kernel_classes = {
@@ -1318,247 +971,101 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             )
 
 
-class TestRhel7(TestInBrowserBase):
-    """Test RHEL7 OOM web page in a browser"""
+class TestBroswerArchLinux(BaseInBrowserTests):
+    """Test ArchLinux 6.1.1 OOM web page in a browser"""
 
-    def test_010_gfp_processing_rhel7(self):
-        """Test processing GFP flags for RHEL7 kernel"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+    # 0x140dca will split into
+    #  GFP_HIGHUSER_MOVABLE -> 0x100cca
+    #                         (GFP_HIGHUSER | __GFP_MOVABLE | __GFP_SKIP_KASAN_POISON | __GFP_SKIP_KASAN_UNPOISON)
+    #      GFP_HIGHUSER
+    #          GFP_USER
+    #              __GFP_RECLAIM
+    #                   ___GFP_DIRECT_RECLAIM       0x400
+    #                   ___GFP_KSWAPD_RECLAIM       0x800
+    #              __GFP_IO                          0x40
+    #              __GFP_FS                          0x80
+    #              __GFP_HARDWALL                0x100000
+    #          __GFP_HIGHMEM                         0x02
+    #      __GFP_MOVABLE                             0x08
+    #      __GFP_SKIP_KASAN_POISON                   0x00
+    #      __GFP_SKIP_KASAN_UNPOISON                 0x00
+    #  __GFP_COMP                                 0x40000
+    #  __GFP_ZERO                                   0x100
+    #                                       sum: 0x140dca
+    check_results_gfp_mask = "0x140dca (GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO)"
+    check_results_proc_name = "doxygen"
+    check_results_proc_pid = "473206"
+    check_results_killed_proc_score = ""
+    check_results_swap_cache_kb = "99452 kBytes"
+    check_results_swap_used_kb = "25066284 kBytes"
+    check_results_swap_free_kb = "84 kBytes"
+    check_results_swap_total_kb = "25165820 kBytes"
+    check_results_explanation_expected = [
+        BaseTests.text_alloc_failed_below_low_watermark,
+        BaseTests.text_mem_not_heavily_fragmented,
+        BaseTests.text_oom_triggered_automatically,
+        BaseTests.text_swap_space_are_in_use,
+    ]
+    check_results_explanation_unexpected = [
+        BaseTests.text_alloc_failed_no_free_chunks,
+        BaseTests.text_alloc_failed_unknown_reason,
+        BaseTests.text_mem_heavily_fragmented,
+        BaseTests.text_oom_triggered_manually,
+        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_with_an_oom_score_of,
+    ]
+    check_results_result_table_expected = [BaseTests.test_swap_swap_total]
+    check_results_result_table_unexpected = [BaseTests.test_swap_no_space]
+    check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB"
+    check_results_mem_node_info_end = "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
+    check_results_mem_watermarks_start = (
+        "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB"
+    )
+    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
+    check_results_header_text = "Page Table Bytes"
+    check_results_swap_active = True
+    check_results_swap_inactive = False
 
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (3, 10, ".el7."),
-            "Wrong KernelConfig release",
-        )
+    # Für spezielle Textchecks:
+    check_results_physical_swap_texts = [
+        (
+            "system has 16461600 kBytes physical memory and 25165820 kBytes swap space.",
+            "Physical and swap memory in summary not found:: >{continuous_text}<",
+        ),
+        (
+            "That's 41627420 kBytes total.",
+            "Total memory in summary not found",
+        ),
+        (
+            "69 % (11513452 kBytes out of 16461600 kBytes) physical memory",
+            "Used physical memory in summary not found",
+        ),
+        (
+            "99 % (25066284 kBytes out of 25165820 kBytes) swap space",
+            "Used swap space in summary not found",
+        ),
+    ]
 
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_WAIT", 0x10),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            ("GFP_KERNEL", 0xD0),  # __GFP_WAIT | __GFP_IO | __GFP_FS
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x5000000",  # 0x1000000 (__GFP_WRITE) + 0x4000000  (no flag - unused)
-                ["__GFP_WRITE"],
-                0x4000000,
-            ),
-            ("0x201da", ["GFP_HIGHUSER_MOVABLE", "__GFP_COLD"], 0),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
-            )
-
-    def test_020_insert_and_analyse_rhel7_example(self):
-        """Test loading and analysing RHEL7 example"""
+    def test_020_insert_and_analyse_example(self):
+        """Test loading and analysing ArchLinux 6.1.1 example"""
         self.clear_notification_box()
-        self.insert_example("RHEL7")
+        self.insert_example("ArchLinux")
         self.click_analyse_button()
-        self.check_results_rhel7()
+        self.check_results()
 
-    def test_030_removal_of_leading_but_useless_columns_rhel7(self):
+    def test_030_removal_of_leading_but_useless_columns(self):
         """
-        Test removal of leading but useless columns with RHEL7 example
+        Test removal of leading but useless columns with an ArchLinux example
 
         In this test, the lines of the "Mem-Info:" block are joined
         together with #012 to form a single line. Therefore, the prefix
         test must handle the additional leading spaces in these lines.
         The selected example tests this behavior.
 
-        @see: test_061_removal_of_leading_but_useless_columns_archlinux()
-        """
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
-        self.check_results_rhel7()
-        self.click_reset_button()
-        for prefix in [
-            "[11686.888109] ",
-            "Apr 01 14:13:32 mysrv: ",
-            "Apr 01 14:13:32 mysrv kernel: ",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
-            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
-            "kernel:",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-        ]:
-            lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            lines = ["{}{}".format(prefix, line) for line in lines]
-            oom_text = "\n".join(lines)
-            self.analyse_oom(oom_text)
-
-            self.check_results_rhel7()
-            self.click_reset_button()
-
-
-class TestUbuntu2110(TestInBrowserBase):
-    """Test Ubuntu 21.10 OOM web page in a browser"""
-
-    def test_010_gfp_processing_ubuntu2110(self):
-        """Test processing GFP flags for Ubuntu 21.10 kernel"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_ubuntu2110)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
-
-        current_kernel_version = analyser.oom_result.kconfig.release
-        expected_kernel_version = (5, 12, "")
-        self.assertEqual(
-            current_kernel_version,
-            expected_kernel_version,
-            f"Wrong KernelConfig release: got {current_kernel_version}, expected {expected_kernel_version}",
-        )
-
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x4001000",  # 0x1000 (__GFP_WRITE) + 0x4000000 (no flag - unused)
-                ["__GFP_WRITE"],
-                0x4000000,
-            ),
-            (
-                "0xCC0",
-                ["GFP_KERNEL"],
-                0,
-            ),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
-            )
-
-    def test_020_insert_and_analyse_ubuntu_example(self):
-        """Test loading and analysing Ubuntu 21.10 example"""
-        self.clear_notification_box()
-        self.insert_example("Ubuntu_2110")
-        self.click_analyse_button()
-        self.check_results_ubuntu2110()
-
-
-class TestArchlinux(TestInBrowserBase):
-    """Test ArchLinux 6.1.1 OOM web page in a browser"""
-
-    def test_010_gfp_processing_archlinux(self):
-        """Test processing GFP flags for ArchLinux 6.1.1 kernel"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
-
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (6, 1, ""),
-            "Wrong KernelConfig release",
-        )
-
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            (
-                "GFP_KERNEL",
-                0xCC0,
-            ),  # (__GFP_RECLAIM (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM) | __GFP_IO | __GFP_FS)
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x201000",  # 0x1000 (__GFP_WRITE) + 0x200000 (no flag - unused)
-                ["__GFP_WRITE"],
-                0x200000,
-            ),
-            ("0x140dca", ["GFP_HIGHUSER_MOVABLE", "__GFP_COMP", "__GFP_ZERO"], 0),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
-            )
-
-    def test_020_insert_and_analyse_archlinux_example(self):
-        """Test loading and analysing ArchLinux 6.1.1 example"""
-        self.clear_notification_box()
-        self.insert_example("ArchLinux")
-        self.click_analyse_button()
-        self.check_results_archlinux_6_1_1()
-
-    def test_030_removal_of_leading_but_useless_columns_archlinux(self):
-        """
-        Test removal of leading but useless columns with an ArchLinux example
-
-        In this test, the lines of the "Mem-Info:" block are not joined
-        together with #012 to form a line, but are separate lines. Therefore,
-        the prefix test must handle the additional leading spaces in these
-        lines. The selected example tests this behavior.
-
-        @see: test_060_removal_of_leading_but_useless_columns_rhel7()
+        @see: TestRhel7.test_030_removal_of_leading_but_useless_columns()
         """
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        self.check_results_archlinux_6_1_1()
+        self.check_results()
         self.click_reset_button()
         for prefix in [
             "[11686.888109] ",
@@ -1579,9 +1086,278 @@ class TestArchlinux(TestInBrowserBase):
                 new_lines.append(new_line)
             oom_text = "\n".join(new_lines)
             self.analyse_oom(oom_text)
-
-            self.check_results_archlinux_6_1_1()
+            self.check_results()
             self.click_reset_button()
+
+
+class TestBrowserRhel7(BaseInBrowserTests):
+    """Test RHEL7 OOM web page in a browser"""
+
+    # 0x201da will split into
+    #  GFP_HIGHUSER_MOVABLE   0x200da
+    #                         (__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL | __GFP_HIGHMEM | __GFP_MOVABLE)
+    #    __GFP_WAIT              0x10
+    #    __GFP_IO                0x40
+    #    __GFP_FS                0x80
+    #    __GFP_HARDWALL       0x20000
+    #    __GFP_HIGHMEM           0x02
+    #    __GFP_MOVABLE           0x08
+    #  __GFP_COLD               0x100
+    #                    sum: 0x201da
+    check_results_gfp_mask = "0x201da (GFP_HIGHUSER_MOVABLE | __GFP_COLD)"
+    check_results_proc_name = "sed"
+    check_results_proc_pid = "29481"
+    check_results_killed_proc_score = "651"
+    check_results_swap_cache_kb = "45368 kBytes"
+    check_results_swap_used_kb = "8343236 kBytes"
+    check_results_swap_free_kb = "0 kBytes"
+    check_results_swap_total_kb = "8388604 kBytes"
+    check_results_explanation_expected = [
+        BaseTests.text_alloc_failed_below_low_watermark,
+        BaseTests.text_mem_not_heavily_fragmented,
+        BaseTests.text_oom_triggered_automatically,
+        BaseTests.text_swap_space_are_in_use,
+        BaseTests.text_with_an_oom_score_of,
+    ]
+    check_results_explanation_unexpected = [
+        BaseTests.text_alloc_failed_no_free_chunks,
+        BaseTests.text_alloc_failed_unknown_reason,
+        BaseTests.text_mem_heavily_fragmented,
+        BaseTests.text_oom_triggered_manually,
+        BaseTests.text_swap_space_not_in_use,
+    ]
+    check_results_result_table_expected = [BaseTests.test_swap_swap_total]
+    check_results_result_table_unexpected = [BaseTests.test_swap_no_space]
+    check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB"
+    check_results_mem_node_info_end = "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
+    check_results_mem_watermarks_start = (
+        "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB"
+    )
+    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0"
+    check_results_header_text = "Page Table Entries"
+    check_results_swap_active = True
+    check_results_swap_inactive = False
+
+    check_results_physical_swap_texts = [
+        (
+            "system has 33519336 kBytes physical memory and 8388604 kBytes swap space.",
+            "Physical and swap memory in summary not found:: >{explanation}<",
+        ),
+        (
+            "That's 41907940 kBytes total.",
+            "Total memory in summary not found:: >{explanation}<",
+        ),
+        (
+            "94 % (31705788 kBytes out of 33519336 kBytes) physical memory",
+            "Used physical memory in summary not found:: >{explanation}<",
+        ),
+        (
+            "99 % (8343236 kBytes out of 8388604 kBytes) swap space",
+            "Used swap space in summary not found:: >{explanation}<",
+        ),
+    ]
+
+    def test_020_insert_and_analyse_example(self):
+        """Test loading and analysing RHEL7 example"""
+        self.clear_notification_box()
+        self.insert_example("RHEL7")
+        self.click_analyse_button()
+        self.check_results()
+
+    def test_030_removal_of_leading_but_useless_columns(self):
+        """
+        Test removal of leading but useless columns with RHEL7 example
+
+        In this test, the lines of the "Mem-Info:" block are joined
+        together with #012 to form a single line. Therefore, the prefix
+        test must handle the additional leading spaces in these lines.
+        The selected example tests this behavior.
+
+        @see: TestArchLinux.test_030_removal_of_leading_but_useless_columns()
+        """
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
+        self.check_results()
+        self.click_reset_button()
+        for prefix in [
+            "[11686.888109] ",
+            "Apr 01 14:13:32 mysrv: ",
+            "Apr 01 14:13:32 mysrv kernel: ",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+            "kernel:",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+        ]:
+            lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+            lines = ["{}{}".format(prefix, line) for line in lines]
+            oom_text = "\n".join(lines)
+            self.analyse_oom(oom_text)
+            self.check_results()
+            self.click_reset_button()
+
+    def test_040_loading_journalctl_input(self):
+        """Test loading input from journalctl
+
+        The second part of the "Mem-Info:" block as starting with the third
+        line has not a prefix like the lines before and after it. It is
+        indented only by a single space.
+        """
+        for prefix in [
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+            "[1234567.654321]",
+        ]:
+            # prepare example
+            example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+            res = []
+
+            # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
+            for line in example_lines:
+                if "#012" in line:
+                    res.extend(line.split("#012"))
+                else:
+                    res.append(line)
+            example_lines = res
+            res = []
+
+            # add date/time prefix except for "Mem-Info:" block
+            for line in example_lines:
+                if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+                    line = f"{prefix} {line}"
+                res.append(line)
+            example = "\n".join(res)
+
+            self.check_meminfo_format_rhel7(
+                f'Unprocessed example with prefix "{prefix}"', example
+            )
+            oom = OOMAnalyser.OOMEntity(example)
+            self.check_meminfo_format_rhel7(
+                f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
+            )
+
+            self.analyse_oom(example)
+            self.check_results()
+            self.click_reset_button()
+
+    def test_050_trigger_proc_space(self):
+        """Test trigger process name contains a space"""
+        example = OOMAnalyser.OOMDisplay.example_rhel7
+        example = example.replace("sed", "VM Monitoring Task")
+
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
+        self.assertTrue(
+            h3_summary.is_displayed(),
+            "Analysis details incl. <h3>Summary</h3> should be displayed",
+        )
+
+    def test_060_kill_proc_space(self):
+        """Test killed process name contains a space"""
+        example = OOMAnalyser.OOMDisplay.example_rhel7
+        example = example.replace("mysqld", "VM Monitoring Task")
+
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+        h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
+        self.assertTrue(
+            h3_summary.is_displayed(),
+            "Analysis details incl. <h3>Summary</h3> should be displayed",
+        )
+
+    def test_070_manually_triggered_OOM(self):
+        """Test for manually triggered OOM"""
+        example = OOMAnalyser.OOMDisplay.example_rhel7
+        example = example.replace("order=0", "order=-1")
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        explanation = self.driver.find_element(By.ID, "explanation")
+        continuous_text = self.to_continuous_text(explanation.text)
+        self.assertTrue(
+            self.text_oom_triggered_manually in continuous_text,
+            'Missing statement "%s"' % self.text_oom_triggered_manually,
+        )
+        self.assertTrue(
+            self.text_oom_triggered_automatically not in continuous_text,
+            'Unexpected statement "%s"' % self.text_oom_triggered_automatically,
+        )
+
+    def test_080_swap_deactivated(self):
+        """Test w/o swap or with deactivated swap"""
+        example = OOMAnalyser.OOMDisplay.example_rhel7
+        example = example.replace("Total swap = 8388604kB", "Total swap = 0kB")
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        self.check_swap_inactive()
+        self.click_reset_button()
+
+        example = OOMAnalyser.OOMDisplay.example_rhel7
+        example = re.sub(r"\d+ pages in swap cac.*\n*", "", example, re.MULTILINE)
+        example = re.sub(r"Swap cache stats.*\n*", "", example)
+        example = re.sub(r"Free swap.*\n*", "", example)
+        example = re.sub(r"Total swap.*\n*", "", example)
+
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+        self.check_swap_inactive()
+
+
+class TestBrowserUbuntu2110(BaseInBrowserTests):
+    """Test Ubuntu 21.10 OOM web page in a browser"""
+
+    # 0xcc0 will split into
+    #  GFP_KERNEL             (__GFP_RECLAIM | __GFP_IO | __GFP_FS)
+    #    __GFP_RECLAIM        (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM)
+    #        ___GFP_DIRECT_RECLAIM   0x400
+    #        ___GFP_KSWAPD_RECLAIM   0x800
+    #    __GFP_IO                    0x40
+    #    __GFP_FS                    0x80
+    #                  sum:          0xCC0
+    check_results_gfp_mask = "0xcc0 (GFP_KERNEL)"
+    check_results_explanation_expected = [
+        BaseTests.text_oom_triggered_manually,
+        BaseTests.text_swap_space_not_in_use,
+    ]
+    check_results_explanation_unexpected = [
+        BaseTests.text_alloc_failed_below_low_watermark,
+        BaseTests.text_alloc_failed_no_free_chunks,
+        BaseTests.text_alloc_failed_unknown_reason,
+        BaseTests.text_mem_heavily_fragmented,
+        BaseTests.text_mem_not_heavily_fragmented,
+        BaseTests.text_oom_triggered_automatically,
+        BaseTests.text_with_an_oom_score_of,
+    ]
+    check_results_result_table_expected = [BaseTests.test_swap_no_space]
+    check_results_result_table_unexpected = [BaseTests.test_swap_swap_total]
+    check_results_mem_node_info_start = (
+        "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB"
+    )
+    check_results_mem_node_info_end = "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
+    check_results_mem_watermarks_start = (
+        "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB"
+    )
+    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
+    check_results_header_text = "Page Table Bytes"
+    check_results_swap_active = False
+    check_results_swap_inactive = True
+
+    check_results_physical_swap_texts = [
+        (
+            "system has 2096632 kBytes physical memory",
+            "Physical memory in summary not found:: >{continuous_text}<",
+        ),
+        (
+            "9 % (209520 kBytes out of 2096632 kBytes) physical memory",
+            "Used physical memory in summary not found:: >{continuous_text}<",
+        ),
+    ]
+
+    def test_020_insert_and_analyse_example(self):
+        """Test loading and analysing Ubuntu 21.10 example"""
+        self.clear_notification_box()
+        self.insert_example("Ubuntu_2110")
+        self.click_analyse_button()
+        self.check_results()
 
 
 if __name__ == "__main__":
