@@ -339,18 +339,18 @@ class BaseInBrowserTests(BaseTests):
         except NoSuchElementException:
             pass
         else:
-            self.fail('Unexpected warning message: "%s"' % warning.text)
+            self.fail(f'Unexpected warning message: "{warning.text}"')
 
     def assert_on_error(self):
         error = self.get_first_error_msg()
         if error:
-            self.fail('Unexpected error message: "%s"' % error)
+            self.fail(f'Unexpected error message: "{error}"')
 
         for event in self.driver.get_log("browser"):
             # ignore favicon.ico errors
             if "favicon.ico" in event["message"]:
                 continue
-            self.fail('Error on browser console reported: "%s"' % event)
+            self.fail(f'Error on browser console reported: "{event}"')
 
     def assert_on_warn_error(self):
         self.assert_on_warn()
@@ -415,7 +415,7 @@ class BaseInBrowserTests(BaseTests):
         option_values = [o.get_attribute("value") for o in select.options]
         self.assertTrue(
             select_value in option_values,
-            "Missing proper option for example %s" % select_value,
+            f"Missing proper option for example {select_value}",
         )
         select.select_by_value(select_value)
         self.assertNotEqual(
@@ -455,11 +455,11 @@ class BaseInBrowserTests(BaseTests):
         continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
             self.text_swap_space_not_in_use in continuous_text,
-            'Missing statement "%s"' % self.text_swap_space_not_in_use,
+            f'Missing statement "{self.text_swap_space_not_in_use}"',
         )
         self.assertTrue(
             self.text_swap_space_are_in_use not in continuous_text,
-            'Unexpected statement "%s"' % self.text_swap_space_are_in_use,
+            f'Unexpected statement "{self.text_swap_space_are_in_use}"',
         )
 
     def check_swap_active(self):
@@ -467,7 +467,7 @@ class BaseInBrowserTests(BaseTests):
         continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
             self.text_swap_space_are_in_use in continuous_text,
-            'Missing statement "%s"' % self.text_swap_space_are_in_use,
+            f'Missing statement "{self.text_swap_space_are_in_use}"',
         )
 
 
@@ -636,8 +636,7 @@ class TestPython(BaseTests):
             self.assertEqual(
                 to_strip,
                 pos,
-                'Calc wrong number of columns to strip for "%s": got: %d, expect: %d'
-                % (line, to_strip, pos),
+                f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {pos}',
             )
 
     def test_004_extract_block_from_next_pos(self):
@@ -715,7 +714,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             kernel_found = analyser._identify_kernel_version()
             self.assertTrue(
                 kernel_found,
-                'Failed to identify kernel from string "%s"' % kversion,
+                f'Failed to identify kernel from string "{kversion}"',
             )
 
             analyser._choose_kernel_config()
@@ -723,8 +722,8 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             self.assertEqual(
                 type(result),
                 type(kcfg),
-                'Mismatch between expected kernel config "%s" and chosen config "%s" for kernel version "%s"'
-                % (type(kcfg), type(result), kversion),
+                f'Mismatch between expected kernel config "{type(kcfg)}" and chosen config "{type(result)}" for '
+                f'kernel version "{kversion}"',
             )
 
     def test_008_kversion_check(self):
@@ -754,8 +753,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             self.assertEqual(
                 analyser._check_kversion_greater_equal(kversion, min_version),
                 expected_result,
-                'Failed to compare kernel version "%s" with minimum version "%s"'
-                % (kversion, min_version),
+                f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"',
             )
 
     def test_009_extract_zoneinfo(self):
@@ -786,17 +784,16 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("Normal", "total_free_kb_per_node", 1, 50836),
         ]:
             self.assertTrue(
-                zone in buddyinfo, "Missing details for zone %s in buddy info" % zone
+                zone in buddyinfo, f"Missing details for zone {zone} in buddy info"
             )
             self.assertTrue(
                 order in buddyinfo[zone],
-                'Missing details for order "%s" in buddy info' % order,
+                f'Missing details for order "{order}" in buddy info',
             )
             count = buddyinfo[zone][order][node]
             self.assertTrue(
                 count == except_count,
-                'Wrong chunk count for order %s in zone "%s" for node "%s" (got: %d, expect %d)'
-                % (order, zone, node, count, except_count),
+                f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {except_count})',
             )
 
     def test_010_extract_zoneinfo(self):
@@ -824,31 +821,30 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         ]:
             self.assertTrue(
                 zone in watermarks,
-                "Missing details for zone %s in memory watermarks" % zone,
+                f"Missing details for zone {zone} in memory watermarks",
             )
             self.assertTrue(
                 node in watermarks[zone],
-                'Missing details for node "%s" in memory watermarks' % node,
+                f'Missing details for node "{node}" in memory watermarks',
             )
             self.assertTrue(
                 level in watermarks[zone][node],
-                'Missing details for level "%s" in memory watermarks' % level,
+                f'Missing details for level "{level}" in memory watermarks',
             )
             level = watermarks[zone][node][level]
             self.assertTrue(
                 level == except_level,
-                'Wrong watermark level for node %s in zone "%s" (got: %d, expect %d)'
-                % (node, zone, level, except_level),
+                f'Wrong watermark level for node {node} in zone "{zone}" (got: {level}, expect {except_level})',
             )
         node = analyser.oom_result.details["trigger_proc_numa_node"]
         self.assertTrue(
-            node == 0, "Wrong node with memory shortage (got: %s, expect: 0)" % node
+            node == 0, f"Wrong node with memory shortage (got: {node}, expect: 0)"
         )
         self.assertEqual(
             analyser.oom_result.kconfig.MAX_ORDER,
             11,  # This is a hard-coded value as extracted from kernel 6.2.0
-            "Unexpected number of chunk sizes (got: %s, expect: 11 (kernel 6.2.0))"
-            % analyser.oom_result.kconfig.MAX_ORDER,
+            f"Unexpected number of chunk sizes (got: {analyser.oom_result.kconfig.MAX_ORDER}, "
+            f"expect: 11 (kernel 6.2.0))",
         )
 
     def test_011_alloc_failure(self):
@@ -889,9 +885,8 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             self.assertEqual(
                 result,
                 expected_result,
-                "Wrong result of the check for free chunks with the same or higher order for Node %d, "
-                'Zone "%s" and order %d (got: %s, expected %s)'
-                % (node, zone, order, result, expected_result),
+                f"Wrong result of the check for free chunks with the same or higher order for Node {node}, "
+                f'Zone "{zone}" and order {order} (got: {result}, expected {expected_result})',
             )
 
         # Search node with memory shortage: watermark "free" < "min"
@@ -907,8 +902,8 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             self.assertEqual(
                 node,
                 expected_node,
-                'Wrong result if a node has memory shortage in zone "%s" (got: %s, expected %s)'
-                % (zone, node, expected_node),
+                f'Wrong result if a node has memory shortage in zone "{zone}" (got: {node}, '
+                f"expected {expected_node})",
             )
 
         self.assertEqual(
@@ -930,8 +925,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         )
         self.assertFalse(
             mem_fragmented,
-            'Memory of Node %d, Zone "%s" is not fragmented, but reported as fragmented'
-            % (node, zone),
+            f'Memory of Node {node}, Zone "{zone}" is not fragmented, but reported as fragmented',
         )
 
     def test_013_page_size(self):
@@ -943,9 +937,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 
         page_size_kb = analyser.oom_result.details["page_size_kb"]
         self.assertEqual(
-            page_size_kb,
-            4,
-            "Unexpected page size (got %s, expect: 4)" % page_size_kb,
+            page_size_kb, 4, f"Unexpected page size (got {page_size_kb}, expect: 4)"
         )
         self.assertEqual(
             analyser.oom_result.details["_page_size_guessed"],
@@ -966,8 +958,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             self.assertEqual(
                 formatted,
                 expected,
-                "Unexpected human readable output of size %s (got %s, expect: %s)"
-                % (value, formatted, expected),
+                f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})",
             )
 
 
@@ -1080,9 +1071,9 @@ class TestBroswerArchLinux(BaseInBrowserTests):
             new_lines = []
             for line in lines:
                 if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                    new_line = "{}{}".format(" " * len(prefix), line)
+                    new_line = f'{" " * len(prefix)}{line}'
                 else:
-                    new_line = "{}{}".format(prefix, line)
+                    new_line = f"{prefix}{line}"
                 new_lines.append(new_line)
             oom_text = "\n".join(new_lines)
             self.analyse_oom(oom_text)
@@ -1188,7 +1179,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
             "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
         ]:
             lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            lines = ["{}{}".format(prefix, line) for line in lines]
+            lines = [f"{prefix}{line}" for line in lines]
             oom_text = "\n".join(lines)
             self.analyse_oom(oom_text)
             self.check_results()
@@ -1274,11 +1265,11 @@ class TestBrowserRhel7(BaseInBrowserTests):
         continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
             self.text_oom_triggered_manually in continuous_text,
-            'Missing statement "%s"' % self.text_oom_triggered_manually,
+            f'Missing statement "{self.text_oom_triggered_manually}"',
         )
         self.assertTrue(
             self.text_oom_triggered_automatically not in continuous_text,
-            'Unexpected statement "%s"' % self.text_oom_triggered_automatically,
+            f'Unexpected statement "{self.text_oom_triggered_automatically}"',
         )
 
     def test_080_swap_deactivated(self):
