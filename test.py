@@ -136,8 +136,8 @@ class TestBase(unittest.TestCase):
         return continuous
 
 
-class TestInBrowser(TestBase):
-    """Test OOM web page in a browser"""
+class TestInBrowserBase(TestBase):
+    """Base class for all tests that run in a browser"""
 
     def setUp(self):
         warnings.simplefilter("ignore", ResourceWarning)
@@ -710,6 +710,10 @@ class TestInBrowser(TestBase):
             'Missing statement "%s"' % self.text_swap_space_are_in_use,
         )
 
+
+class TestInBrowser(TestInBrowserBase):
+    """Test OOM web page in a browser"""
+
     def test_010_load_page(self):
         """Test if the page is loading"""
         assert "OOMAnalyser" in self.driver.title
@@ -718,27 +722,6 @@ class TestInBrowser(TestBase):
         """Test if JS is loaded"""
         elem = self.driver.find_element(By.ID, "version")
         self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
-
-    def test_030_insert_and_analyse_rhel7_example(self):
-        """Test loading and analysing RHEL7 example"""
-        self.clear_notification_box()
-        self.insert_example("RHEL7")
-        self.click_analyse_button()
-        self.check_results_rhel7()
-
-    def test_031_insert_and_analyse_ubuntu_example(self):
-        """Test loading and analysing Ubuntu 21.10 example"""
-        self.clear_notification_box()
-        self.insert_example("Ubuntu_2110")
-        self.click_analyse_button()
-        self.check_results_ubuntu2110()
-
-    def test_032_insert_and_analyse_archlinux_example(self):
-        """Test loading and analysing ArchLinux 6.1.1 example"""
-        self.clear_notification_box()
-        self.insert_example("ArchLinux")
-        self.click_analyse_button()
-        self.check_results_archlinux_6_1_1()
 
     def test_033_empty_textarea(self):
         """Test "Analyse" with an empty textarea"""
@@ -862,74 +845,6 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             h3_summary.is_displayed(),
             "Analysis details incl. <h3>Summary</h3> should be displayed",
         )
-
-    def test_060_removal_of_leading_but_useless_columns_rhel7(self):
-        """
-        Test removal of leading but useless columns with RHEL7 example
-
-        In this test, the lines of the "Mem-Info:" block are joined
-        together with #012 to form a single line. Therefore, the prefix
-        test must handle the additional leading spaces in these lines.
-        The selected example tests this behavior.
-
-        @see: test_061_removal_of_leading_but_useless_columns_archlinux()
-        """
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
-        self.check_results_rhel7()
-        self.click_reset_button()
-        for prefix in [
-            "[11686.888109] ",
-            "Apr 01 14:13:32 mysrv: ",
-            "Apr 01 14:13:32 mysrv kernel: ",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
-            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
-            "kernel:",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-        ]:
-            lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            lines = ["{}{}".format(prefix, line) for line in lines]
-            oom_text = "\n".join(lines)
-            self.analyse_oom(oom_text)
-
-            self.check_results_rhel7()
-            self.click_reset_button()
-
-    def test_061_removal_of_leading_but_useless_columns_archlinux(self):
-        """
-        Test removal of leading but useless columns with an ArchLinux example
-
-        In this test, the lines of the "Mem-Info:" block are not joined
-        together with #012 to form a line, but are separate lines. Therefore,
-        the prefix test must handle the additional leading spaces in these
-        lines. The selected example tests this behavior.
-
-        @see: test_060_removal_of_leading_but_useless_columns_rhel7()
-        """
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        self.check_results_archlinux_6_1_1()
-        self.click_reset_button()
-        for prefix in [
-            "[11686.888109] ",
-            "Apr 01 14:13:32 mysrv: ",
-            "Apr 01 14:13:32 mysrv kernel: ",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
-            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
-            "kernel:",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-        ]:
-            lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
-            new_lines = []
-            for line in lines:
-                if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                    new_line = "{}{}".format(" " * len(prefix), line)
-                else:
-                    new_line = "{}{}".format(prefix, line)
-                new_lines.append(new_line)
-            oom_text = "\n".join(new_lines)
-            self.analyse_oom(oom_text)
-
-            self.check_results_archlinux_6_1_1()
-            self.click_reset_button()
 
     def test_070_manually_triggered_OOM(self):
         """Test for manually triggered OOM"""
@@ -1157,167 +1072,6 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 type(kcfg),
                 'Mismatch between expected kernel config "%s" and chosen config "%s" for kernel version "%s"'
                 % (type(kcfg), type(result), kversion),
-            )
-
-    def test_007_gfp_processing(self):
-        """Test processing GFP flags"""
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
-
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (3, 10, ".el7."),
-            "Wrong KernelConfig release",
-        )
-
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_WAIT", 0x10),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            ("GFP_KERNEL", 0xD0),  # __GFP_WAIT | __GFP_IO | __GFP_FS
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x5000000",  # 0x1000000 (__GFP_WRITE) + 0x4000000  (no flag - unused)
-                ["__GFP_WRITE"],
-                0x4000000,
-            ),
-            ("0x201da", ["GFP_HIGHUSER_MOVABLE", "__GFP_COLD"], 0),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
-            )
-
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_ubuntu2110)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
-
-        current_kernel_version = analyser.oom_result.kconfig.release
-        expected_kernel_version = (5, 12, "")
-        self.assertEqual(
-            current_kernel_version,
-            expected_kernel_version,
-            f"Wrong KernelConfig release: got {current_kernel_version}, expected {expected_kernel_version}",
-        )
-
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x4001000",  # 0x1000 (__GFP_WRITE) + 0x4000000 (no flag - unused)
-                ["__GFP_WRITE"],
-                0x4000000,
-            ),
-            (
-                "0xCC0",
-                ["GFP_KERNEL"],
-                0,
-            ),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
-            )
-
-        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        analyser = OOMAnalyser.OOMAnalyser(oom)
-        success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
-
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (6, 1, ""),
-            "Wrong KernelConfig release",
-        )
-
-        for flag, hex_value in [
-            ("__GFP_DMA", 0x01),
-            ("__GFP_IO", 0x40),
-            ("__GFP_FS", 0x80),
-            (
-                "GFP_KERNEL",
-                0xCC0,
-            ),  # (__GFP_RECLAIM (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM) | __GFP_IO | __GFP_FS)
-            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
-        ]:
-            self.assertEqual(
-                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
-                hex_value,
-                "Invalid decimal value for %s" % flag,
-            )
-
-        for hex_value, flags_expected, unknown_expected in [
-            (
-                "0x01",
-                ["__GFP_DMA"],
-                0,
-            ),
-            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
-            (
-                "0x201000",  # 0x1000 (__GFP_WRITE) + 0x200000 (no flag - unused)
-                ["__GFP_WRITE"],
-                0x200000,
-            ),
-            ("0x140dca", ["GFP_HIGHUSER_MOVABLE", "__GFP_COMP", "__GFP_ZERO"], 0),
-        ]:
-            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
-            self.assertEqual(
-                flags_calculated,
-                flags_expected,
-                "Invalid flag(s) for hex value %s" % hex_value,
-            )
-            self.assertEqual(
-                unknown_calculated,
-                unknown_expected,
-                "Invalid remaining / not resolved decimal flag value",
             )
 
     def test_008_kversion_check(self):
@@ -1562,6 +1316,272 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 "Unexpected human readable output of size %s (got %s, expect: %s)"
                 % (value, formatted, expected),
             )
+
+
+class TestRhel7(TestInBrowserBase):
+    """Test RHEL7 OOM web page in a browser"""
+
+    def test_010_gfp_processing_rhel7(self):
+        """Test processing GFP flags for RHEL7 kernel"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (3, 10, ".el7."),
+            "Wrong KernelConfig release",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_WAIT", 0x10),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
+            ("GFP_KERNEL", 0xD0),  # __GFP_WAIT | __GFP_IO | __GFP_FS
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x5000000",  # 0x1000000 (__GFP_WRITE) + 0x4000000  (no flag - unused)
+                ["__GFP_WRITE"],
+                0x4000000,
+            ),
+            ("0x201da", ["GFP_HIGHUSER_MOVABLE", "__GFP_COLD"], 0),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+    def test_020_insert_and_analyse_rhel7_example(self):
+        """Test loading and analysing RHEL7 example"""
+        self.clear_notification_box()
+        self.insert_example("RHEL7")
+        self.click_analyse_button()
+        self.check_results_rhel7()
+
+    def test_030_removal_of_leading_but_useless_columns_rhel7(self):
+        """
+        Test removal of leading but useless columns with RHEL7 example
+
+        In this test, the lines of the "Mem-Info:" block are joined
+        together with #012 to form a single line. Therefore, the prefix
+        test must handle the additional leading spaces in these lines.
+        The selected example tests this behavior.
+
+        @see: test_061_removal_of_leading_but_useless_columns_archlinux()
+        """
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
+        self.check_results_rhel7()
+        self.click_reset_button()
+        for prefix in [
+            "[11686.888109] ",
+            "Apr 01 14:13:32 mysrv: ",
+            "Apr 01 14:13:32 mysrv kernel: ",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+            "kernel:",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+        ]:
+            lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+            lines = ["{}{}".format(prefix, line) for line in lines]
+            oom_text = "\n".join(lines)
+            self.analyse_oom(oom_text)
+
+            self.check_results_rhel7()
+            self.click_reset_button()
+
+
+class TestUbuntu2110(TestInBrowserBase):
+    """Test Ubuntu 21.10 OOM web page in a browser"""
+
+    def test_010_gfp_processing_ubuntu2110(self):
+        """Test processing GFP flags for Ubuntu 21.10 kernel"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_ubuntu2110)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        current_kernel_version = analyser.oom_result.kconfig.release
+        expected_kernel_version = (5, 12, "")
+        self.assertEqual(
+            current_kernel_version,
+            expected_kernel_version,
+            f"Wrong KernelConfig release: got {current_kernel_version}, expected {expected_kernel_version}",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x4001000",  # 0x1000 (__GFP_WRITE) + 0x4000000 (no flag - unused)
+                ["__GFP_WRITE"],
+                0x4000000,
+            ),
+            (
+                "0xCC0",
+                ["GFP_KERNEL"],
+                0,
+            ),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+    def test_020_insert_and_analyse_ubuntu_example(self):
+        """Test loading and analysing Ubuntu 21.10 example"""
+        self.clear_notification_box()
+        self.insert_example("Ubuntu_2110")
+        self.click_analyse_button()
+        self.check_results_ubuntu2110()
+
+
+class TestArchlinux(TestInBrowserBase):
+    """Test ArchLinux 6.1.1 OOM web page in a browser"""
+
+    def test_010_gfp_processing_archlinux(self):
+        """Test processing GFP flags for ArchLinux 6.1.1 kernel"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        self.assertTrue(success, "OOM analysis failed")
+
+        self.assertEqual(
+            analyser.oom_result.kconfig.release,
+            (6, 1, ""),
+            "Wrong KernelConfig release",
+        )
+
+        for flag, hex_value in [
+            ("__GFP_DMA", 0x01),
+            ("__GFP_IO", 0x40),
+            ("__GFP_FS", 0x80),
+            (
+                "GFP_KERNEL",
+                0xCC0,
+            ),  # (__GFP_RECLAIM (___GFP_DIRECT_RECLAIM | ___GFP_KSWAPD_RECLAIM) | __GFP_IO | __GFP_FS)
+            ("__GFP_UNKNOWN", 0x00),  # unknown GFP flag
+        ]:
+            self.assertEqual(
+                analyser.oom_result.kconfig._gfp_flag2decimal(flag),
+                hex_value,
+                "Invalid decimal value for %s" % flag,
+            )
+
+        for hex_value, flags_expected, unknown_expected in [
+            (
+                "0x01",
+                ["__GFP_DMA"],
+                0,
+            ),
+            ("0x05", ["__GFP_DMA", "__GFP_DMA32"], 0),
+            (
+                "0x201000",  # 0x1000 (__GFP_WRITE) + 0x200000 (no flag - unused)
+                ["__GFP_WRITE"],
+                0x200000,
+            ),
+            ("0x140dca", ["GFP_HIGHUSER_MOVABLE", "__GFP_COMP", "__GFP_ZERO"], 0),
+        ]:
+            flags_calculated, unknown_calculated = analyser._gfp_hex2flags(hex_value)
+            self.assertEqual(
+                flags_calculated,
+                flags_expected,
+                "Invalid flag(s) for hex value %s" % hex_value,
+            )
+            self.assertEqual(
+                unknown_calculated,
+                unknown_expected,
+                "Invalid remaining / not resolved decimal flag value",
+            )
+
+    def test_020_insert_and_analyse_archlinux_example(self):
+        """Test loading and analysing ArchLinux 6.1.1 example"""
+        self.clear_notification_box()
+        self.insert_example("ArchLinux")
+        self.click_analyse_button()
+        self.check_results_archlinux_6_1_1()
+
+    def test_030_removal_of_leading_but_useless_columns_archlinux(self):
+        """
+        Test removal of leading but useless columns with an ArchLinux example
+
+        In this test, the lines of the "Mem-Info:" block are not joined
+        together with #012 to form a line, but are separate lines. Therefore,
+        the prefix test must handle the additional leading spaces in these
+        lines. The selected example tests this behavior.
+
+        @see: test_060_removal_of_leading_but_useless_columns_rhel7()
+        """
+        self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
+        self.check_results_archlinux_6_1_1()
+        self.click_reset_button()
+        for prefix in [
+            "[11686.888109] ",
+            "Apr 01 14:13:32 mysrv: ",
+            "Apr 01 14:13:32 mysrv kernel: ",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+            "kernel:",
+            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+        ]:
+            lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
+            new_lines = []
+            for line in lines:
+                if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+                    new_line = "{}{}".format(" " * len(prefix), line)
+                else:
+                    new_line = "{}{}".format(prefix, line)
+                new_lines.append(new_line)
+            oom_text = "\n".join(new_lines)
+            self.analyse_oom(oom_text)
+
+            self.check_results_archlinux_6_1_1()
+            self.click_reset_button()
 
 
 if __name__ == "__main__":
