@@ -5769,6 +5769,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # set defaults and clear notifications / JS console
         self.set_html_defaults()
 
+        # scroll to the top to show the results
+        window.scrollTo({"top": 0, "behavior": "smooth"})
+
         self.oom = OOMEntity(self.load_from_form())
         analyser = OOMAnalyser(self.oom)
         success = analyser.analyse()
@@ -5776,9 +5779,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.oom_result = analyser.oom_result
             self.show_oom_details()
             self.update_toc()
-
-        # scroll to the top to show the results
-        window.scrollTo({"top": 0, "behavior": "smooth"})
 
     def load_from_form(self):
         """
