@@ -5755,7 +5755,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """Toggle the visibility of the full OOM message"""
         oom_element = document.getElementById("oom")
         row_with_oom = oom_element.parentNode.parentNode
-        toggle_msg = document.getElementById("oom_toogle_msg")
+        toggle_msg = document.getElementById("oom_toggle_msg")
 
         if show or row_with_oom.classList.contains("js-text--display-none"):
             row_with_oom.classList.remove("js-text--display-none")
