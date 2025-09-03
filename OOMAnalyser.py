@@ -4439,7 +4439,7 @@ class OOMAnalyser:
         # reduce the minimum watermark for high-priority calls
         # ALLOC_HIGH == __GFP_HIGH
         gfp_mask_decimal = self.oom_result.details["_trigger_proc_gfp_mask_decimal"]
-        gfp_flag_high = self.oom_result.kconfig.GFP_FLAGS["__GFP_DMA"]["_value"]
+        gfp_flag_high = self.oom_result.kconfig.GFP_FLAGS["__GFP_HIGH"]["_value"]
         if (gfp_mask_decimal & gfp_flag_high) == gfp_flag_high:
             min_kb -= int(min_kb / 2)
 
