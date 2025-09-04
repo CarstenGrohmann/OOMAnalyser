@@ -3781,6 +3781,32 @@ class OOMResult:
     watermarks = {}
     """Memory watermark information"""
 
+    def __init__(self):
+        self.buddyinfo = {}
+        self.details = (
+            dict(self.default_values)
+            if getattr(self, "default_values", None) is not None
+            else {}
+        )
+        self.error_msg = ""
+        self.kconfig = (
+            self.kconfig
+            if getattr(self, "kconfig", None) is not None
+            else BaseKernelConfig()
+        )
+        self.kversion = None
+        self.mem_alloc_failure = (
+            self.mem_alloc_failure
+            if getattr(self, "mem_alloc_failure", None) is not None
+            else OOMMemoryAllocFailureType.not_started
+        )
+        self.mem_fragmented = None
+        self.oom_entity = None
+        self.oom_text = None
+        self.oom_type = OOMType.UNKNOWN
+        self.swap_active = False
+        self.watermarks = {}
+
 
 class OOMAnalyser:
     """Analyze an OOM object and calculate additional values"""
