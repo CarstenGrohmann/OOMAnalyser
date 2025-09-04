@@ -3488,39 +3488,46 @@ class OOMEntity:
     text = ""
     """OOM as text"""
 
-    def __init__(self, text):
-        # use Unix LF only
-        text = text.replace("\r\n", "\n")
-        text = text.strip()
-        oom_lines = text.split("\n")
-
+    def __init__(self, raw_text: str):
         self.current_line = 0
-        self.lines = oom_lines
-        self.text = text
+        self.lines = []
+        self.state = OOMEntityState.unknown
+        self.text = ""
+
+        self._format_oom_text(raw_text)
 
         # don't do anything if the text is empty or does not contain the leading OOM message
-        if not text:
+        if not self.text:
             self.state = OOMEntityState.empty
             return
-        if "invoked oom-killer:" not in text:
+        if "invoked oom-killer:" not in self.text:
             self.state = OOMEntityState.invalid
             return
 
-        oom_lines = self._remove_non_oom_lines(oom_lines)
+        self._format_oom_lines()
+
+        if "Killed process" in self.text:
+            self.state = OOMEntityState.complete
+        else:
+            self.state = OOMEntityState.started
+
+    def _format_oom_text(self, raw_text: str):
+        """Convert to Unix LF only and strip leading/trailing whitespaces"""
+        text = raw_text.replace("\r\n", "\n")
+        text = text.strip()
+        self.text = text
+        self.lines = text.split("\n")
+
+    def _format_oom_lines(self):
+        oom_lines = self._remove_non_oom_lines(self.lines)
         oom_lines = self._remove_kernel_colon(oom_lines)
         cols_to_strip = self._number_of_columns_to_strip(
             oom_lines[self._get_CPU_index(oom_lines)]
         )
         oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
-
         self.lines = oom_lines
-        self.text = "\n".join(oom_lines)
-
-        if "Killed process" in text:
-            self.state = OOMEntityState.complete
-        else:
-            self.state = OOMEntityState.started
+        self.text = "\n".join(self.lines)
 
     def _get_CPU_index(self, lines):
         """
