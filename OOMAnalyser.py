@@ -15,7 +15,7 @@ VERSION = "0.8.0_devel"
 """Version number e.g. "0.6.0" or "0.6.0 (devel)" """
 
 # __pragma__ ('skip')
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any, Callable
 
 # MOC objects to satisfy statical checkers and imports in unit tests
 js_undefined = 0
@@ -51,12 +51,12 @@ class Console:
 
 class EventTarget:
     def addEventListener(
-        self, type: str, listener: callable, options: Optional[dict] = None
+        self, type: str, listener: Callable, options: Optional[dict] = None
     ) -> None:
         pass
 
     def removeEventListener(
-        self, type: str, listener: callable, options: Optional[dict] = None
+        self, type: str, listener: Callable, options: Optional[dict] = None
     ) -> None:
         pass
 
@@ -204,11 +204,11 @@ class OOMMemoryAllocFailureType:
     """"high order" requests don't trigger OOM"""
 
 
-def is_visible(element):
+def is_visible(element: Element) -> bool:
     return element.offsetWidth > 0 and element.offsetHeight > 0
 
 
-def hide_element_by_id(element_id):
+def hide_element_by_id(element_id: str) -> None:
     """Hide the specified HTML element"""
     element = document.getElementById(element_id)
     if element:
@@ -217,7 +217,7 @@ def hide_element_by_id(element_id):
         internal_error("Element with id '{}' not found".format(element_id))
 
 
-def show_element_by_id(element_id):
+def show_element_by_id(element_id: str) -> None:
     """Show the specified HTML element"""
     element = document.getElementById(element_id)
     if element:
@@ -226,30 +226,29 @@ def show_element_by_id(element_id):
         internal_error("Element with id '{}' not found".format(element_id))
 
 
-def hide_elements_by_selector(selector):
+def hide_elements_by_selector(selector: str) -> None:
     """Hide all matching elements by adding class js-text--display-none"""
     for element in document.querySelectorAll(selector):
         element.classList.add("js-text--display-none")
 
 
-def show_elements_by_selector(selector):
+def show_elements_by_selector(selector: str) -> None:
     """Show all matching elements by removing class js-text--display-none"""
     for element in document.querySelectorAll(selector):
         element.classList.remove("js-text--display-none")
 
 
-def toggle_visibility_by_id(element_id):
+def toggle_visibility_by_id(element_id: str) -> None:
     """Toggle the visibility of the specified HTML element"""
     element = document.getElementById(element_id)
     element.classList.toggle("js-text--display-none")
 
 
-def escape_html(unsafe):
+def escape_html(unsafe: str) -> str:
     """
     Escape unsafe HTML entities
 
     @type unsafe: str
-    @rtype: str
     """
     return (
         unsafe.replace("&", "&amp;")
@@ -260,27 +259,27 @@ def escape_html(unsafe):
     )
 
 
-def debug(msg):
+def debug(msg: str) -> None:
     """Add a debug message to the notification box"""
     add_to_notifybox("DEBUG", msg)
 
 
-def error(msg):
+def error(msg: str) -> None:
     """Show the notification box and add the error message"""
     add_to_notifybox("ERROR", msg)
 
 
-def internal_error(msg):
+def internal_error(msg: str) -> None:
     """Show the notification box and add the internal error message"""
     add_to_notifybox("INTERNAL ERROR", msg)
 
 
-def warning(msg):
+def warning(msg: str) -> None:
     """Show the notification box and add the warning message"""
     add_to_notifybox("WARNING", msg)
 
 
-def add_to_notifybox(prefix, msg):
+def add_to_notifybox(prefix: str, msg: str) -> None:
     """
     Escaped and add a message to the notification box
 
@@ -758,7 +757,7 @@ class BaseKernelConfig:
             self.GFP_FLAGS[flag]["_value"] = value
         # __pragma__ ('nojsiter')
 
-    def _gfp_flag2decimal(self, flag):
+    def _gfp_flag2decimal(self, flag: str) -> int:
         """\
         Convert a single flag into a decimal value.
 
@@ -812,11 +811,9 @@ class BaseKernelConfig:
 
         return lvalue
 
-    def _gfp_create_reverse_lookup(self):
+    def _gfp_create_reverse_lookup(self) -> List[str]:
         """
         Create a sorted list of flags used to do a reverse lookup from value to the flag.
-
-        @rtype: List(str)
         """
         # __pragma__ ('jsiter')
         useful = [
@@ -2334,6 +2331,7 @@ class KernelConfig_4_19(KernelConfig_4_18):
     pstable_start = "[  pid  ]"
 
 
+# noinspection GrazieInspection
 class KernelConfig_5_1(KernelConfig_4_19):
     # Supported changes:
     #  * update GFP flags
@@ -3463,13 +3461,13 @@ The last entry in this list is the base configuration as a fallback.
 class OOMEntity:
     """Hold the whole OOM message block and provide access"""
 
-    current_line = 0
+    current_line: int = 0
     """Zero based index of the current line in self.lines"""
 
-    lines = []
+    lines: List[str] = []
     """OOM text as list of lines"""
 
-    REC_MEMINFO_BLOCK_SECOND_PART = re.compile(
+    REC_MEMINFO_BLOCK_SECOND_PART: re.Pattern = re.compile(
         r"^\s*( (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+)$"
     )
     """RE to match the second part of the "Mem-Info:" block
@@ -3482,10 +3480,10 @@ class OOMEntity:
     single leading space.
     """
 
-    state = OOMEntityState.unknown
+    state: int = OOMEntityState.unknown
     """State of the OOM after initial parsing"""
 
-    text = ""
+    text: str = ""
     """OOM as text"""
 
     def __init__(self, raw_text: str):
@@ -3529,7 +3527,7 @@ class OOMEntity:
         self.lines = oom_lines
         self.text = "\n".join(self.lines)
 
-    def _get_CPU_index(self, lines):
+    def _get_CPU_index(self, lines: List[str]) -> int:
         """
         Return the index of the first line with "CPU: "
 
@@ -3541,7 +3539,7 @@ class OOMEntity:
 
         return 0
 
-    def _number_of_columns_to_strip(self, line):
+    def _number_of_columns_to_strip(self, line: str) -> int:
         """
         Determinate the number of columns left to the OOM message to strip.
 
@@ -3564,7 +3562,7 @@ class OOMEntity:
 
         return to_strip
 
-    def _remove_non_oom_lines(self, oom_lines):
+    def _remove_non_oom_lines(self, oom_lines: List[str]) -> List[str]:
         """Remove all lines before and after the OOM message block"""
         cleaned_lines = []
         in_oom_lines = False
@@ -3595,7 +3593,7 @@ class OOMEntity:
 
         return cleaned_lines
 
-    def _rsyslog_unescape_lf(self, oom_lines):
+    def _rsyslog_unescape_lf(self, oom_lines: List[str]) -> List[str]:
         """
         Split lines at '#012' (octal representation of LF).
 
@@ -3619,7 +3617,7 @@ class OOMEntity:
 
         return lines
 
-    def _remove_kernel_colon(self, oom_lines):
+    def _remove_kernel_colon(self, oom_lines: List[str]) -> List[str]:
         """
         Remove the "kernel:" pattern w/o leading and tailing spaces.
 
@@ -3630,7 +3628,9 @@ class OOMEntity:
         oom_lines = [i.replace("kernel:", "") for i in oom_lines]
         return oom_lines
 
-    def _strip_needless_columns(self, oom_lines, cols_to_strip=0):
+    def _strip_needless_columns(
+        self, oom_lines: List[str], cols_to_strip: int = 0
+    ) -> List[str]:
         """
         Remove needless columns at the start of every line.
 
@@ -3660,7 +3660,7 @@ class OOMEntity:
 
         return stripped_lines
 
-    def goto_previous_line(self):
+    def goto_previous_line(self) -> None:
         """Set line pointer to previous line
 
         If using in front of an iterator:
@@ -3672,24 +3672,23 @@ class OOMEntity:
         if self.current_line > 0:
             self.current_line -= 1
 
-    def current(self):
+    def current(self) -> str:
         """Return the current line"""
         return self.lines[self.current_line]
 
-    def next(self):
+    def next(self) -> str:
         """Return the next line"""
         if self.current_line + 1 < len(self.lines):
             self.current_line += 1
             return self.lines[self.current_line]
         raise StopIteration()
 
-    def find_text(self, pattern):
+    def find_text(self, pattern: str) -> bool:
         """
         Search the pattern and set the position to the first found line.
         Otherwise, the position pointer won't be changed.
 
         @param pattern: Text to find
-        @type pattern: str
 
         @return: True if the marker has found.
         """
@@ -3709,59 +3708,52 @@ class OOMEntity:
 class OOMResult:
     """Results of an OOM analysis"""
 
-    buddyinfo = {}
+    buddyinfo: dict = {}
     """Information about free areas in all zones"""
 
-    details = {}
+    details: dict = {}
     """Extracted result"""
 
-    default_values = {
+    default_values: dict = {
         "killed_proc_shmem_rss_kb": 0,  # set to 0 to show all values to calculate TotalRSS
     }
     """Predefined values used to populate details dictionary"""
 
-    error_msg = ""
+    error_msg: str = ""
     """
     Error message
-
-    @type: str
     """
 
     kconfig = BaseKernelConfig()
     """Kernel configuration"""
 
-    kversion = None
+    kversion: str = ""
     """
     Kernel version
-
-    @type: str
     """
 
-    mem_alloc_failure = OOMMemoryAllocFailureType.not_started
+    mem_alloc_failure: int = OOMMemoryAllocFailureType.not_started
     """State/result of the memory allocation failure analysis
 
     @see: OOMAnalyser._analyse_alloc_failure()
     """
 
-    mem_fragmented = None
+    mem_fragmented: Optional[bool] = None
     """True if the memory is heavily fragmented. This means that the higher order has no free chunks.
 
     @see: BaseKernelConfig.PAGE_ALLOC_COSTLY_ORDER, OOMAnalyser._check_for_memory_fragmentation()
-    @type: None | bool
     """
 
-    oom_entity = None
+    oom_entity: Optional[OOMEntity] = None
     """
     State of this OOM (unknown, incomplete, ...)
 
     @type: OOMEntityState
     """
 
-    oom_text = None
+    oom_text: str = ""
     """
     OOM text
-
-    @type: str
     """
 
     oom_type = OOMType.UNKNOWN
@@ -3771,14 +3763,12 @@ class OOMResult:
     @type: OOMEntityType
     """
 
-    swap_active = False
+    swap_active: bool = False
     """
     Swap space active or inactive
-
-    @type: bool
     """
 
-    watermarks = {}
+    watermarks: dict = {}
     """Memory watermark information"""
 
     def __init__(self):
@@ -3794,7 +3784,7 @@ class OOMResult:
             if getattr(self, "kconfig", None) is not None
             else BaseKernelConfig()
         )
-        self.kversion = None
+        self.kversion = ""
         self.mem_alloc_failure = (
             self.mem_alloc_failure
             if getattr(self, "mem_alloc_failure", None) is not None
@@ -3802,7 +3792,7 @@ class OOMResult:
         )
         self.mem_fragmented = None
         self.oom_entity = None
-        self.oom_text = None
+        self.oom_text = ""
         self.oom_type = OOMType.UNKNOWN
         self.swap_active = False
         self.watermarks = {}
@@ -3859,11 +3849,9 @@ class OOMAnalyser:
         self._set_oom_result_default_details()
         self.oom_block_complete = OOMEntityState.unknown
 
-    def _identify_kernel_version(self):
+    def _identify_kernel_version(self) -> bool:
         """
         Identify the used kernel version
-
-        @rtype: bool
         """
         match = self.REC_KERNEL_VERSION.search(self.oom_entity.text)
         if not match:
@@ -3905,7 +3893,7 @@ class OOMAnalyser:
 
         return True
 
-    def _choose_kernel_config(self):
+    def _choose_kernel_config(self) -> None:
         """
         Choose the first matching kernel configuration from AllKernelConfigs
 
@@ -3933,11 +3921,9 @@ class OOMAnalyser:
             )
         )
 
-    def _check_for_empty_oom(self):
+    def _check_for_empty_oom(self) -> bool:
         """
         Check for an empty OOM text
-
-        @rtype: bool
         """
         if not self.oom_entity.text:
             self.oom_block_complete = OOMEntityState.empty
@@ -3947,7 +3933,7 @@ class OOMAnalyser:
             return False
         return True
 
-    def _distinguish_between_cgroup_and_kernel_oom_type(self):
+    def _distinguish_between_cgroup_and_kernel_oom_type(self) -> None:
         """Set OOM type depending on CGROUP and KERNEL OOM"""
         if self.oom_result.kconfig.REC_OOM_CGROUP.search(self.oom_entity.text):
             debug("OOM triggered by cgroup memory limit")
@@ -3956,7 +3942,7 @@ class OOMAnalyser:
             debug("OOM triggered by kernel memory allocation failure")
             self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC_OR_MANUAL
 
-    def _distinguish_between_automatic_and_manual_kernel_oom(self):
+    def _distinguish_between_automatic_and_manual_kernel_oom(self) -> None:
         """Set OOM type depending on automatic or manual kernel OOM"""
         if self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC_OR_MANUAL:
             if self.oom_result.details["trigger_proc_order"] == "-1":
@@ -3966,11 +3952,9 @@ class OOMAnalyser:
                 debug("OOM triggered automatically")
                 self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC
 
-    def _check_for_complete_oom(self):
+    def _check_for_complete_oom(self) -> bool:
         """
         Check if the OOM in self.oom_entity is complete and update self.oom_block_complete accordingly
-
-        @rtype: bool
         """
         self.oom_block_complete = OOMEntityState.unknown
         self.oom_result.error_msg = "Unknown OOM format"
@@ -3986,13 +3970,12 @@ class OOMAnalyser:
             return False
 
         self.oom_block_complete = OOMEntityState.complete
-        self.oom_result.error_msg = None
+        self.oom_result.error_msg = ""
         return True
 
-    def _extract_block_from_next_pos(self, marker):
+    def _extract_block_from_next_pos(self, marker: str) -> str:
         """
         Extract a block that starts with the marker and contains all lines up to the next line with ":".
-        @rtype: str
         """
         block = ""
         if not self.oom_entity.find_text(marker):
@@ -4084,7 +4067,7 @@ class OOMAnalyser:
                 )
         # __pragma__ ('nojsiter')
 
-    def _extract_gpf_mask(self):
+    def _extract_gpf_mask(self) -> None:
         """Extract the GFP (Get Free Pages) mask"""
         if self.oom_result.details["trigger_proc_gfp_flags"] is not None:
             flags = self.oom_result.details["trigger_proc_gfp_flags"]
@@ -4289,12 +4272,11 @@ class OOMAnalyser:
         debug("No NUMA node has a memory shortage: watermark free < min")
         return
 
-    def _gfp_hex2flags(self, hexvalue):
+    def _gfp_hex2flags(self, hexvalue: str) -> Tuple[List[str], int]:
         """\
         Convert the hexadecimal value into flags specified by definition
 
         @return: Unsorted list of flags and the sum of all unknown flags as integer
-        @rtype: List(str), int
         """
         remaining = int(hexvalue, 16)
         converted_flags = []
@@ -4370,16 +4352,17 @@ class OOMAnalyser:
         ps_index.sort(key=int)
         self.oom_result.details["_pstable_index"] = ps_index
 
-    def _check_free_chunks(self, start_with_order, zone, node):
+    def _check_free_chunks(
+        self, start_with_order: int, zone: str, node: int
+    ) -> Optional[bool]:
         """Check for at least one free chunk in the current or any higher order.
 
         Returns True, if at least one suitable chunk is free.
         Returns None, if buddyinfo doesn't contain information for the requested node, order or zone
 
-        @param int start_with_order: Start checking with this order
-        @param str zone: Memory zone
-        @param int node: Node number
-        @rtype: None|bool
+        @param start_with_order: Start checking with this order
+        @param zone: Memory zone
+        @param node: Node number
         """
         if not self.oom_result.buddyinfo:
             return None
@@ -4680,13 +4663,11 @@ class OOMAnalyser:
         self.oom_result.details = {}
         self.oom_result.details.update(self.oom_result.default_values)
 
-    def analyse(self):
+    def analyse(self) -> bool:
         """
         Extract and calculate values from the given OOM object
 
         If the return value is False, the OOM is too incomplete to perform an analysis.
-
-        @rtype: bool
         """
         if not self._check_for_empty_oom():
             error(self.oom_result.error_msg)
@@ -4795,13 +4776,11 @@ class SVGChart:
         self.cfg["title_bottommiddle_x"] = self.cfg["diagram_width"] // 2
 
     # __pragma__ ('kwargs')
-    def create_element(self, tag, **kwargs):
+    def create_element(self, tag: str, **kwargs) -> Element:
         """
         Create an SVG element of the given tag.
 
         @note: Underscores in the argument names will be replaced by minus
-        @param str tag: Type of element to be created
-        @rtype: Node
         """
         element = document.createElementNS(self.namespace, tag)
         # __pragma__ ('jsiter')
@@ -4814,13 +4793,11 @@ class SVGChart:
     # __pragma__ ('nokwargs')
 
     # __pragma__ ('kwargs')
-    def create_element_text(self, text, **kwargs):
+    def create_element_text(self, text: str, **kwargs) -> Element:
         """
         Create an SVG text element
 
         @note: Underscores in the argument names will be replaced by minus
-        @param str text: Text
-        @rtype: Node
         """
         element = self.create_element("text", **kwargs)
         element.textContent = text
@@ -4858,14 +4835,13 @@ class SVGChart:
         g.appendChild(rect)
         return g
 
-    def create_legend_entry(self, color, desc, pos):
+    def create_legend_entry(self, color: str, desc: str, pos: int) -> Element:
         """
         Create a legend entry for the given position. Both elements of the entry are grouped within a g-element.
 
-        @param str color: Colour of the entry
-        @param str desc: Description
-        @param int pos: Continuous position
-        @rtype: Node
+        @param color: Colour of the entry
+        @param desc: Description
+        @param pos: Continuous position
         """
         label_group = self.create_element("g", id=desc)
         color_rect = self.create_rectangle(0, 0, 20, 20, color)
@@ -4881,54 +4857,46 @@ class SVGChart:
 
         return label_group
 
-    def legend_max_row(self, pos):
+    def legend_max_row(self, pos: int) -> int:
         """
         Returns the maximum number of rows in the legend
 
-        @param int pos: Continuous position
+        @param pos: Continuous position
         """
         max_row = math.ceil(pos / self.max_entries_per_row)
         return max_row
 
-    def legend_max_col(self, pos):
+    def legend_max_col(self, pos: int) -> int:
         """
         Returns the maximum number of columns in the legend
 
-        @param int pos: Continuous position
-        @rtype: int
+        @param pos: Continuous position
         """
         if pos < self.max_entries_per_row:
             return pos
         return self.max_entries_per_row
 
-    def legend_calc_x(self, column):
+    def legend_calc_x(self, column: int) -> int:
         """
         Calculate the X-axis using the given column
-
-        @type column: int
-        @rtype: int
         """
         x = self.cfg["bar_bottomleft_x"] + self.cfg["legend_margin"]
         x += column * (self.cfg["legend_margin"] + self.cfg["legend_entry_width"])
         return x
 
-    def legend_calc_y(self, row):
+    def legend_calc_y(self, row: int) -> int:
         """
         Calculate the Y-axis using the given row
-
-        @type row: int
-        @rtype: int
         """
         y = self.cfg["bar_bottomleft_y"] + self.cfg["legend_margin"]
         y += row * 40
         return y
 
-    def legend_calc_xy(self, pos):
+    def legend_calc_xy(self, pos: int) -> Tuple[int, int]:
         """
         Calculate the X-axis and Y-axis
 
-        @param int pos: Continuous position
-        @rtype: int, int
+        @param pos: Continuous position
         """
         if not pos:
             col = 0
@@ -4944,11 +4912,9 @@ class SVGChart:
 
         return x, y
 
-    def generate_bar_area(self, elements):
+    def generate_bar_area(self, elements: List[Tuple[str, Any]]) -> Element:
         """
         Generate colord stacked bars. All entries are group within a g-element.
-
-        @rtype: Node
         """
         bar_group = self.create_element(
             "g", id="bar_group", stroke="black", stroke_width=2
@@ -4975,11 +4941,9 @@ class SVGChart:
 
         return bar_group
 
-    def generate_legend(self, elements):
+    def generate_legend(self, elements: List[Tuple[str, Any]]) -> Element:
         """
         Generate a legend for all elements. All entries are grouped within a g-element.
-
-        @rtype: Node
         """
         legend_group = self.create_element("g", id="legend_group")
         for i, two in enumerate(elements):
@@ -4995,13 +4959,12 @@ class SVGChart:
 
         return legend_group
 
-    def generate_chart(self, title, *elements):
+    def generate_chart(self, title: str, *elements: Tuple[str, Any]) -> Element:
         """
         Return an SVG bar chart for all elements
 
-        @param str title: Chart title
+        @param title: Chart title
         @param elements: List of tuple with name and length of the entry (not normalized)
-        @rtype: Node
         """
         filtered_elements = [(name, length) for name, length in elements if length > 0]
         bar_group = self.generate_bar_area(filtered_elements)
@@ -5031,7 +4994,7 @@ class OOMDisplay:
     """
     OOM analysis details
 
-    @rtype: OOMResult
+    @type: OOMResult
     """
 
     example_archlinux_6_1_1 = """\
@@ -5813,17 +5776,15 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.show_oom_details()
             self.update_toc()
 
-    def load_from_form(self):
+    def load_from_form(self) -> str:
         """
         Return the OOM text from the textarea element
-
-        @rtype: str
         """
         element = document.getElementById("textarea_oom")
         oom_text = element.value
         return oom_text
 
-    def show_oom_details(self):
+    def show_oom_details(self) -> None:
         """
         Show all extracted details as well as additionally generated information
         """
@@ -5923,7 +5884,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             ("Free PCP", "free_pcp_pages"),
             ("Free CMA", "free_cma_pages"),
         )
-        chart_elements = [
+        chart_elements: List[Tuple[str, int]] = [
             (title, self.oom_result.details[value])
             for title, value in ram_title_attr
             if value in self.oom_result.details
