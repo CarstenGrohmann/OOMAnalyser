@@ -4005,7 +4005,7 @@ class OOMAnalyser:
                 in [OOMPatternType.CGROUP_MANDATORY, OOMPatternType.CGROUP_OPTIONAL]
             ):
                 debug(
-                    "Ignore pattern {} for OOM type {} as pattern type is different {}".format(
+                    'Skip pattern "{}" for OOM type {} as pattern type is different {}'.format(
                         k,
                         self.oom_result.oom_type,
                         pattern_type,
