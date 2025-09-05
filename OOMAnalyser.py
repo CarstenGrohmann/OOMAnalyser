@@ -296,7 +296,7 @@ def add_to_notifybox(prefix: str, msg: str) -> None:
     notify_box = document.getElementById("notify_box")
     notification = document.createElement("div")
     notification.classList.add(css_class)
-    notification.innerHTML = "{}: {}<br>".format(prefix, escape_html(msg))
+    notification.innerHTML = "{}: {}<br>".format(escape_html(prefix), escape_html(msg))
     notify_box.appendChild(notification)
 
     # Also show all messages on the JS console
