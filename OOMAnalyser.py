@@ -5174,6 +5174,168 @@ Out of memory: Killed process 473206 (doxygen) total-vm:30290680kB, anon-rss:923
 oom_reaper: reaped process 473206 (doxygen), now anon-rss:0kB, file-rss:0kB, shmem-rss:0kB
     """
 
+    example_proxmox_cgroup_oom = """\
+[Di Aug 12 03:54:03 2025] php-fpm invoked oom-killer: gfp_mask=0x1100cca(GFP_HIGHUSER_MOVABLE), order=0, oom_score_adj=0
+[Di Aug 12 03:54:03 2025] CPU: 8 PID: 3923954 Comm: php-fpm Tainted: P           O      5.15.158-2-pve #1
+[Di Aug 12 03:54:03 2025] Hardware name: ASUS System Product Name/Pro WS 565-ACE, BIOS 2424 09/29/2021
+[Di Aug 12 03:54:03 2025] Call Trace:
+[Di Aug 12 03:54:03 2025]  <TASK>
+[Di Aug 12 03:54:03 2025]  dump_stack_lvl+0x4a/0x63
+[Di Aug 12 03:54:03 2025]  dump_stack+0x10/0x16
+[Di Aug 12 03:54:03 2025]  dump_header+0x53/0x225
+[Di Aug 12 03:54:03 2025]  oom_kill_process.cold+0xb/0x10
+[Di Aug 12 03:54:03 2025]  out_of_memory+0x1dc/0x530
+[Di Aug 12 03:54:03 2025]  mem_cgroup_out_of_memory+0x145/0x160
+[Di Aug 12 03:54:03 2025]  try_charge_memcg+0x69d/0x760
+[Di Aug 12 03:54:03 2025]  ? srso_alias_return_thunk+0x5/0x7f
+[Di Aug 12 03:54:03 2025]  charge_memcg+0x45/0xb0
+[Di Aug 12 03:54:03 2025]  __mem_cgroup_charge+0x2d/0x90
+[Di Aug 12 03:54:03 2025]  __add_to_page_cache_locked+0x2d8/0x350
+[Di Aug 12 03:54:03 2025]  ? scan_shadow_nodes+0x40/0x40
+[Di Aug 12 03:54:03 2025]  add_to_page_cache_lru+0x4d/0xd0
+[Di Aug 12 03:54:03 2025]  pagecache_get_page+0x1c2/0x5c0
+[Di Aug 12 03:54:03 2025]  ? __x86_indirect_thunk_r11+0x1/0x20
+[Di Aug 12 03:54:03 2025]  filemap_fault+0x488/0xb10
+[Di Aug 12 03:54:03 2025]  ? srso_alias_return_thunk+0x5/0x7f
+[Di Aug 12 03:54:03 2025]  ? filemap_map_pages+0x13c/0x680
+[Di Aug 12 03:54:03 2025]  __do_fault+0x3c/0x120
+[Di Aug 12 03:54:03 2025]  __handle_mm_fault+0xde8/0x1610
+[Di Aug 12 03:54:03 2025]  handle_mm_fault+0xd8/0x2c0
+[Di Aug 12 03:54:03 2025]  do_user_addr_fault+0x1c2/0x660
+[Di Aug 12 03:54:03 2025]  ? exit_to_user_mode_prepare+0x93/0x1b0
+[Di Aug 12 03:54:03 2025]  exc_page_fault+0x77/0x170
+[Di Aug 12 03:54:03 2025]  asm_exc_page_fault+0x27/0x30
+[Di Aug 12 03:54:03 2025] RIP: 0033:0x7fe0ef0d0aa0
+[Di Aug 12 03:54:03 2025] Code: Unable to access opcode bytes at RIP 0x7fe0ef0d0a76.
+[Di Aug 12 03:54:03 2025] RSP: 002b:00007ffc6207b9d8 EFLAGS: 00010202
+[Di Aug 12 03:54:03 2025] RAX: 00007fe0ef0fcb80 RBX: 000055f0ee508160 RCX: 0000000000000007
+[Di Aug 12 03:54:03 2025] RDX: 0000000000000154 RSI: 0000000000000154 RDI: 00007fe0c796f150
+[Di Aug 12 03:54:03 2025] RBP: 00007fe0ef41e3d0 R08: 00007fe0c796f150 R09: 00007fe0c7972a60
+[Di Aug 12 03:54:03 2025] R10: 000000007fffffff R11: 00007ffc6218b090 R12: 000055f0ed12d7d0
+[Di Aug 12 03:54:03 2025] R13: 00007fe0ef0fcb80 R14: 00007fe0ef41e3d0 R15: 00007fe0c7972bf0
+[Di Aug 12 03:54:03 2025]  </TASK>
+[Di Aug 12 03:54:03 2025] memory: usage 31211520kB, limit 31211520kB, failcnt 83420
+[Di Aug 12 03:54:03 2025] swap: usage 0kB, limit 0kB, failcnt 0
+[Di Aug 12 03:54:03 2025] Memory cgroup stats for /lxc/39004:
+[Di Aug 12 03:54:03 2025] anon 31154200576
+                          file 688283648
+                          kernel_stack 5242880
+                          pagetables 84332544
+                          percpu 4009216
+                          sock 405504
+                          shmem 687980544
+                          file_mapped 390635520
+                          file_dirty 0
+                          file_writeback 0
+                          swapcached 0
+                          anon_thp 0
+                          file_thp 0
+                          shmem_thp 0
+                          inactive_anon 31307640832
+                          active_anon 534540288
+                          inactive_file 0
+                          active_file 0
+                          unevictable 0
+                          slab_reclaimable 6884672
+                          slab_unreclaimable 15298680
+                          slab 22183352
+                          workingset_refault_anon 0
+                          workingset_refault_file 123846124
+                          workingset_activate_anon 0
+                          workingset_activate_file 6653828
+                          workingset_restore_anon 0
+                          workingset_restore_file 5922037
+                          workingset_nodereclaim 266042
+                          pgfault 61533557290
+                          pgmajfault 328889433
+                          pgrefill 154903624
+                          pgscan 314913254
+                          pgsteal 199641295
+                          pgactivate 156259055
+                          pgdeactivate 133017042
+                          pglazyfree 1930
+                          pglazyfreed 1817
+                          thp_fault_alloc 0
+                          thp_collapse_alloc 0
+[Di Aug 12 03:54:03 2025] Tasks state (memory values in pages):
+[Di Aug 12 03:54:03 2025] [  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
+[Di Aug 12 03:54:03 2025] [  19690]     0 19690    42446      630    98304        0             0 systemd
+[Di Aug 12 03:54:03 2025] [1833435]     0 1833435     5294      360    81920        0             0 systemd
+[Di Aug 12 03:54:03 2025] [1833436]     0 1833436    42653      656   102400        0             0 (sd-pam)
+[Di Aug 12 03:54:03 2025] [1833418]     0 1833418     3718      281    69632        0             0 sshd
+[Di Aug 12 03:54:03 2025] [1833454]     0 1833454     1372      530    49152        0             0 bash
+[Di Aug 12 03:54:03 2025] [  23642]     0 23642      605       27    45056        0             0 agetty
+[Di Aug 12 03:54:03 2025] [  23654]     0 23654      605       27    45056        0             0 agetty
+[Di Aug 12 03:54:03 2025] [  21417]     0 21417    42429    31073   389120        0             0 systemd-journal
+[Di Aug 12 03:54:03 2025] [  25431]     0 25431    10873      212    77824        0             0 master
+[Di Aug 12 03:54:03 2025] [  25448]   101 25448    10973      215    77824        0             0 qmgr
+[Di Aug 12 03:54:03 2025] [2731222]   101 2731222    10962      210    73728        0             0 pickup
+[Di Aug 12 03:54:03 2025] [  21519]   108 21519     1706      109    49152        0             0 rpcbind
+[Di Aug 12 03:54:03 2025] [  21537]     0 21537    55433      343    86016        0             0 rsyslogd
+[Di Aug 12 03:54:03 2025] [  21539]     0 21539     4883      259    77824        0             0 systemd-logind
+[Di Aug 12 03:54:03 2025] [  21542]   106 21542     2296      193    61440        0          -900 dbus-daemon
+[Di Aug 12 03:54:03 2025] [  21544]     0 21544     1378       60    49152        0             0 cron
+[Di Aug 12 03:54:03 2025] [  23770]     0 23770     2144      232    53248        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23820]    33 23820     6472     4460    90112        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23824]    33 23824     2840      823    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23825]    33 23825     5965     3954    86016        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23826]    33 23826     2926      903    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23828]    33 23828     2743      700    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23829]    33 23829     3040      986    65536        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23830]    33 23830     2622      602    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23833]    33 23833     2664      636    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23835]    33 23835     3069     1028    65536        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23836]    33 23836     2718      700    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23837]    33 23837     2787      757    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23841]    33 23841     2765      739    61440        0             0 nginx
+[Di Aug 12 03:54:03 2025] [  23626]     0 23626   136463     4053   155648        0             0 fail2ban-server
+[Di Aug 12 03:54:03 2025] [  23583]   107 23583     1613      152    53248        0          -500 nrpe
+[Di Aug 12 03:54:03 2025] [  23602]   998 23602  1366958    24377  1540096        0             0 alloy
+[Di Aug 12 03:54:03 2025] [  24267]     0 24267     4442     2448    73728        0             0 munin-node
+[Di Aug 12 03:54:03 2025] [  23635]     0 23635   560832     3493   335872        0          -999 containerd
+[Di Aug 12 03:54:03 2025] [  28830]     0 28830   309118      521   110592        0          -998 containerd-shim
+[Di Aug 12 03:54:03 2025] [  28840]     0 28840   309118      589   106496        0          -998 containerd-shim
+[Di Aug 12 03:54:03 2025] [  28903]     0 28903   309182      651   114688        0          -998 containerd-shim
+[Di Aug 12 03:54:03 2025] [  23649]     0 23649      605       28    40960        0             0 agetty
+[Di Aug 12 03:54:03 2025] [  24698]     0 24698   681294    10978   561152        0          -500 dockerd
+[Di Aug 12 03:54:03 2025] [  28747]     0 28747   547418     1148   241664        0          -500 docker-proxy
+[Di Aug 12 03:54:03 2025] [  28770]     0 28770   547354     1205   233472        0          -500 docker-proxy
+[Di Aug 12 03:54:03 2025] [  28950]   999 28950    36169      869   139264        0             0 redis-server
+[Di Aug 12 03:54:03 2025] [  28960]     0 28960     6350     3419    86016        0             0 supervisord
+[Di Aug 12 03:54:03 2025] [  29943]     0 29943    60176      415   102400        0             0 syslog-ng
+[Di Aug 12 03:54:03 2025] [  29946]     0 29946     3326      632    61440        0             0 apache2
+[Di Aug 12 03:54:03 2025] [  29948]     0 29948     1816       65    53248        0             0 cron
+[Di Aug 12 03:54:03 2025] [1109590]  1000 1109590     1438      133    49152        0             0 bash
+[Di Aug 12 03:54:03 2025] [3607313]     0 3607313   191864     3712   376832        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [4069179]    33 4069179   485550     2818   294912        0             0 apache2
+[Di Aug 12 03:54:03 2025] [4082621]    33 4082621   485518     2756   294912        0             0 apache2
+[Di Aug 12 03:54:03 2025] [1107452]    33 1107452   485501     2701   294912        0             0 apache2
+[Di Aug 12 03:54:03 2025] [3589018]  1000 3589018  2006387  1814349 15110144        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3637209]  1000 3637209  1116561   964430  8314880        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3716361]  1000 3716361   197166    64102  1028096        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3718400]  1000 3718400   631433   496715  4513792        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3726383]  1000 3726383   197464    68014  1069056        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3766026]  1000 3766026   197466    65625  1060864        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3818699]  1000 3818699   197629    63109  1064960        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3902942]  1000 3902942  3685044  3195335 27021312        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3923954]  1000 3923954   210010    57884   991232        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3951198]  1000 3951198   195390    52179   925696        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3959475]  1000 3959475   195994    54247   921600        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3964255]  1000 3964255  1410840  1230038 10379264        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3988024]  1000 3988024   197476    36148   774144        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3990260]  1000 3990260   196569    43429   851968        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3993067]  1000 3993067   195922    29187   671744        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3993877]  1000 3993877   196866    31888   774144        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [3993880]  1000 3993880   196814    32009   782336        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [4007111]  1000 4007111   191931     2715   364544        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [4007831]     0 4007831   191864     2504   323584        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [4007878]     0 4007878   191864     2505   331776        0             0 php-fpm
+[Di Aug 12 03:54:03 2025] [  28961]  1000 28961   179082      505   135168        0             0 MailHog
+[Di Aug 12 03:54:03 2025] [1083565]     0 1083565     3455      215    69632        0         -1000 sshd
+[Di Aug 12 03:54:03 2025] oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),cpuset=docker-a59e4e7d3090c04c6ce5a4b7a8bc85228eb9b96ac00b1284643a8c7c11dda661.scope,mems_allowed=0,oom_memcg=/lxc/39004,task_memcg=/lxc/39004/ns/system.slice/docker-a59e4e7d3090c04c6ce5a4b7a8bc85228eb9b96ac00b1284643a8c7c11dda661.scope,task=php-fpm,pid=3902942,uid=1000
+[Di Aug 12 03:54:03 2025] Memory cgroup out of memory: Killed process 3902942 (php-fpm) total-vm:14740176kB, anon-rss:12625252kB, file-rss:0kB, shmem-rss:156088kB, UID:1000 pgtables:26388kB oom_score_adj:0
+    """
+
     example_rhel7 = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
 sed cpuset=/ mems_allowed=0-1
@@ -5739,6 +5901,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             document.getElementById("textarea_oom").value = self.example_ubuntu2110
         elif selection == "ArchLinux":
             document.getElementById("textarea_oom").value = self.example_archlinux_6_1_1
+        elif selection == "Proxmox_cgroup_oom":
+            document.getElementById(
+                "textarea_oom"
+            ).value = self.example_proxmox_cgroup_oom
 
     def reset_form(self):
         """Reset HTML input form"""
