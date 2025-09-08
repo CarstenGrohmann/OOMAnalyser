@@ -484,7 +484,7 @@ class TestInBrowser(BaseInBrowserTests):
         self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
 
     def test_033_empty_textarea(self):
-        """Test "Analyse" with an empty textarea"""
+        """Test "Analyse OOM block" with an empty textarea"""
         textarea = self.driver.find_element(By.ID, "textarea_oom")
         self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
         # textarea.send_keys(text)

@@ -495,7 +495,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <div id="explanation">
         <div class="js-text--default-hide js-text--display-none js-oom-cgroup-automatic--show">
             <p>
-                A cgroup-local OOM killer was automatically triggered because the memory usage inside a specific
+                The cgroup-local OOM killer was automatically triggered because the memory usage inside a specific
                 control group exceeded its configured limit. Unlike a global OOM event, the system itself still had
                 free memory available. The cgroup-local OOM killer evaluates the tasks within that cgroup, assigns
                 scores, and terminates the process with the highest score in order to bring the group’s memory
@@ -571,7 +571,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <span class="js-text--default-hide js-text--display-none js-alloc-failure-unknown-reason--show">
                     The request failed, but the reason is unknown.
                 </span>
-                    This memory shortage triggers the OOM process.
+                This memory shortage triggers the OOM process.
             </p>
         </div>
         <p>
@@ -581,7 +581,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 with an OOM score of <span class="killed_proc_score"></span>
             </span>
             has been terminated. It uses <span class="killed_proc_rss_percent"></span>
-            (<span class="killed_proc_total_rss_kb"></span>) of the resident memory.
+            <span class="killed_proc_total_rss_kb"></span> of the resident memory.
         </p>
         <div class="js-text--default-hide js-text--display-none js-memory-fragmentation--show">
             <p>
@@ -844,12 +844,12 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 </td>
             </tr>
             <tr class="js-text--default-show js-swap-active--show">
-                <td>Swap Cached</td>
+                <td>Swap Cache</td>
                 <td class="text--align-right"><span class="swap_cache_kb"></span></td>
                 <td>Memory, which once was swapped out, is swapped back in
-                    but still also is in the swap file.  (If memory pressure
+                    but still also is in the swap space. (If memory pressure
                     is high, these pages don't need to be swapped out
-                    again because they are already in the swap file.  This
+                    again because they are already in the swap space. This
                     saves I/O).
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
