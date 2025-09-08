@@ -190,8 +190,11 @@ THIS PROGRAM COMES WITH NO WARRANTY
         .js-oom-kernel-manual--show {
             /* empty - used to show sections for manually triggered kernel OOMs */
         }
-        .js-oom-cgroup-automatic--show {
-            /* empty - used to show sections for automatically triggered cgroup OOMs */
+        .js-oom-cgroup-v1--show {
+            /* empty - used to show sections for automatically triggered cgroup v1 OOMs */
+        }
+        .js-oom-cgroup-v2--show {
+            /* empty - used to show sections for automatically triggered cgroup v2 OOMs */
         }
 
         .js-pagesize-guessed--show {
@@ -493,7 +496,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h3 id="summary">Summary</h3>
     <div id="explanation">
-        <div class="js-text--default-hide js-text--display-none js-oom-cgroup-automatic--show">
+        <div class="js-text--default-hide js-text--display-none js-oom-cgroup-v1--show js-oom-cgroup-v2--show">
             <p>
                 The cgroup-local OOM killer was automatically triggered because the memory usage inside a specific
                 control group exceeded its configured limit. Unlike a global OOM event, the system itself still had
@@ -752,7 +755,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 </td>
                 <td>Process killed by Linux kernel to satisfy the memory request.</td>
             </tr>
-            <tr class="js-text--default-hide js-text--display-none js-oom-cgroup-automatic--show">
+            <tr class="js-text--default-hide js-text--display-none js-oom-cgroup-v1--show js-oom-cgroup-v2--show">
                 <td>Affected cgroup</td>
                 <td class="test--align-right"><span class="cgroup_path"></span></td>
                 <td>C group, to which the terminated process belonged</td>
@@ -1050,7 +1053,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             </tr>
         </tbody>
 
-        <tbody id="tbody_memory_usage_cgroup" class="js-text--default-hide js-text--display-none js-oom-cgroup-automatic--show">
+        <tbody id="tbody_memory_usage_cgroup" class="js-text--default-hide js-text--display-none js-oom-cgroup-v1--show js-oom-cgroup-v2--show">
 
             <!-- Cgroup memory usage -->
             <tr>

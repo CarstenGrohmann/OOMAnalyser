@@ -168,7 +168,8 @@ class OOMType:
     KERNEL_AUTOMATIC_OR_MANUAL = "KERNEL_AUTOMATIC_OR_MANUAL"
     KERNEL_AUTOMATIC = "KERNEL_AUTOMATIC"
     KERNEL_MANUAL = "KERNEL_MANUAL"
-    CGROUP_AUTOMATIC = "CGROUP_AUTOMATIC"
+    CGROUP_V1 = "CGROUP_V1"
+    CGROUP_V2 = "CGROUP_V2"
 
 
 class OOMPatternType:
@@ -178,7 +179,9 @@ class OOMPatternType:
     ALL_MANDATORY = "ALL_MANDATORY"
     KERNEL_MANDATORY = "KERNEL_MANDATORY"
     KERNEL_OPTIONAL = "KERNEL_OPTIONAL"
-    CGROUP_MANDATORY = "CGROUP_MANDATORY"
+    CGROUP_ALL_MANDATORY = "CGROUP_ALL_MANDATORY"
+    CGROUP_V1_MANDATORY = "CGROUP_V1_MANDATORY"
+    CGROUP_V2_MANDATORY = "CGROUP_V2_MANDATORY"
     CGROUP_OPTIONAL = "CGROUP_OPTIONAL"
 
 
@@ -430,33 +433,33 @@ class BaseKernelConfig:
             r"Killed process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: memory usage": (
             # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
             r"^memory: usage (?P<cgroup_memory_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_memory_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_memory_failcnt>\d+)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_V2_MANDATORY,
         ),
         "cgroup v1 oom: kmem usage": (
             # 3.8: memcg: kmem accounting basic infrastructure (510fc4e11b772fd60f2c545c64d4c55abd07ce36)
             r"^kmem: usage (?P<cgroup_kmem_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_kmem_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_kmem_failcnt>\d+)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_V1_MANDATORY,
         ),
         "cgroup oom: path": (
             # 3.9: memcg, oom: provide more precise dump info while memcg oom happening (58cf188ed649b6570dfdc9c62156cdf396c2e395)
             r"^Memory cgroup stats for (?P<cgroup_path>\S+):",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup v1 oom: swap usage": (
             # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
             r"^memory+swap: usage (?P<cgroup_memory_swap_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_memory_swap_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_memory_swap_failcnt>\d+)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_V1_MANDATORY,
         ),
     }
     """
@@ -682,6 +685,9 @@ class BaseKernelConfig:
 
     REC_OOM_CGROUP = re.compile(r"^Memory cgroup stats for", re.MULTILINE)
     """RE to match if the OOM is a cgroup OOM"""
+
+    REC_CGROUP_V1 = re.compile(r"^memory+swap: usage", re.MULTILINE)
+    """RE to match if the cgroup is a v1 cgroup"""
 
     REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
     """RE to extract the page size from buddyinfo DMA zone"""
@@ -1487,14 +1493,14 @@ class KernelConfig_4_5(KernelConfig_4_4):
             # remaining lines (w/ leading space)
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
             r"^\s+file (?P<cgroup_memory_file_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (basic memory stats 1)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
             r"^\s+file_mapped (?P<cgroup_memory_file_mapped_bytes>\d+)(?:\n)"
             r"^\s+file_dirty (?P<cgroup_memory_file_dirty_bytes>\d+)(?:\n)"
             r"^\s+file_writeback (?P<cgroup_memory_file_writeback_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (basic memory stats 2)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
@@ -1503,18 +1509,18 @@ class KernelConfig_4_5(KernelConfig_4_4):
             r"^\s+inactive_file (?P<cgroup_memory_inactive_file_bytes>\d+)(?:\n)"
             r"^\s+active_file (?P<cgroup_memory_active_file_bytes>\d+)(?:\n)"
             r"^\s+unevictable (?P<cgroup_memory_unevictable_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (page stats 1)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
             r"^\s+pgfault (?P<cgroup_memory_pgfault_bytes>\d+)(?:\n)"
             r"^\s+pgmajfault (?P<cgroup_memory_pgmajfault_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (sock)": (
             # 4.5 mm: memcontrol: add "sock" to cgroup2 memory.stat (b2807f07f4f87362925b8a5b8cbb7b624da10f03)
             r"^\s+sock (?P<cgroup_memory_sock_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -1616,14 +1622,14 @@ class KernelConfig_4_6(KernelConfig_4_5):
         "cgroup oom: mem info block (kernel_stack)": (
             # 4.6 mm: memcontrol: report kernel stack usage in cgroup2 memory.stat (12580e4b54ba8a1b22ec977c200be0174ca42348)
             r"^\s+kernel_stack (?P<cgroup_memory_kernel_stack_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (slab)": (
             # 4.6 mm: memcontrol: report slab usage in cgroup2 memory.stat (27ee57c93ff00b8a2d6c6dd6b0b3dddda7b43b77)
             r"^\s+slab_reclaimable (?P<cgroup_memory_slab_reclaimable_bytes>\d+)(?:\n)"
             r"^\s+slab_unreclaimable (?P<cgroup_memory_slab_unreclaimable_bytes>\d+)(?:\n)"
             r"^\s+slab (?P<cgroup_memory_slab_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -1910,14 +1916,14 @@ class KernelConfig_4_12(KernelConfig_4_10):
         "cgroup oom: mem info block (shmem)": (
             # 4.12 mm: memcontrol: provide shmem statistics (9a4caf1e9fa4864ce21ba9584a2c336bfbc72740)
             r"^\s+shmem (?P<cgroup_memory_shmem_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (workingset)": (
             # 4.12  mm: vmscan: fix IO/refault regression in cache workingset transition (2a2e48854d704214dac7546e87ae0e4daa0e61a0)
             r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
             r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)"
             r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2026,7 +2032,7 @@ class KernelConfig_4_13(KernelConfig_4_12):
             r"^\s+pgdeactivate (?P<cgroup_memory_pgdeactivate_bytes>\d+)(?:\n)"
             r"^\s+pglazyfree (?P<cgroup_memory_pglazyfree_bytes>\d+)(?:\n)"
             r"^\s+pglazyfreed (?P<cgroup_memory_pglazyfreed_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2418,13 +2424,13 @@ class KernelConfig_5_1(KernelConfig_4_19):
         "cgroup oom: mem info block (anon_thp)": (
             # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
             r"^\s+anon_thp (?P<cgroup_memory_anon_thp_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (Transparent Huge Pages)": (
             # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
             r"^\s+thp_fault_alloc (?P<cgroup_memory_thp_fault_alloc_bytes>\d+)(?:\n)"
             r"^\s+thp_collapse_alloc (?P<cgroup_memory_thp_collapse_alloc_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2449,13 +2455,13 @@ class KernelConfig_5_3(KernelConfig_5_1):
             r"^swap: usage (?P<cgroup_swap_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_swap_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_swap_failcnt>\d+)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (workingset)": (
             # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
             r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
             r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2496,7 +2502,7 @@ class KernelConfig_5_4(KernelConfig_5_3):
             r"total-vm:(?P<killed_proc_total_vm_kb>\d+)kB, anon-rss:(?P<killed_proc_anon_rss_kb>\d+)kB, "
             r"file-rss:(?P<killed_proc_file_rss_kb>\d+)kB, shmem-rss:(?P<killed_proc_shmem_rss_kb>\d+)kB, "
             r"UID:\d+ pgtables:(?P<killed_proc_pgtables>\d+)kB oom_score_adj:(?P<killed_proc_oom_score_adj>-?\d+)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2526,10 +2532,15 @@ class KernelConfig_5_8(KernelConfig_5_4):
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
-        "cgroup oom: mem info block (workingset_restore)": (
+        "cgroup oom: mem info block (workingset)": (
+            # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)"
             # 5.8 mm, memcg: add workingset_restore in memory.stat (a6f5576bb195c3b7508e3e1c98d2dcf6691f96e8)
-            r"^\s+workingset_restore (?P<cgroup_memory_workingset_restore_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            r"^\s+workingset_restore (?P<cgroup_memory_workingset_restore_bytes>\d+)(?:\n)"
+            # 4.12  mm: vmscan: fix IO/refault regression in cache workingset transition (2a2e48854d704214dac7546e87ae0e4daa0e61a0)
+            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)(?:\n)",
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2555,12 +2566,12 @@ class KernelConfig_5_9(KernelConfig_5_8):
             # 5.9 mm: memcontrol: fix missing suffix of workingset_restore (8d3fe09d8d6645dcbbe2413cde58f51ceb6545a6)
             r"^\s+workingset_restore_anon (?P<cgroup_memory_workingset_restore_anon_bytes>\d+)(?:\n)"
             r"^\s+workingset_restore_file (?P<cgroup_memory_workingset_restore_file_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (percpu)": (
             # 5.9 mm: memcg/percpu: per-memcg percpu memory statistics (772616b031f06e05846488b01dab46a7c832da13)
             r"^\s+percpu (?P<cgroup_memory_percpu_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2580,13 +2591,13 @@ class KernelConfig_5_11(KernelConfig_5_9):
         "cgroup oom: mem info block (pagetables)": (
             # 5.11 mm: memcontrol: account pagetables per node (f0c0c115fb81940f4dba0644ac2a8a43b39c83f3)
             r"^\s+pagetables (?P<cgroup_memory_pagetables_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (file_thp, shmem_thp)": (
             # 5.11 mm: memcontrol: add file_thp, shmem_thp to memory.stat (b8eddff8886b173b0a0f21a3bb1a594cc6d974d1)
             r"^\s+file_thp (?P<cgroup_memory_file_thp_bytes>\d+)(?:\n)"
             r"^\s+shmem_thp (?P<cgroup_memory_shmem_thp_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -2606,7 +2617,7 @@ class KernelConfig_5_12(KernelConfig_5_11):
         "cgroup oom: mem info block (swapcached)": (
             # 5.12 mm: memcg: add swapcache stat for memcg v2 (b6038942480e574c697ea1a80019bbe586c1d654)
             r"^\s+swapcached (?P<cgroup_memory_swapcached_bytes>\d+)(?:\n)",
-            OOMPatternType.CGROUP_MANDATORY,
+            OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
 
@@ -3936,8 +3947,12 @@ class OOMAnalyser:
     def _distinguish_between_cgroup_and_kernel_oom_type(self) -> None:
         """Set OOM type depending on CGROUP and KERNEL OOM"""
         if self.oom_result.kconfig.REC_OOM_CGROUP.search(self.oom_entity.text):
-            debug("OOM triggered by cgroup memory limit")
-            self.oom_result.oom_type = OOMType.CGROUP_AUTOMATIC
+            if self.oom_result.kconfig.REC_CGROUP_V1.search(self.oom_entity.text):
+                debug("OOM triggered by cgroup v1 memory limit")
+                self.oom_result.oom_type = OOMType.CGROUP_V1
+            else:
+                debug("OOM triggered by cgroup v2 memory limit")
+                self.oom_result.oom_type = OOMType.CGROUP_V2
         else:
             debug("OOM triggered by kernel memory allocation failure")
             self.oom_result.oom_type = OOMType.KERNEL_AUTOMATIC_OR_MANUAL
@@ -3996,13 +4011,13 @@ class OOMAnalyser:
         for k in self.oom_result.kconfig.EXTRACT_PATTERN:
             pattern, pattern_type = self.oom_result.kconfig.EXTRACT_PATTERN[k]
             if (
-                self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC
+                self.oom_result.oom_type in [OOMType.CGROUP_V1, OOMType.CGROUP_V2]
                 and pattern_type
                 in [OOMPatternType.KERNEL_MANDATORY, OOMPatternType.KERNEL_OPTIONAL]
             ) or (
                 self.oom_result.oom_type == OOMType.KERNEL_AUTOMATIC_OR_MANUAL
                 and pattern_type
-                in [OOMPatternType.CGROUP_MANDATORY, OOMPatternType.CGROUP_OPTIONAL]
+                in [OOMPatternType.CGROUP_ALL_MANDATORY, OOMPatternType.CGROUP_OPTIONAL]
             ):
                 debug(
                     'Skip pattern "{}" for OOM type {} as pattern type is different {}'.format(
@@ -4022,11 +4037,21 @@ class OOMAnalyser:
                         in [OOMPatternType.ALL_MANDATORY, OOMPatternType.ALL_OPTIONAL]
                     )
                     or (
-                        self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC
+                        self.oom_result.oom_type == OOMType.CGROUP_V1
                         and pattern_type
                         in [
-                            OOMPatternType.CGROUP_MANDATORY,
+                            OOMPatternType.CGROUP_ALL_MANDATORY,
                             OOMPatternType.CGROUP_OPTIONAL,
+                            OOMPatternType.CGROUP_V1_MANDATORY,
+                        ]
+                    )
+                    or (
+                        self.oom_result.oom_type == OOMType.CGROUP_V2
+                        and pattern_type
+                        in [
+                            OOMPatternType.CGROUP_ALL_MANDATORY,
+                            OOMPatternType.CGROUP_OPTIONAL,
+                            OOMPatternType.CGROUP_V2_MANDATORY,
                         ]
                     )
                     or (
@@ -4044,7 +4069,7 @@ class OOMAnalyser:
             elif pattern_type in [
                 OOMPatternType.ALL_MANDATORY,
                 OOMPatternType.KERNEL_MANDATORY,
-                OOMPatternType.CGROUP_MANDATORY,
+                OOMPatternType.CGROUP_ALL_MANDATORY,
             ]:
                 error(
                     "Failed to extract information from OOM text. The regular "
@@ -6097,8 +6122,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             show_elements_by_selector(".js-oom-kernel-automatic--show")
         elif self.oom_result.oom_type == OOMType.KERNEL_MANUAL:
             show_elements_by_selector(".js-oom-kernel-manual--show")
-        elif self.oom_result.oom_type == OOMType.CGROUP_AUTOMATIC:
-            show_elements_by_selector(".js-oom-cgroup-automatic--show")
+        elif self.oom_result.oom_type == OOMType.CGROUP_V1:
+            show_elements_by_selector(".js-oom-cgroup-v1--show")
+        elif self.oom_result.oom_type == OOMType.CGROUP_V2:
+            show_elements_by_selector(".js-oom-cgroup-v2--show")
 
         for item in self.oom_result.details.keys():
             if item.startswith("_"):  # ignore internal items
