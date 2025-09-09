@@ -12,14 +12,15 @@ import socketserver
 import threading
 import time
 import unittest
+import warnings
+from typing import Dict, List
 
-from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.common.exceptions import *
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
-import warnings
 
 import OOMAnalyser
 
@@ -140,30 +141,51 @@ class BaseInBrowserTests(BaseTests):
     """Base class for all tests that run in a browser"""
 
     # --- Begin: generic result check configuration ---
-    # For each test variant, set these in the child class
-    check_results_expected = None
-    check_results_gfp_mask = None
-    check_results_proc_name = None
-    check_results_proc_pid = None
-    check_results_killed_proc_score = None
-    check_results_swap_cache_kb = None
-    check_results_swap_used_kb = None
-    check_results_swap_free_kb = None
-    check_results_swap_total_kb = None
-    check_results_explanation_expected = None
-    check_results_explanation_unexpected = None
-    check_results_result_table_expected = None
-    check_results_result_table_unexpected = None
-    check_results_mem_node_info_start = None
-    check_results_mem_node_info_end = None
-    check_results_mem_watermarks_start = None
-    check_results_mem_watermarks_end = None
-    check_results_header_text = None
-    check_results_swap_active = None
-    check_results_swap_inactive = None
+    # For each test variant, set these in the child class. An empty value
+    # disables the corresponding check.
+    check_results_gfp_mask: str = ""
+    """Expected text in the GFP mask field in results table"""
+    check_results_proc_name: str = ""
+    """Expected text in the process name field in results table"""
+    check_results_proc_pid: str = ""
+    """Expected text in the process pid field in results table"""
+    check_results_killed_proc_score: str = ""
+    """Expected text in the killed process OOM score field in results table"""
+    check_results_swap_cache_kb: str = ""
+    """Expected text in the swap cache field in results table"""
+    check_results_swap_used_kb: str = ""
+    """Expected text in the swap used field in results table"""
+    check_results_swap_free_kb: str = ""
+    """Expected text in the swap free field in results table"""
+    check_results_swap_total_kb: str = ""
+    """Expected text in the swap total field in results table"""
+    check_explanation_expected_statements: List[str] = []
+    """List of text patterns that must be found in the summary/explanation section"""
+    check_explanation_unexpected_statements: List[str] = []
+    """List of text patterns that must not be found in the summary/explanation section"""
+    check_results_result_table_expected: List[str] = []
+    """List of text patterns that must be found in the result table"""
+    check_results_result_table_unexpected: List[str] = []
+    """List of text patterns that must not be found in the result table"""
+    check_results_mem_node_info_start: str = ""
+    """Expected start text in the memory node info section"""
+    check_results_mem_node_info_end: str = ""
+    """Expected end text in the memory node info section"""
+    check_results_mem_watermarks_start: str = ""
+    """Expected start text in the memory watermarks section"""
+    check_results_mem_watermarks_end: str = ""
+    """Expected end text in the memory watermarks section"""
+    check_results_column_header: str = ""
+    """Expected text in the column header of the process table"""
+    check_results_swap_active: bool = True
+    """Enabled to check that system swap space is used"""
+    check_results_swap_inactive: bool = True
+    """Enabled to check that system swap space is disabled"""
+    check_explanation_section: Dict[str, str] = {}
+    """Dictionary with category and text pattern to check the summary/explanation section"""
     # --- End: generic result check configuration ---
 
-    def check_results(self):
+    def check_all_results(self):
         """
         Generic result checker for OOM analysis results.
         Skips tests if the corresponding class variable is None.
@@ -175,7 +197,7 @@ class BaseInBrowserTests(BaseTests):
             "Analysis details incl. <h3>Summary</h3> should be displayed",
         )
 
-        if self.check_results_proc_name is not None:
+        if self.check_results_proc_name:
             trigger_proc_name = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_name"
             )
@@ -184,7 +206,7 @@ class BaseInBrowserTests(BaseTests):
                 self.check_results_proc_name,
                 "Unexpected trigger process name",
             )
-        if self.check_results_proc_pid is not None:
+        if self.check_results_proc_pid:
             trigger_proc_pid = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_pid"
             )
@@ -193,7 +215,7 @@ class BaseInBrowserTests(BaseTests):
                 self.check_results_proc_pid,
                 f"Unexpected trigger process pid: --{trigger_proc_pid.text}--",
             )
-        if self.check_results_gfp_mask is not None:
+        if self.check_results_gfp_mask:
             trigger_proc_gfp_mask = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_gfp_mask"
             )
@@ -203,7 +225,7 @@ class BaseInBrowserTests(BaseTests):
                 self.check_results_gfp_mask,
                 f'Unexpected GFP Mask: got: "{mask}", expect: "{self.check_results_gfp_mask}"',
             )
-        if self.check_results_killed_proc_score is not None:
+        if self.check_results_killed_proc_score:
             killed_proc_score = self.driver.find_element(
                 By.CLASS_NAME, "killed_proc_score"
             )
@@ -212,93 +234,88 @@ class BaseInBrowserTests(BaseTests):
                 self.check_results_killed_proc_score,
                 "Unexpected OOM score of killed process",
             )
-        if self.check_results_swap_cache_kb is not None:
+        if self.check_results_swap_cache_kb:
             swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
             self.assertEqual(swap_cache_kb.text, self.check_results_swap_cache_kb)
-        if self.check_results_swap_used_kb is not None:
+        if self.check_results_swap_used_kb:
             swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
             self.assertEqual(swap_used_kb.text, self.check_results_swap_used_kb)
-        if self.check_results_swap_free_kb is not None:
+        if self.check_results_swap_free_kb:
             swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
             self.assertEqual(swap_free_kb.text, self.check_results_swap_free_kb)
-        if self.check_results_swap_total_kb is not None:
+        if self.check_results_swap_total_kb:
             swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
             self.assertEqual(swap_total_kb.text, self.check_results_swap_total_kb)
 
-        if self.check_results_explanation_expected is not None:
-            explanation = self.driver.find_element(By.ID, "explanation")
-            continuous_text = self.to_continuous_text(explanation.text)
-            for expected in self.check_results_explanation_expected:
-                self.assertTrue(
-                    expected in continuous_text,
-                    f'Missing statement in OOM summary: "{expected}"',
-                )
-            if self.check_results_explanation_unexpected is not None:
-                for unexpected in self.check_results_explanation_unexpected:
-                    self.assertTrue(
-                        unexpected not in continuous_text,
-                        f'Unexpected statement in OOM summary: "{unexpected}"',
-                    )
+        continuous_explanation_text = self.to_continuous_text(
+            self.driver.find_element(By.ID, "explanation").text
+        )
+        for expected in self.check_explanation_expected_statements:
+            self.assertTrue(
+                expected in continuous_explanation_text,
+                f'Missing statement "{expected}" in summary section: >{continuous_explanation_text}<',
+            )
+        for unexpected in self.check_explanation_unexpected_statements:
+            self.assertTrue(
+                unexpected not in continuous_explanation_text,
+                f'Unexpected statement "{unexpected}" in summary section: >{continuous_explanation_text}<',
+            )
 
-        if self.check_results_result_table_expected is not None:
-            result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+        result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
+        if self.check_results_result_table_expected:
             for expected in self.check_results_result_table_expected:
                 self.assertTrue(
                     expected in result_table.text,
                     f'Missing statement in result table: "{expected}"',
                 )
-            if self.check_results_result_table_unexpected is not None:
-                for unexpected in self.check_results_result_table_unexpected:
-                    self.assertTrue(
-                        unexpected not in result_table.text,
-                        f'Unexpected statement in result table: "{unexpected}"',
-                    )
+        if self.check_results_result_table_unexpected:
+            for unexpected in self.check_results_result_table_unexpected:
+                self.assertTrue(
+                    unexpected not in result_table.text,
+                    f'Unexpected statement in result table: "{unexpected}"',
+                )
 
-        if self.check_results_explanation_expected is not None:
-            continuous_text = self.to_continuous_text(
-                self.driver.find_element(By.ID, "explanation").text
+        # check text pattern in summary section
+        for category in self.check_explanation_section:
+            pattern = self.check_explanation_section[category]
+            self.assertTrue(
+                pattern in continuous_explanation_text,
+                f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<',
             )
-            # Die folgenden Checks sind spezifisch für die Beispiele, daher optional:
-            if hasattr(self, "check_results_physical_swap_texts"):
-                for txt, msg in self.check_results_physical_swap_texts:
-                    self.assertTrue(
-                        txt in continuous_text,
-                        msg,
-                    )
 
-        if self.check_results_mem_node_info_start is not None:
-            mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+        mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
+        if self.check_results_mem_node_info_start:
             self.assertEqual(
                 mem_node_info.text[: len(self.check_results_mem_node_info_start)],
                 self.check_results_mem_node_info_start,
                 "Unexpected memory chunks",
             )
-            if self.check_results_mem_node_info_end is not None:
-                self.assertEqual(
-                    mem_node_info.text[-len(self.check_results_mem_node_info_end) :],
-                    self.check_results_mem_node_info_end,
-                    "Unexpected memory information about hugepages",
-                )
+        if self.check_results_mem_node_info_end:
+            self.assertEqual(
+                mem_node_info.text[-len(self.check_results_mem_node_info_end) :],
+                self.check_results_mem_node_info_end,
+                "Unexpected memory information about hugepages",
+            )
 
-        if self.check_results_mem_watermarks_start is not None:
-            mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+        mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
+        if self.check_results_mem_watermarks_start:
             self.assertEqual(
                 mem_watermarks.text[: len(self.check_results_mem_watermarks_start)],
                 self.check_results_mem_watermarks_start,
                 "Unexpected memory watermarks",
             )
-            if self.check_results_mem_watermarks_end is not None:
-                self.assertEqual(
-                    mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :],
-                    self.check_results_mem_watermarks_end,
-                    "Unexpected lowmem_reserve values",
-                )
+        if self.check_results_mem_watermarks_end:
+            self.assertEqual(
+                mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :],
+                self.check_results_mem_watermarks_end,
+                "Unexpected lowmem_reserve values",
+            )
 
-        if self.check_results_header_text is not None:
+        if self.check_results_column_header:
             header = self.driver.find_element(By.ID, "pstable_header")
             self.assertTrue(
-                self.check_results_header_text in header.text,
-                f'Missing column header "{self.check_results_header_text}"',
+                self.check_results_column_header in header.text,
+                f'Missing column header "{self.check_results_column_header}"',
             )
 
         if self.check_results_swap_active:
@@ -991,13 +1008,13 @@ class TestBroswerArchLinux(BaseInBrowserTests):
     check_results_swap_used_kb = "25066284 kBytes"
     check_results_swap_free_kb = "84 kBytes"
     check_results_swap_total_kb = "25165820 kBytes"
-    check_results_explanation_expected = [
+    check_explanation_expected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
         BaseTests.text_swap_space_are_in_use,
     ]
-    check_results_explanation_unexpected = [
+    check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_no_free_chunks,
         BaseTests.text_alloc_failed_unknown_reason,
         BaseTests.text_mem_heavily_fragmented,
@@ -1013,36 +1030,23 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB"
     )
     check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
-    check_results_header_text = "Page Table Bytes"
+    check_results_column_header = "Page Table Bytes"
     check_results_swap_active = True
     check_results_swap_inactive = False
 
-    # Für spezielle Textchecks:
-    check_results_physical_swap_texts = [
-        (
-            "system has 16461600 kBytes physical memory and 25165820 kBytes swap space.",
-            "Physical and swap memory in summary not found:: >{continuous_text}<",
-        ),
-        (
-            "That's 41627420 kBytes total.",
-            "Total memory in summary not found",
-        ),
-        (
-            "69 % (11513452 kBytes out of 16461600 kBytes) physical memory",
-            "Used physical memory in summary not found",
-        ),
-        (
-            "99 % (25066284 kBytes out of 25165820 kBytes) swap space",
-            "Used swap space in summary not found",
-        ),
-    ]
+    check_explanation_section = {
+        "Physical and swap memory": "system has 16461600 kBytes physical memory and 25165820 kBytes swap space.",
+        "Total memory": "That's 41627420 kBytes total.",
+        "Use physical memory": "69 % (11513452 kBytes out of 16461600 kBytes) physical memory",
+        "Use swap space": "99 % (25066284 kBytes out of 25165820 kBytes) swap space",
+    }
 
     def test_020_insert_and_analyse_example(self):
         """Test loading and analysing ArchLinux 6.1.1 example"""
         self.clear_notification_box()
         self.insert_example("ArchLinux")
         self.click_analyse_button()
-        self.check_results()
+        self.check_all_results()
 
     def test_030_removal_of_leading_but_useless_columns(self):
         """
@@ -1056,7 +1060,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         @see: TestRhel7.test_030_removal_of_leading_but_useless_columns()
         """
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        self.check_results()
+        self.check_all_results()
         self.click_reset_button()
         for prefix in [
             "[11686.888109] ",
@@ -1077,7 +1081,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
                 new_lines.append(new_line)
             oom_text = "\n".join(new_lines)
             self.analyse_oom(oom_text)
-            self.check_results()
+            self.check_all_results()
             self.click_reset_button()
 
 
@@ -1103,14 +1107,14 @@ class TestBrowserRhel7(BaseInBrowserTests):
     check_results_swap_used_kb = "8343236 kBytes"
     check_results_swap_free_kb = "0 kBytes"
     check_results_swap_total_kb = "8388604 kBytes"
-    check_results_explanation_expected = [
+    check_explanation_expected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
         BaseTests.text_swap_space_are_in_use,
         BaseTests.text_with_an_oom_score_of,
     ]
-    check_results_explanation_unexpected = [
+    check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_no_free_chunks,
         BaseTests.text_alloc_failed_unknown_reason,
         BaseTests.text_mem_heavily_fragmented,
@@ -1125,35 +1129,23 @@ class TestBrowserRhel7(BaseInBrowserTests):
         "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB"
     )
     check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0"
-    check_results_header_text = "Page Table Entries"
+    check_results_column_header = "Page Table Entries"
     check_results_swap_active = True
     check_results_swap_inactive = False
 
-    check_results_physical_swap_texts = [
-        (
-            "system has 33519336 kBytes physical memory and 8388604 kBytes swap space.",
-            "Physical and swap memory in summary not found:: >{explanation}<",
-        ),
-        (
-            "That's 41907940 kBytes total.",
-            "Total memory in summary not found:: >{explanation}<",
-        ),
-        (
-            "94 % (31705788 kBytes out of 33519336 kBytes) physical memory",
-            "Used physical memory in summary not found:: >{explanation}<",
-        ),
-        (
-            "99 % (8343236 kBytes out of 8388604 kBytes) swap space",
-            "Used swap space in summary not found:: >{explanation}<",
-        ),
-    ]
+    check_explanation_section = {
+        "Physical and swap memory": "system has 33519336 kBytes physical memory and 8388604 kBytes swap space.",
+        "Total memory": "That's 41907940 kBytes total.",
+        "Use physical memory": "94 % (31705788 kBytes out of 33519336 kBytes) physical memory",
+        "Use swap space": "99 % (8343236 kBytes out of 8388604 kBytes) swap space",
+    }
 
     def test_020_insert_and_analyse_example(self):
         """Test loading and analysing RHEL7 example"""
         self.clear_notification_box()
         self.insert_example("RHEL7")
         self.click_analyse_button()
-        self.check_results()
+        self.check_all_results()
 
     def test_030_removal_of_leading_but_useless_columns(self):
         """
@@ -1167,7 +1159,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
         @see: TestArchLinux.test_030_removal_of_leading_but_useless_columns()
         """
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
-        self.check_results()
+        self.check_all_results()
         self.click_reset_button()
         for prefix in [
             "[11686.888109] ",
@@ -1182,7 +1174,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
             lines = [f"{prefix}{line}" for line in lines]
             oom_text = "\n".join(lines)
             self.analyse_oom(oom_text)
-            self.check_results()
+            self.check_all_results()
             self.click_reset_button()
 
     def test_040_loading_journalctl_input(self):
@@ -1225,7 +1217,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
             )
 
             self.analyse_oom(example)
-            self.check_results()
+            self.check_all_results()
             self.click_reset_button()
 
     def test_050_trigger_proc_space(self):
@@ -1305,11 +1297,11 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
     #    __GFP_FS                    0x80
     #                  sum:          0xCC0
     check_results_gfp_mask = "0xcc0 (GFP_KERNEL)"
-    check_results_explanation_expected = [
+    check_explanation_expected_statements = [
         BaseTests.text_oom_triggered_manually,
         BaseTests.text_swap_space_not_in_use,
     ]
-    check_results_explanation_unexpected = [
+    check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_alloc_failed_no_free_chunks,
         BaseTests.text_alloc_failed_unknown_reason,
@@ -1328,27 +1320,21 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB"
     )
     check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
-    check_results_header_text = "Page Table Bytes"
+    check_results_column_header = "Page Table Bytes"
     check_results_swap_active = False
     check_results_swap_inactive = True
 
-    check_results_physical_swap_texts = [
-        (
-            "system has 2096632 kBytes physical memory",
-            "Physical memory in summary not found:: >{continuous_text}<",
-        ),
-        (
-            "9 % (209520 kBytes out of 2096632 kBytes) physical memory",
-            "Used physical memory in summary not found:: >{continuous_text}<",
-        ),
-    ]
+    check_explanation_section = {
+        "Physical and swap memory": "system has 2096632 kBytes physical memory",
+        "Use physical memory": "9 % (209520 kBytes out of 2096632 kBytes) physical memory",
+    }
 
     def test_020_insert_and_analyse_example(self):
         """Test loading and analysing Ubuntu 21.10 example"""
         self.clear_notification_box()
         self.insert_example("Ubuntu_2110")
         self.click_analyse_button()
-        self.check_results()
+        self.check_all_results()
 
 
 if __name__ == "__main__":
