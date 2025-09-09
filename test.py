@@ -1337,5 +1337,43 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         self.check_all_results()
 
 
+class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
+    """Test cases for Proxmox Cgroup OOM example"""
+
+    text_oom_triggered_automatically = (
+        "The cgroup-local OOM killer was automatically triggered"
+    )
+
+    check_explanation_unexpected_statements = [
+        BaseTests.text_oom_triggered_manually,
+        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_alloc_failed_below_low_watermark,
+        BaseTests.text_alloc_failed_no_free_chunks,
+        BaseTests.text_alloc_failed_unknown_reason,
+        BaseTests.text_mem_heavily_fragmented,
+        BaseTests.text_mem_not_heavily_fragmented,
+        BaseTests.text_with_an_oom_score_of,
+    ]
+
+    check_explanation_expected_statements = [
+        text_oom_triggered_automatically,
+    ]
+
+    check_results_swap_active = False
+    check_results_swap_inactive = False
+
+    check_explanation_section = {
+        "Terminated process": 'The process "php-fpm" (PID 3902942) has been terminated.',
+        "Resident memory": "It uses 12781340 kBytes of the resident memory.",
+    }
+
+    def test_020_insert_and_analyse_example(self):
+        """Test loading and analysing Proxmox cgroup OOM example"""
+        self.clear_notification_box()
+        self.insert_example("Proxmox_cgroup_oom")
+        self.click_analyse_button()
+        self.check_all_results()
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
