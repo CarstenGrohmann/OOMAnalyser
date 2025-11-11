@@ -2455,7 +2455,7 @@ class KernelConfig_5_3(KernelConfig_5_1):
             r"^swap: usage (?P<cgroup_swap_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_swap_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_swap_failcnt>\d+)",
-            OOMPatternType.CGROUP_ALL_MANDATORY,
+            OOMPatternType.CGROUP_V2_MANDATORY,
         ),
         "cgroup oom: mem info block (workingset)": (
             # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
@@ -5611,6 +5611,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     """
     """SVG graphics with one black triangle DOWN for sorting"""
 
+    SWAP_ENABLED_AND_UNLIMITED = -1
+    """Swap space is enabled and unlimited"""
+
     def __init__(self):
         self.oom = None
         self.set_html_defaults()
@@ -5985,7 +5988,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             OOMType.KERNEL_MANUAL,
             OOMType.KERNEL_AUTOMATIC,
         ]:
-            self._show_swap_usage()
+            self._show_system_swap_usage()
+        if self.oom_result.oom_type in [OOMType.CGROUP_V1, OOMType.CGROUP_V2]:
+            self._show_cgroup_swap()
         self._show_trigger_process()
         self._show_alloc_failure()
         self._show_kernel_upgrade()
@@ -6085,8 +6090,53 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         elem_svg_ram = document.getElementById("svg_ram")
         elem_svg_ram.appendChild(svg_ram)
 
-    def _show_swap_usage(self):
-        """Show/hide swap space and generate a usage diagram"""
+    def _show_cgroup_swap(self):
+        """Show/hide cgroup swap space"""
+        if self.oom_result.oom_type == OOMType.CGROUP_V1:
+            if "cgroup_memory_swap_limit_kb" in self.oom_result.details:
+                self._show_cgroup_v1_swap_usage()
+        elif self.oom_result.oom_type == OOMType.CGROUP_V2:
+            if "cgroup_swap_limit_kb" in self.oom_result.details:
+                self._show_cgroup_v2_swap_usage()
+
+    def _show_cgroup_v1_swap_usage(self):
+        """Show/hide cgroup v1 swap space"""
+        if self.oom_result.details["cgroup_memory_swap_limit_kb"] == 0:
+            hide_elements_by_selector(".js-cgroup-v1-swap-active--show")
+            show_elements_by_selector(".js-cgroup-swap-inactive--show")
+            hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
+        elif (
+            self.oom_result.details["cgroup_memory_swap_limit_kb"]
+            == self.SWAP_ENABLED_AND_UNLIMITED
+        ):
+            hide_elements_by_selector(".js-cgroup-v1-swap-active--show")
+            hide_elements_by_selector(".js-cgroup-swap-inactive--show")
+            show_elements_by_selector(".js-cgroup-swap-unlimited--show")
+        else:
+            show_elements_by_selector(".js-cgroup-v1-swap-active--show")
+            hide_elements_by_selector(".js-cgroup-swap-inactive--show")
+            hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
+
+    def _show_cgroup_v2_swap_usage(self):
+        """Show/hide cgroup v2 swap space"""
+        if self.oom_result.details["cgroup_swap_limit_kb"] == 0:
+            hide_elements_by_selector(".js-cgroup-v2-swap-active--show")
+            show_elements_by_selector(".js-cgroup-swap-inactive--show")
+            hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
+        elif (
+            self.oom_result.details["cgroup_swap_limit_kb"]
+            == self.SWAP_ENABLED_AND_UNLIMITED
+        ):
+            hide_elements_by_selector(".js-cgroup-v2-swap-active--show")
+            hide_elements_by_selector(".js-cgroup-swap-inactive--show")
+            show_elements_by_selector(".js-cgroup-swap-unlimited--show")
+        else:
+            show_elements_by_selector(".js-cgroup-v2-swap-active--show")
+            hide_elements_by_selector(".js-cgroup-swap-inactive--show")
+            hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
+
+    def _show_system_swap_usage(self):
+        """Show/hide system swap space and generate a usage diagram"""
         if self.oom_result.swap_active:
             # generate swap usage diagram
             svg = SVGChart()
@@ -6098,11 +6148,11 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             )
             elem_svg_swap = document.getElementById("svg_swap")
             elem_svg_swap.appendChild(svg_swap)
-            show_elements_by_selector(".js-swap-active--show")
-            hide_elements_by_selector(".js-swap-inactive--show")
+            show_elements_by_selector(".js-system-swap-active--show")
+            hide_elements_by_selector(".js-system-swap-inactive--show")
         else:
-            hide_elements_by_selector(".js-swap-active--show")
-            show_elements_by_selector(".js-swap-inactive--show")
+            show_elements_by_selector(".js-system-swap-inactive--show")
+            hide_elements_by_selector(".js-system-swap-active--show")
 
     def _show_trigger_process(self):
         """Show trigger process details w/ or w/o UID"""

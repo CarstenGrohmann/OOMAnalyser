@@ -57,10 +57,12 @@ class BaseTests(unittest.TestCase):
     text_oom_triggered_manually = "OOM killer was manually triggered"
     text_oom_triggered_automatically = "OOM killer was automatically triggered"
 
-    text_swap_space_not_in_use = "physical memory and no swap space"
-    text_swap_space_are_in_use = "swap space are in use"
-    test_swap_no_space = "No swap space available"
-    test_swap_swap_total = "Swap Total"
+    text_cgroup_swap_activated = "Swap space is enabled for this cgroup."
+    text_cgroup_swap_deactivated = "Swap space usage is disabled for this cgroup."
+    text_kernel_swap_space_not_in_use = "physical memory and no swap space"
+    text_kernel_swap_space_are_in_use = "swap space are in use"
+    test_kernel_swap_no_space = "No swap space available"
+    test_kernel_swap_swap_total = "Swap Total"
 
     text_with_an_oom_score_of = "with an OOM score of"
 
@@ -471,20 +473,20 @@ class BaseInBrowserTests(BaseTests):
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
-            self.text_swap_space_not_in_use in continuous_text,
-            f'Missing statement "{self.text_swap_space_not_in_use}"',
+            self.text_kernel_swap_space_not_in_use in continuous_text,
+            f'Missing statement "{self.text_kernel_swap_space_not_in_use}"',
         )
         self.assertTrue(
-            self.text_swap_space_are_in_use not in continuous_text,
-            f'Unexpected statement "{self.text_swap_space_are_in_use}"',
+            self.text_kernel_swap_space_are_in_use not in continuous_text,
+            f'Unexpected statement "{self.text_kernel_swap_space_are_in_use}"',
         )
 
     def check_swap_active(self):
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
         self.assertTrue(
-            self.text_swap_space_are_in_use in continuous_text,
-            f'Missing statement "{self.text_swap_space_are_in_use}"',
+            self.text_kernel_swap_space_are_in_use in continuous_text,
+            f'Missing statement "{self.text_kernel_swap_space_are_in_use}"',
         )
 
 
@@ -1012,18 +1014,18 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
-        BaseTests.text_swap_space_are_in_use,
+        BaseTests.text_kernel_swap_space_are_in_use,
     ]
     check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_no_free_chunks,
         BaseTests.text_alloc_failed_unknown_reason,
         BaseTests.text_mem_heavily_fragmented,
         BaseTests.text_oom_triggered_manually,
-        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_kernel_swap_space_not_in_use,
         BaseTests.text_with_an_oom_score_of,
     ]
-    check_results_result_table_expected = [BaseTests.test_swap_swap_total]
-    check_results_result_table_unexpected = [BaseTests.test_swap_no_space]
+    check_results_result_table_expected = [BaseTests.test_kernel_swap_swap_total]
+    check_results_result_table_unexpected = [BaseTests.test_kernel_swap_no_space]
     check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB"
     check_results_mem_node_info_end = "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
     check_results_mem_watermarks_start = (
@@ -1111,7 +1113,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
-        BaseTests.text_swap_space_are_in_use,
+        BaseTests.text_kernel_swap_space_are_in_use,
         BaseTests.text_with_an_oom_score_of,
     ]
     check_explanation_unexpected_statements = [
@@ -1119,10 +1121,10 @@ class TestBrowserRhel7(BaseInBrowserTests):
         BaseTests.text_alloc_failed_unknown_reason,
         BaseTests.text_mem_heavily_fragmented,
         BaseTests.text_oom_triggered_manually,
-        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_kernel_swap_space_not_in_use,
     ]
-    check_results_result_table_expected = [BaseTests.test_swap_swap_total]
-    check_results_result_table_unexpected = [BaseTests.test_swap_no_space]
+    check_results_result_table_expected = [BaseTests.test_kernel_swap_swap_total]
+    check_results_result_table_unexpected = [BaseTests.test_kernel_swap_no_space]
     check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB"
     check_results_mem_node_info_end = "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
     check_results_mem_watermarks_start = (
@@ -1299,7 +1301,7 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
     check_results_gfp_mask = "0xcc0 (GFP_KERNEL)"
     check_explanation_expected_statements = [
         BaseTests.text_oom_triggered_manually,
-        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_kernel_swap_space_not_in_use,
     ]
     check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
@@ -1310,8 +1312,8 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         BaseTests.text_oom_triggered_automatically,
         BaseTests.text_with_an_oom_score_of,
     ]
-    check_results_result_table_expected = [BaseTests.test_swap_no_space]
-    check_results_result_table_unexpected = [BaseTests.test_swap_swap_total]
+    check_results_result_table_expected = [BaseTests.test_kernel_swap_no_space]
+    check_results_result_table_unexpected = [BaseTests.test_kernel_swap_swap_total]
     check_results_mem_node_info_start = (
         "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB"
     )
@@ -1346,7 +1348,8 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
 
     check_explanation_unexpected_statements = [
         BaseTests.text_oom_triggered_manually,
-        BaseTests.text_swap_space_not_in_use,
+        BaseTests.text_cgroup_swap_activated,
+        BaseTests.text_kernel_swap_space_not_in_use,
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_alloc_failed_no_free_chunks,
         BaseTests.text_alloc_failed_unknown_reason,
@@ -1357,6 +1360,7 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
 
     check_explanation_expected_statements = [
         text_oom_triggered_automatically,
+        BaseTests.text_cgroup_swap_deactivated,
     ]
 
     check_results_swap_active = False
