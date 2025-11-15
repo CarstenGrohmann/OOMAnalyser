@@ -325,7 +325,7 @@ class BaseKernelConfig:
     EXTRACT_PATTERN_BASE = {
         "invoked oom-killer": (
             r"^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: "
-            r"gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-z0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, "
+            r"gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-f0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, "
             r"(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?"
             r"order=(?P<trigger_proc_order>-?\d+), "
             r"oom_score_adj=(?P<trigger_proc_oomscore>-?\d+)",
@@ -456,7 +456,7 @@ class BaseKernelConfig:
         ),
         "cgroup v1 oom: swap usage": (
             # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
-            r"^memory+swap: usage (?P<cgroup_memory_swap_usage_kb>\d+)kB, "
+            r"^memory\+swap: usage (?P<cgroup_memory_swap_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_memory_swap_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_memory_swap_failcnt>\d+)",
             OOMPatternType.CGROUP_V1_MANDATORY,
@@ -686,10 +686,10 @@ class BaseKernelConfig:
     REC_OOM_CGROUP = re.compile(r"^Memory cgroup stats for", re.MULTILINE)
     """RE to match if the OOM is a cgroup OOM"""
 
-    REC_CGROUP_V1 = re.compile(r"^memory+swap: usage", re.MULTILINE)
+    REC_CGROUP_V1 = re.compile(r"^memory\+swap: usage", re.MULTILINE)
     """RE to match if the cgroup is a v1 cgroup"""
 
-    REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB")
+    REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB", re.MULTILINE)
     """RE to extract the page size from buddyinfo DMA zone"""
 
     REC_PROCESS_LINE = re.compile(
