@@ -613,26 +613,28 @@ class TestPython(BaseTests):
     def test_002_killed_proc_space(self):
         """Test RE to find name of the killed process"""
         pattern_key = "global oom: kill process - pid, name and score"
-        process_name = "sed"
-        text = self.get_lines(OOMAnalyser.OOMDisplay.example_rhel7, -2)
+        original_process_name = "sed"
+        original_text = self.get_lines(OOMAnalyser.OOMDisplay.example_rhel7, -2)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
             pattern_key
         ][0]
         rec = re.compile(pattern, re.MULTILINE)
-        match = rec.search(text)
-        self.assertTrue(
-            match,
-            f'Error: Search for process names failed for process name "{process_name}"',
-        )
 
-        old_name = process_name
-        process_name = "VM Monitoring Task"
-        text = text.replace(old_name, process_name)
-        match = rec.search(text)
-        self.assertTrue(
-            match,
-            f'Error: Search for process names failed for process name "{process_name}"',
-        )
+        # Test various process names
+        test_process_names = [
+            ("sed", "simple process name"),
+            ("VM Monitoring Task", "process name with spaces"),
+            ("kworker/0:1", "process name with special characters (slash and colon)"),
+            ("php-fpm", "process name with hyphen"),
+        ]
+
+        for process_name, description in test_process_names:
+            text = original_text.replace(original_process_name, process_name)
+            match = rec.search(text)
+            self.assertTrue(
+                match,
+                f'Error: Search for process names failed for {description}: "{process_name}"',
+            )
 
     def test_003_OOMEntity_number_of_columns_to_strip(self):
         """Test stripping useless / leading columns"""

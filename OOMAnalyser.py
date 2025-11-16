@@ -324,9 +324,10 @@ class BaseKernelConfig:
 
     EXTRACT_PATTERN_BASE = {
         "invoked oom-killer": (
-            r"^(?P<trigger_proc_name>[\S ]+) invoked oom-killer: "
-            r"gfp_mask=(?P<trigger_proc_gfp_mask>0x[a-f0-9]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, "
-            r"(nodemask=(?P<trigger_proc_nodemask>([\d,-]+|\(null\))), )?"
+            # Process names can contain spaces (e.g., "VM Monitoring Task") and special chars (e.g., "kworker/0:1")
+            r"^(?P<trigger_proc_name>.+?) invoked oom-killer: "
+            r"gfp_mask=(?P<trigger_proc_gfp_mask>0x[0-9a-f]+)(\((?P<trigger_proc_gfp_flags>[A-Z_|]+)\))?, "
+            r"(?:nodemask=(?P<trigger_proc_nodemask>[\d,-]+|\(null\)), )?"
             r"order=(?P<trigger_proc_order>-?\d+), "
             r"oom_score_adj=(?P<trigger_proc_oomscore>-?\d+)",
             OOMPatternType.KERNEL_MANDATORY,
@@ -334,43 +335,43 @@ class BaseKernelConfig:
         # Source: lib/dump_stack:dump_stack_print_info()
         "Trigger process and kernel version": (
             r"^CPU: \d+ PID: (?P<trigger_proc_pid>\d+) "
-            r"Comm: .* (Not tainted|Tainted:.*) "
+            r"Comm: .*? (Not tainted|Tainted:.*?) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
             OOMPatternType.ALL_MANDATORY,
         ),
         # split caused by a limited number of iterations during converting PY regex into JS regex
         # Source: mm/page_alloc.c:__show_free_areas()
         "Overall Mem-Info (part 1)": (
-            r"^Mem-Info:.*"
+            r"^Mem-Info:.*?"
             #
-            r"(?:\n)"
+            r"\n"
             # first line (starting w/o a space)
             r"^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) "
             r"isolated_anon:(?P<isolated_anon_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             # remaining lines (w/ leading space)
             r"^ active_file:(?P<active_file_pages>\d+) inactive_file:(?P<inactive_file_pages>\d+) "
             r"isolated_file:(?P<isolated_file_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+) "
             r"unstable:(?P<unstable_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
         "Overall Mem-Info (part 2)": (
             r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+) "
             r"bounce:(?P<bounce_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
         "Available memory chunks": (
-            r"(?P<mem_node_info>(^Node \d+ ((DMA|DMA32|Normal):|(hugepages)).+(\n|$))+)",
+            r"(?P<mem_node_info>(?:^Node \d+ (?:(?:DMA|DMA32|Normal):|hugepages).+?(?:\n|$))+)",
             OOMPatternType.ALL_OPTIONAL,
         ),
         "Memory watermarks": (
-            r"(?P<mem_watermarks>(^(Node \d+ (DMA|DMA32|Normal) free:|lowmem_reserve\[\]:).+(\n|$))+)",
+            r"(?P<mem_watermarks>(?:^(?:Node \d+ (?:DMA|DMA32|Normal) free:|lowmem_reserve\[\]:).+?(?:\n|$))+)",
             OOMPatternType.ALL_OPTIONAL,
         ),
         "Page cache": (
@@ -380,32 +381,32 @@ class BaseKernelConfig:
         # Source:mm/swap_state.c:show_swap_cache_info()
         "Swap usage information": (
             r"^(?P<swap_cache_pages>\d+) pages in swap cache"
-            r"(?:\n)"
+            r"\n"
             r"^Swap cache stats: add \d+, delete \d+, find \d+\/\d+"
-            r"(?:\n)"
+            r"\n"
             r"^Free swap  = (?P<swap_free_kb>\d+)kB"
-            r"(?:\n)"
+            r"\n"
             r"^Total swap = (?P<swap_total_kb>\d+)kB",
             OOMPatternType.ALL_OPTIONAL,
         ),
         "Page information": (
             r"^(?P<ram_pages>\d+) pages RAM"
             r"("
-            r"(?:\n)"
+            r"\n"
             r"^(?P<highmem_pages>\d+) pages HighMem/MovableOnly"
             r")?"
-            r"(?:\n)"
+            r"\n"
             r"^(?P<reserved_pages>\d+) pages reserved"
             r"("
-            r"(?:\n)"
+            r"\n"
             r"^(?P<cma_pages>\d+) pages cma reserved"
             r")?"
             r"("
-            r"(?:\n)"
+            r"\n"
             r"^(?P<pagetablecache_pages>\d+) pages in pagetable cache"
             r")?"
             r"("
-            r"(?:\n)"
+            r"\n"
             r"^(?P<hwpoisoned_pages>\d+) pages hwpoisoned"
             r")?",
             OOMPatternType.KERNEL_MANDATORY,
@@ -416,7 +417,8 @@ class BaseKernelConfig:
             #  * "Out of memory"
             #  * "Memory cgroup out of memory"
             r"^(Out of memory.*|Memory cgroup out of memory): "
-            r"Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>[\S ]+)\) "
+            # Process names can contain spaces (e.g., "VM Monitoring Task") and special chars (e.g., "kworker/0:1")
+            r"Kill process (?P<killed_proc_pid>\d+) \((?P<killed_proc_name>.+?)\) "
             r"score (?P<killed_proc_score>\d+) or sacrifice child",
             OOMPatternType.KERNEL_MANDATORY,
         ),
@@ -673,7 +675,7 @@ class BaseKernelConfig:
     """
 
     REC_FREE_MEMORY_CHUNKS = re.compile(
-        r"Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*) = (?P<total_free_kb_per_node>\d+)kB"
+        r"Node (?P<node>\d+) (?P<zone>DMA|DMA32|Normal): (?P<zone_usage>.*?) = (?P<total_free_kb_per_node>\d+)kB"
     )
     """RE to extract free memory chunks of a memory zone"""
 
@@ -693,8 +695,8 @@ class BaseKernelConfig:
     """RE to extract the page size from buddyinfo DMA zone"""
 
     REC_PROCESS_LINE = re.compile(
-        r"^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
-        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*"
+        r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
+        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*"
     )
     """Match content of process table"""
 
@@ -704,7 +706,7 @@ class BaseKernelConfig:
         r"min:(?P<min>\d+)kB "
         r"low:(?P<low>\d+)kB "
         r"high:(?P<high>\d+)kB "
-        r".*"
+        r".*?"
     )
     """
     RE to extract watermark information in a memory zone
@@ -1489,37 +1491,37 @@ class KernelConfig_4_5(KernelConfig_4_4):
         "cgroup oom: mem info block (check first two lines)": (
             # first line (starting w/o a space)
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
-            r"^anon (?P<cgroup_memory_anon_bytes>\d+)(?:\n)"
+            r"^anon (?P<cgroup_memory_anon_bytes>\d+)\n"
             # remaining lines (w/ leading space)
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
-            r"^\s+file (?P<cgroup_memory_file_bytes>\d+)(?:\n)",
+            r"^\s+file (?P<cgroup_memory_file_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (basic memory stats 1)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
-            r"^\s+file_mapped (?P<cgroup_memory_file_mapped_bytes>\d+)(?:\n)"
-            r"^\s+file_dirty (?P<cgroup_memory_file_dirty_bytes>\d+)(?:\n)"
-            r"^\s+file_writeback (?P<cgroup_memory_file_writeback_bytes>\d+)(?:\n)",
+            r"^\s+file_mapped (?P<cgroup_memory_file_mapped_bytes>\d+)\n"
+            r"^\s+file_dirty (?P<cgroup_memory_file_dirty_bytes>\d+)\n"
+            r"^\s+file_writeback (?P<cgroup_memory_file_writeback_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (basic memory stats 2)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
-            r"^\s+inactive_anon (?P<cgroup_memory_inactive_anon_bytes>\d+)(?:\n)"
-            r"^\s+active_anon (?P<cgroup_memory_active_anon_bytes>\d+)(?:\n)"
-            r"^\s+inactive_file (?P<cgroup_memory_inactive_file_bytes>\d+)(?:\n)"
-            r"^\s+active_file (?P<cgroup_memory_active_file_bytes>\d+)(?:\n)"
-            r"^\s+unevictable (?P<cgroup_memory_unevictable_bytes>\d+)(?:\n)",
+            r"^\s+inactive_anon (?P<cgroup_memory_inactive_anon_bytes>\d+)\n"
+            r"^\s+active_anon (?P<cgroup_memory_active_anon_bytes>\d+)\n"
+            r"^\s+inactive_file (?P<cgroup_memory_inactive_file_bytes>\d+)\n"
+            r"^\s+active_file (?P<cgroup_memory_active_file_bytes>\d+)\n"
+            r"^\s+unevictable (?P<cgroup_memory_unevictable_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (page stats 1)": (
             # 4.5 mm: memcontrol: basic memory statistics in cgroup2 memory controller (587d9f726aaec52157e4156e50363dbe6cb82bdb)
-            r"^\s+pgfault (?P<cgroup_memory_pgfault_bytes>\d+)(?:\n)"
-            r"^\s+pgmajfault (?P<cgroup_memory_pgmajfault_bytes>\d+)(?:\n)",
+            r"^\s+pgfault (?P<cgroup_memory_pgfault_bytes>\d+)\n"
+            r"^\s+pgmajfault (?P<cgroup_memory_pgmajfault_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (sock)": (
             # 4.5 mm: memcontrol: add "sock" to cgroup2 memory.stat (b2807f07f4f87362925b8a5b8cbb7b624da10f03)
-            r"^\s+sock (?P<cgroup_memory_sock_bytes>\d+)(?:\n)",
+            r"^\s+sock (?P<cgroup_memory_sock_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -1621,14 +1623,14 @@ class KernelConfig_4_6(KernelConfig_4_5):
     EXTRACT_PATTERN_OVERLAY_46 = {
         "cgroup oom: mem info block (kernel_stack)": (
             # 4.6 mm: memcontrol: report kernel stack usage in cgroup2 memory.stat (12580e4b54ba8a1b22ec977c200be0174ca42348)
-            r"^\s+kernel_stack (?P<cgroup_memory_kernel_stack_bytes>\d+)(?:\n)",
+            r"^\s+kernel_stack (?P<cgroup_memory_kernel_stack_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (slab)": (
             # 4.6 mm: memcontrol: report slab usage in cgroup2 memory.stat (27ee57c93ff00b8a2d6c6dd6b0b3dddda7b43b77)
-            r"^\s+slab_reclaimable (?P<cgroup_memory_slab_reclaimable_bytes>\d+)(?:\n)"
-            r"^\s+slab_unreclaimable (?P<cgroup_memory_slab_unreclaimable_bytes>\d+)(?:\n)"
-            r"^\s+slab (?P<cgroup_memory_slab_bytes>\d+)(?:\n)",
+            r"^\s+slab_reclaimable (?P<cgroup_memory_slab_reclaimable_bytes>\d+)\n"
+            r"^\s+slab_unreclaimable (?P<cgroup_memory_slab_unreclaimable_bytes>\d+)\n"
+            r"^\s+slab (?P<cgroup_memory_slab_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -1915,14 +1917,14 @@ class KernelConfig_4_12(KernelConfig_4_10):
     EXTRACT_PATTERN_OVERLAY_412 = {
         "cgroup oom: mem info block (shmem)": (
             # 4.12 mm: memcontrol: provide shmem statistics (9a4caf1e9fa4864ce21ba9584a2c336bfbc72740)
-            r"^\s+shmem (?P<cgroup_memory_shmem_bytes>\d+)(?:\n)",
+            r"^\s+shmem (?P<cgroup_memory_shmem_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (workingset)": (
             # 4.12  mm: vmscan: fix IO/refault regression in cache workingset transition (2a2e48854d704214dac7546e87ae0e4daa0e61a0)
-            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
-            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)"
-            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)(?:\n)",
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)\n"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)\n"
+            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2025,13 +2027,13 @@ class KernelConfig_4_13(KernelConfig_4_12):
     EXTRACT_PATTERN_OVERLAY_413 = {
         "cgroup oom: mem info block (page stats 2)": (
             # 4.13 mm: per-cgroup memory reclaim stats (2262185c5b287f2758afda79c149b7cf6bee165c)
-            r"^\s+pgrefill (?P<cgroup_memory_pgrefill_bytes>\d+)(?:\n)"
-            r"^\s+pgscan (?P<cgroup_memory_pgscan_bytes>\d+)(?:\n)"
-            r"^\s+pgsteal (?P<cgroup_memory_pgsteal_bytes>\d+)(?:\n)"
-            r"^\s+pgactivate (?P<cgroup_memory_pgactivate_bytes>\d+)(?:\n)"
-            r"^\s+pgdeactivate (?P<cgroup_memory_pgdeactivate_bytes>\d+)(?:\n)"
-            r"^\s+pglazyfree (?P<cgroup_memory_pglazyfree_bytes>\d+)(?:\n)"
-            r"^\s+pglazyfreed (?P<cgroup_memory_pglazyfreed_bytes>\d+)(?:\n)",
+            r"^\s+pgrefill (?P<cgroup_memory_pgrefill_bytes>\d+)\n"
+            r"^\s+pgscan (?P<cgroup_memory_pgscan_bytes>\d+)\n"
+            r"^\s+pgsteal (?P<cgroup_memory_pgsteal_bytes>\d+)\n"
+            r"^\s+pgactivate (?P<cgroup_memory_pgactivate_bytes>\d+)\n"
+            r"^\s+pgdeactivate (?P<cgroup_memory_pgdeactivate_bytes>\d+)\n"
+            r"^\s+pglazyfree (?P<cgroup_memory_pglazyfree_bytes>\d+)\n"
+            r"^\s+pglazyfreed (?P<cgroup_memory_pglazyfreed_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2214,8 +2216,8 @@ class KernelConfig_4_15(KernelConfig_4_14):
     # pr_info("[ pid ]   uid  tgid total_vm      rss nr_ptes nr_pmds nr_puds swapents oom_score_adj name\n");
     # pr_info("[ pid ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
     REC_PROCESS_LINE = re.compile(
-        r"^\[(?P<pid>[ \d]+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
-        r"(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+)\s*"
+        r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
+        r"(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*"
     )
 
     pstable_items = [
@@ -2423,13 +2425,13 @@ class KernelConfig_5_1(KernelConfig_4_19):
     EXTRACT_PATTERN_OVERLAY_51 = {
         "cgroup oom: mem info block (anon_thp)": (
             # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
-            r"^\s+anon_thp (?P<cgroup_memory_anon_thp_bytes>\d+)(?:\n)",
+            r"^\s+anon_thp (?P<cgroup_memory_anon_thp_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (Transparent Huge Pages)": (
             # 5.1 mm: memcontrol: expose THP events on a per-memcg basis (1ff9e6e1798c7670ea6a7680a1ad5582df2fa914)
-            r"^\s+thp_fault_alloc (?P<cgroup_memory_thp_fault_alloc_bytes>\d+)(?:\n)"
-            r"^\s+thp_collapse_alloc (?P<cgroup_memory_thp_collapse_alloc_bytes>\d+)(?:\n)",
+            r"^\s+thp_fault_alloc (?P<cgroup_memory_thp_fault_alloc_bytes>\d+)\n"
+            r"^\s+thp_collapse_alloc (?P<cgroup_memory_thp_collapse_alloc_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2459,8 +2461,8 @@ class KernelConfig_5_3(KernelConfig_5_1):
         ),
         "cgroup oom: mem info block (workingset)": (
             # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
-            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
-            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)",
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)\n"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2520,26 +2522,26 @@ class KernelConfig_5_8(KernelConfig_5_4):
 
     EXTRACT_PATTERN_OVERLAY_58 = {
         "Overall Mem-Info (part 1)": (
-            r"^Mem-Info:.*" r"(?:\n)"
+            r"^Mem-Info:.*?" r"\n"
             # first line (starting w/o a space)
             r"^active_anon:(?P<active_anon_pages>\d+) inactive_anon:(?P<inactive_anon_pages>\d+) "
             r"isolated_anon:(?P<isolated_anon_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             # remaining lines (w/ leading space)
             r"^ active_file:(?P<active_file_pages>\d+) inactive_file:(?P<inactive_file_pages>\d+) "
             r"isolated_file:(?P<isolated_file_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ unevictable:(?P<unevictable_pages>\d+) dirty:(?P<dirty_pages>\d+) writeback:(?P<writeback_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
         "cgroup oom: mem info block (workingset)": (
             # 5.3 mm: memcontrol: dump memory.stat during cgroup OOM (c8713d0b23123759c9d86b0421243c2c309505d7)
-            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)(?:\n)"
-            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)(?:\n)"
+            r"^\s+workingset_refault (?P<cgroup_memory_workingset_refault_bytes>\d+)\n"
+            r"^\s+workingset_activate (?P<cgroup_memory_workingset_activate_bytes>\d+)\n"
             # 5.8 mm, memcg: add workingset_restore in memory.stat (a6f5576bb195c3b7508e3e1c98d2dcf6691f96e8)
-            r"^\s+workingset_restore (?P<cgroup_memory_workingset_restore_bytes>\d+)(?:\n)"
+            r"^\s+workingset_restore (?P<cgroup_memory_workingset_restore_bytes>\d+)\n"
             # 4.12  mm: vmscan: fix IO/refault regression in cache workingset transition (2a2e48854d704214dac7546e87ae0e4daa0e61a0)
-            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)(?:\n)",
+            r"^\s+workingset_nodereclaim (?P<cgroup_memory_workingset_nodereclaim_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2559,18 +2561,18 @@ class KernelConfig_5_9(KernelConfig_5_8):
     EXTRACT_PATTERN_OVERLAY_59 = {
         "cgroup oom: mem info block (workingset)": (
             # 5.9 mm/workingset: prepare the workingset detection infrastructure for anon LRU (170b04b7ae49634df103810dad67b22cf8a99aa6)
-            r"^\s+workingset_refault_anon (?P<cgroup_memory_workingset_refault_anon_bytes>\d+)(?:\n)"
-            r"^\s+workingset_refault_file (?P<cgroup_memory_workingset_refault_file_bytes>\d+)(?:\n)"
-            r"^\s+workingset_activate_anon (?P<cgroup_memory_workingset_activate_anon_bytes>\d+)(?:\n)"
-            r"^\s+workingset_activate_file (?P<cgroup_memory_workingset_activate_file_bytes>\d+)(?:\n)"
+            r"^\s+workingset_refault_anon (?P<cgroup_memory_workingset_refault_anon_bytes>\d+)\n"
+            r"^\s+workingset_refault_file (?P<cgroup_memory_workingset_refault_file_bytes>\d+)\n"
+            r"^\s+workingset_activate_anon (?P<cgroup_memory_workingset_activate_anon_bytes>\d+)\n"
+            r"^\s+workingset_activate_file (?P<cgroup_memory_workingset_activate_file_bytes>\d+)\n"
             # 5.9 mm: memcontrol: fix missing suffix of workingset_restore (8d3fe09d8d6645dcbbe2413cde58f51ceb6545a6)
-            r"^\s+workingset_restore_anon (?P<cgroup_memory_workingset_restore_anon_bytes>\d+)(?:\n)"
-            r"^\s+workingset_restore_file (?P<cgroup_memory_workingset_restore_file_bytes>\d+)(?:\n)",
+            r"^\s+workingset_restore_anon (?P<cgroup_memory_workingset_restore_anon_bytes>\d+)\n"
+            r"^\s+workingset_restore_file (?P<cgroup_memory_workingset_restore_file_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (percpu)": (
             # 5.9 mm: memcg/percpu: per-memcg percpu memory statistics (772616b031f06e05846488b01dab46a7c832da13)
-            r"^\s+percpu (?P<cgroup_memory_percpu_bytes>\d+)(?:\n)",
+            r"^\s+percpu (?P<cgroup_memory_percpu_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2590,13 +2592,13 @@ class KernelConfig_5_11(KernelConfig_5_9):
     EXTRACT_PATTERN_OVERLAY_511 = {
         "cgroup oom: mem info block (pagetables)": (
             # 5.11 mm: memcontrol: account pagetables per node (f0c0c115fb81940f4dba0644ac2a8a43b39c83f3)
-            r"^\s+pagetables (?P<cgroup_memory_pagetables_bytes>\d+)(?:\n)",
+            r"^\s+pagetables (?P<cgroup_memory_pagetables_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
         "cgroup oom: mem info block (file_thp, shmem_thp)": (
             # 5.11 mm: memcontrol: add file_thp, shmem_thp to memory.stat (b8eddff8886b173b0a0f21a3bb1a594cc6d974d1)
-            r"^\s+file_thp (?P<cgroup_memory_file_thp_bytes>\d+)(?:\n)"
-            r"^\s+shmem_thp (?P<cgroup_memory_shmem_thp_bytes>\d+)(?:\n)",
+            r"^\s+file_thp (?P<cgroup_memory_file_thp_bytes>\d+)\n"
+            r"^\s+shmem_thp (?P<cgroup_memory_shmem_thp_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2616,7 +2618,7 @@ class KernelConfig_5_12(KernelConfig_5_11):
     EXTRACT_PATTERN_OVERLAY_512 = {
         "cgroup oom: mem info block (swapcached)": (
             # 5.12 mm: memcg: add swapcache stat for memcg v2 (b6038942480e574c697ea1a80019bbe586c1d654)
-            r"^\s+swapcached (?P<cgroup_memory_swapcached_bytes>\d+)(?:\n)",
+            r"^\s+swapcached (?P<cgroup_memory_swapcached_bytes>\d+)\n",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
     }
@@ -2728,7 +2730,7 @@ class KernelConfig_5_16(KernelConfig_5_14):
         r"min:(?P<min>\d+)kB "
         r"low:(?P<low>\d+)kB "
         r"high:(?P<high>\d+)kB "
-        r".*"
+        r".*?"
     )
 
 
@@ -2919,9 +2921,9 @@ class KernelConfig_6_0(KernelConfig_5_18):
     EXTRACT_PATTERN_OVERLAY_60 = {
         "Swap usage information": (
             r"^(?P<swap_cache_pages>\d+) pages in swap cache"
-            r"(?:\n)"
+            r"\n"
             r"^Free swap  = (?P<swap_free_kb>\d+)kB"
-            r"(?:\n)"
+            r"\n"
             r"^Total swap = (?P<swap_total_kb>\d+)kB",
             OOMPatternType.ALL_OPTIONAL,
         ),
@@ -2942,13 +2944,13 @@ class KernelConfig_6_1(KernelConfig_6_0):
     EXTRACT_PATTERN_OVERLAY_61 = {
         "Overall Mem-Info (part 2)": (
             r"^ slab_reclaimable:(?P<slab_reclaimable_pages>\d+) slab_unreclaimable:(?P<slab_unreclaimable_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ mapped:(?P<mapped_pages>\d+) shmem:(?P<shmem_pages>\d+) pagetables:(?P<pagetables_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ sec_pagetables:(?P<sec_pagetables>\d+) bounce:(?P<bounce_pages>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ kernel_misc_reclaimable:(?P<kernel_misc_reclaimable>\d+)"
-            r"(?:\n)"
+            r"\n"
             r"^ free:(?P<free_pages>\d+) free_pcp:(?P<free_pcp_pages>\d+) free_cma:(?P<free_cma_pages>\d+)",
             OOMPatternType.KERNEL_MANDATORY,
         ),
@@ -3416,7 +3418,7 @@ class KernelConfig_6_11(KernelConfig_6_10):
         # Source: lib/dump_stack:dump_stack_print_info()
         "Trigger process and kernel version": (
             r"^CPU: \d+ UID: (?P<trigger_proc_uid>\d+) PID: (?P<trigger_proc_pid>\d+) "
-            r"Comm: .* (Not tainted|Tainted:.*) "
+            r"Comm: .*? (Not tainted|Tainted:.*?) "
             r"(?P<kernel_version>\d[\w.+-]+) #\d",
             OOMPatternType.ALL_MANDATORY,
         ),
@@ -3479,7 +3481,7 @@ class OOMEntity:
     """OOM text as list of lines"""
 
     REC_MEMINFO_BLOCK_SECOND_PART: re.Pattern = re.compile(
-        r"^\s*( (active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+)$"
+        r"^\s*( (?:active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+)$"
     )
     """RE to match the second part of the "Mem-Info:" block
 
@@ -3833,11 +3835,9 @@ class OOMAnalyser:
     """RE to match the OOM line with kernel version"""
 
     REC_SPLIT_KVERSION = re.compile(
-        r"(?P<kernel_version>"
         r"(?P<major>\d+)\.(?P<minor>\d+)"  # major.minor
         r"(\.\d+)?"  # optional: patch level
         r"(-[\w.+-]+)?"  # optional: -rc6, -arch-1, -19-generic
-        r")"
     )
     """
     RE for splitting the kernel version into parts
