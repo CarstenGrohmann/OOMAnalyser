@@ -4171,7 +4171,7 @@ class OOMAnalyser:
             if match:
                 details = match.groupdict()
                 details["notes"] = ""
-                pid = details.pop("pid")
+                pid = int(details.pop("pid"))
                 self.oom_result.details["_pstable"][pid] = {}
                 self.oom_result.details["_pstable"][pid].update(details)
 
