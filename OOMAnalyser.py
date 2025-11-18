@@ -4203,7 +4203,7 @@ class OOMAnalyser:
             if "total_free_kb_per_node" not in buddy_info[zone]:
                 buddy_info[zone]["total_free_kb_per_node"] = {}
             buddy_info[zone]["total_free_kb_per_node"][node] = int(
-                int(match.group("total_free_kb_per_node"))
+                match.group("total_free_kb_per_node")
             )
 
             order = -1  # to start with 0 after the first increment in for loop
