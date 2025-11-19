@@ -1174,10 +1174,9 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Swap Cache <br/> (swapcached)</td>
                 <td class="text--align-right"><span class="cgroup_memory_swapcached_bytes"></span></td>
                 <td>Memory, which once was swapped out, is swapped back in
-                    but still also is in the swap file.  (If memory pressure
-                    is high, these pages don't need to be swapped out
-                    again because they are already in the swap file.  This
-                    saves I/O).
+                    but still also is in the swap space.  (If memory pressure
+                    is high, these pages don't need to be swapped out again
+                    because they are already in the swap file. This saves I/O).
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
@@ -1186,81 +1185,89 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>Anonymous memory <br/> (anon)</td>
                 <td class="text--align-right"><span class="cgroup_memory_anon_bytes"></span></td>
-                <td>Memory allocated for heap, stack, or other data without file backing.</td>
+                <td>Amount of memory used in anonymous mappings such as
+                    brk(), sbrk(), and mmap(MAP_ANONYMOUS). Note that
+                    some kernel configurations might account complete larger
+                    allocations (e.g., THP) if only some, but not all the
+                    memory of such an allocation is mapped anymore.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>File-backed memory <br/> (file)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_bytes"></span></td>
-                <td>Memory used for files cached or mapped from disk.</td>
+                <td>Amount of memory used to cache filesystem data,
+                    including tmpfs and shared memory.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Kernel stack memory <br/> (kernel_stack)</td>
                 <td class="text--align-right"><span class="cgroup_memory_kernel_stack_bytes"></span></td>
-                <td>Memory used for kernel thread stacks.</td>
+                <td>Amount of memory allocated to kernel stacks.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Page tables <br/> (pagetables)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pagetables_bytes"></span></td>
-                <td>Memory allocated for process page table structures.</td>
+                <td>Amount of memory allocated for page tables.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Per-CPU memory <br/> (percpu)</td>
                 <td class="text--align-right"><span class="cgroup_memory_percpu_bytes"></span></td>
-                <td>Memory used for per-CPU kernel data structures.</td>
+                <td>Amount of memory used for storing per-cpu kernel
+                    data structures.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Socket buffers <br/> (sock)</td>
                 <td class="text--align-right"><span class="cgroup_memory_sock_bytes"></span></td>
-                <td>Memory allocated for network socket buffers.</td>
+                <td>Amount of memory used in network transmission buffers.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Shared Memory <br> (shmem)</td>
                 <td class="text--align-right"><span class="cgroup_memory_shmem_bytes"></span></td>
-                <td>Shared memory <br> This may include System V shared memory and shared anonymous memory.</td>
+                <td>Amount of cached filesystem data that is swap-backed,
+                    such as tmpfs, shm segments, shared anonymous <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>)s.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Memory directly mapped to files <br/> (file_mapped)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_mapped_bytes"></span></td>
-                <td>
-                    Files which have been mapped into memory (with
-                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
-                    <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
-                </td>
+                <td>Amount of cached filesystem data mapped with <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>).</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Dirty file pages <br/> (file_dirty)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_dirty_bytes"></span></td>
-                <td>File-backed pages modified but not yet written to disk.</td>
+                <td>Amount of cached filesystem data that was modified but
+                    not yet written back to disk.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Writeback pages <br/> (file_writeback)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_writeback_bytes"></span></td>
-                <td>File-backed pages currently being written to disk.</td>
+                <td>Amount of cached filesystem data that was modified and
+                    is currently being written back to disk.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Anonymous Transparent Huge Pages <br/> (anon_thp)</td>
                 <td class="text--align-right"><span class="cgroup_memory_anon_thp_bytes"></span></td>
-                <td>Anonymous memory using Transparent Huge Pages for better performance.</td>
+                <td>Amount of memory used in anonymous mappings backed by
+                    transparent hugepages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>File Transparent Huge Pages <br/> (file_thp)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_thp_bytes"></span></td>
-                <td>File-backed memory using Transparent Huge Pages.</td>
+                <td>Amount of cached filesystem data backed by transparent
+                    hugepages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Shared memory Transparent Huge Pages <br/> (shmem_thp)</td>
                 <td class="text--align-right"><span class="cgroup_memory_shmem_thp_bytes"></span></td>
-                <td>Shared memory using Transparent Huge Pages.</td>
+                <td>Amount of shm, tmpfs, shared anonymous mmap()s backed by
+                    transparent hugepages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Inactive anonymous memory <br/> (inactive_anon)</td>
                 <td class="text--align-right"><span class="cgroup_memory_inactive_anon_bytes"></span></td>
-                <td>Anonymous memory not recently accessed, eligible for reclaim.</td>
+                <td>Amount of anonymous memory not recently accessed, eligible for reclaim.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Active anonymous memory <br/> (active_anon)</td>
                 <td class="text--align-right"><span class="cgroup_memory_active_anon_thp_bytes"></span></td>
-                <td>Active anonymous pages</td>
+                <td>Amount of recently used anonymous memory pages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Inactive file memory <br/> (inactive_file)</td>
@@ -1270,7 +1277,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>Active file memory <br/> (active_file)</td>
                 <td class="text--align-right"><span class="cgroup_memory_active_file_bytes"></span></td>
-                <td>File-backed memory recently accessed, less likely to be reclaimed.</td>
+                <td>Amount of active cached filesystem data.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Unevictable memory <br/> (unevictable)</td>
@@ -1282,12 +1289,14 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>Reclaimable slab memory <br/> (slab_reclaimable)</td>
                 <td class="text--align-right"><span class="cgroup_memory_slab_reclaimable_bytes"></span></td>
-                <td>Kernel objects that can be reclaimed</td>
+                <td>Kernel objects that can be reclaimed, such as
+                    dentries and inodes.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Unreclaimable slab memory <br/> (slab_unreclaimable)</td>
                 <td class="text--align-right"><span class="cgroup_memory_slab_unreclaimable_bytes"></span></td>
-                <td>Non-reclaimable kernel memory</td>
+                <td>Part of kernel memory that cannot be reclaimed on memory
+                    pressure.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Total slab memory <br/> (slab)</td>
@@ -1302,32 +1311,35 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>File workingset refaults <br/> (workingset_refault_file)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_refault_file_bytes"></span></td>
-                <td>File-backed pages re-accessed after being evicted from memory.</td>
+                <td>Number of refaults of previously evicted file pages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Anonymous workingset activations <br/> (workingset_activate_anon)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_activate_anon_bytes"></span></td>
-                <td>Anonymous pages moved to active list after access.</td>
+                <td>Number of refaulted anonymous pages that were immediately
+                    activated.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>File workingset activations <br/> (workingset_activate_file)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_activate_file_bytes"></span></td>
-                <td>File-backed pages moved to active list after access.</td>
+                <td>Number of refaulted file pages that were immediately activated.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Anonymous workingset restores <br/> (workingset_restore_anon)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_restore_anon_bytes"></span></td>
-                <td>Anonymous pages restored to workingset after swap-in.</td>
+                <td>Number of restored anonymous pages which have been detected as
+                    an active workingset before they got reclaimed.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>File workingset restores <br/> (workingset_restore_file)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_restore_file_bytes"></span></td>
-                <td>File-backed pages restored to workingset after re-read.</td>
+                <td>Number of restored file pages which have been detected as an
+                    active workingset before they got reclaimed.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Workingset node reclaim <br/> (workingset_nodereclaim)</td>
                 <td class="text--align-right"><span class="cgroup_memory_workingset_nodereclaim_bytes"></span></td>
-                <td>Number of times memory reclaim was triggered on a node.</td>
+                <td>Number of times a shadow node has been reclaimed.</td>
             </tr>
             <!-- BEGIN: workingset_(refault|activate) -->
             <tr class="js-text--default-hide">
@@ -1385,24 +1397,23 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>Pages activated <br/> (pgactivate)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pgactivate_bytes"></span></td>
-                <td>Pages moved to the active list during memory management.</td>
+                <td>Amount of pages moved to the active list during memory management.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Pages deactivated <br/> (pgdeactivate)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pgdeactivate_bytes"></span></td>
-                <td>Pages moved to the inactive list during memory management.</td>
+                <td>Amount of pages moved to the inactive list during memory management.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Lazy free pages <br/> (pglazyfree)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pglazyfree_bytes"></span></td>
-                <td>Pages marked for lazy freeing (e.g., by
-                    <a href="https://man7.org/linux/man-pages/man2/madvise.2.html"><code>MADV_FREE</code></a>).
-                </td>
+                <td>Amount of pages postponed to be freed under memory pressure (e.g., by
+                    <a href="https://man7.org/linux/man-pages/man2/madvise.2.html"><code>MADV_FREE</code></a>).</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Lazy freed pages <br/> (pglazyfreed)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pglazyfreed_bytes"></span></td>
-                <td>Pages actually freed after being marked for lazy freeing.</td>
+                <td>Amount of reclaimed lazyfree pages.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>THP fault allocations <br/> (thp_fault_alloc)</td>
@@ -1412,7 +1423,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <tr class="js-text--default-hide">
                 <td>THP collapse allocations <br/> (thp_collapse_alloc)</td>
                 <td class="text--align-right"><span class="cgroup_memory_thp_collapse_alloc_bytes"></span></td>
-                <td>Transparent Huge Pages allocated during memory compaction.</td>
+                <td>Number of transparent hugepages which were allocated to allow
+                    collapsing an existing range of pages.</td>
             </tr>
         </tbody>
 
