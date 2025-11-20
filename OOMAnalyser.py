@@ -379,14 +379,14 @@ class BaseKernelConfig:
             OOMPatternType.KERNEL_MANDATORY,
         ),
         # Source:mm/swap_state.c:show_swap_cache_info()
-        "Swap usage information": (
-            r"^(?P<swap_cache_pages>\d+) pages in swap cache"
+        "System swap usage information": (
+            r"^(?P<system_swap_cache_pages>\d+) pages in swap cache"
             r"\n"
             r"^Swap cache stats: add \d+, delete \d+, find \d+\/\d+"
             r"\n"
-            r"^Free swap  = (?P<swap_free_kb>\d+)kB"
+            r"^Free swap  = (?P<system_swap_free_kb>\d+)kB"
             r"\n"
-            r"^Total swap = (?P<swap_total_kb>\d+)kB",
+            r"^Total swap = (?P<system_swap_total_kb>\d+)kB",
             OOMPatternType.ALL_OPTIONAL,
         ),
         "Page information": (
@@ -456,7 +456,7 @@ class BaseKernelConfig:
             r"^Memory cgroup stats for (?P<cgroup_path>\S+):",
             OOMPatternType.CGROUP_ALL_MANDATORY,
         ),
-        "cgroup v1 oom: swap usage": (
+        "cgroup v1 oom: memory+swap usage": (
             # 2.6.30: memcg: show memcg information during OOM (e222432bfa7dcf6ec008622a978c9f284ed5e3a9)
             r"^memory\+swap: usage (?P<cgroup_memory_swap_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_memory_swap_limit_kb>\d+)kB, "
@@ -2919,12 +2919,12 @@ class KernelConfig_6_0(KernelConfig_5_18):
     }
 
     EXTRACT_PATTERN_OVERLAY_60 = {
-        "Swap usage information": (
-            r"^(?P<swap_cache_pages>\d+) pages in swap cache"
+        "System swap usage information": (
+            r"^(?P<system_swap_cache_pages>\d+) pages in swap cache"
             r"\n"
-            r"^Free swap  = (?P<swap_free_kb>\d+)kB"
+            r"^Free swap  = (?P<system_swap_free_kb>\d+)kB"
             r"\n"
-            r"^Total swap = (?P<swap_total_kb>\d+)kB",
+            r"^Total swap = (?P<system_swap_total_kb>\d+)kB",
             OOMPatternType.ALL_OPTIONAL,
         ),
     }
@@ -3776,7 +3776,7 @@ class OOMResult:
     @type: OOMEntityType
     """
 
-    swap_active: bool = False
+    system_swap_active: bool = False
     """
     Swap space active or inactive
     """
@@ -3807,7 +3807,7 @@ class OOMResult:
         self.oom_entity = None
         self.oom_text = ""
         self.oom_type = OOMType.UNKNOWN
-        self.swap_active = False
+        self.system_swap_active = False
         self.watermarks = {}
 
 
@@ -4561,27 +4561,29 @@ class OOMAnalyser:
 
     def _calc_swap_values(self):
         """Calculate all swap related values"""
-        if "swap_total_kb" in self.oom_result.details:
-            self.oom_result.swap_active = self.oom_result.details["swap_total_kb"] > 0
-        if not self.oom_result.swap_active:
+        if "system_swap_total_kb" in self.oom_result.details:
+            self.oom_result.system_swap_active = (
+                self.oom_result.details["system_swap_total_kb"] > 0
+            )
+        if not self.oom_result.system_swap_active:
             return
 
-        self.oom_result.details["swap_cache_kb"] = (
-            self.oom_result.details["swap_cache_pages"]
+        self.oom_result.details["system_swap_cache_kb"] = (
+            self.oom_result.details["system_swap_cache_pages"]
             * self.oom_result.details["page_size_kb"]
         )
-        del self.oom_result.details["swap_cache_pages"]
+        del self.oom_result.details["system_swap_cache_pages"]
 
         #  SwapUsed = SwapTotal - SwapFree - SwapCache
-        self.oom_result.details["swap_used_kb"] = (
-            self.oom_result.details["swap_total_kb"]
-            - self.oom_result.details["swap_free_kb"]
-            - self.oom_result.details["swap_cache_kb"]
+        self.oom_result.details["system_swap_used_kb"] = (
+            self.oom_result.details["system_swap_total_kb"]
+            - self.oom_result.details["system_swap_free_kb"]
+            - self.oom_result.details["system_swap_cache_kb"]
         )
         self.oom_result.details["system_swap_used_percent"] = int(
             100
-            * self.oom_result.details["swap_used_kb"]
-            / self.oom_result.details["swap_total_kb"]
+            * self.oom_result.details["system_swap_used_kb"]
+            / self.oom_result.details["system_swap_total_kb"]
         )
 
     def _calc_system_values(self):
@@ -4592,10 +4594,10 @@ class OOMAnalyser:
             self.oom_result.details["ram_pages"]
             * self.oom_result.details["page_size_kb"]
         )
-        if self.oom_result.swap_active:
+        if self.oom_result.system_swap_active:
             self.oom_result.details["system_total_ramswap_kb"] = (
                 self.oom_result.details["system_total_ram_kb"]
-                + self.oom_result.details["swap_total_kb"]
+                + self.oom_result.details["system_swap_total_kb"]
             )
         else:
             self.oom_result.details[
@@ -5889,7 +5891,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             element.removeChild(element.firstChild)
 
         # remove svg charts
-        for element_id in ("svg_swap", "svg_ram"):
+        for element_id in ("svg_system_swap", "svg_ram"):
             element = document.getElementById(element_id)
             while element.firstChild:
                 element.removeChild(element.firstChild)
@@ -6136,17 +6138,17 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
     def _show_system_swap_usage(self):
         """Show/hide system swap space and generate a usage diagram"""
-        if self.oom_result.swap_active:
+        if self.oom_result.system_swap_active:
             # generate swap usage diagram
             svg = SVGChart()
-            svg_swap = svg.generate_chart(
-                "Swap Summary",
-                ("Swap Used", self.oom_result.details["swap_used_kb"]),
-                ("Swap Free", self.oom_result.details["swap_free_kb"]),
-                ("Swap Cached", self.oom_result.details["swap_cache_kb"]),
+            svg_system_swap = svg.generate_chart(
+                "System Swap Summary",
+                ("Swap Used", self.oom_result.details["system_swap_used_kb"]),
+                ("Swap Free", self.oom_result.details["system_swap_free_kb"]),
+                ("Swap Cached", self.oom_result.details["system_swap_cache_kb"]),
             )
-            elem_svg_swap = document.getElementById("svg_swap")
-            elem_svg_swap.appendChild(svg_swap)
+            elem_svg_system_swap = document.getElementById("svg_system_swap")
+            elem_svg_system_swap.appendChild(svg_system_swap)
             show_elements_by_selector(".js-system-swap-active--show")
             hide_elements_by_selector(".js-system-swap-inactive--show")
         else:

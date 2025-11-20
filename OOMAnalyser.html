@@ -536,11 +536,11 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <div class="js-text--default-hide js-text--display-none js-system-swap-active--show js-oom-kernel-manual--show">
             <p>
                 The system has <span class="system_total_ram_kb"></span> physical memory and
-                <span class="swap_total_kb"></span> swap space. That's <span class="system_total_ramswap_kb"></span>
+                <span class="system_swap_total_kb"></span> system swap space. That's <span class="system_total_ramswap_kb"></span>
                 total. <span class="system_total_used_percent"></span>
                 (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
                 physical memory and <span class="system_swap_used_percent"></span>
-                (<span class="swap_used_kb"></span> out of <span class="swap_total_kb"></span>) swap space are in use.
+                (<span class="system_swap_used_kb"></span> out of <span class="system_swap_total_kb"></span>) system swap space are in use.
             </p>
         </div>
 
@@ -576,7 +576,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         </div>
         <div class="js-text--default-hide js-text--display-none js-system-swap-inactive--show">
             <p>
-                The system has <span class="system_total_ram_kb"></span> physical memory and no swap space.
+                The system has <span class="system_total_ram_kb"></span> physical memory and no system swap space.
                 <span class="system_total_used_percent"></span>
                 (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
                 physical memory is in use.
@@ -864,47 +864,47 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="result__table--border" colspan="2"><div id="svg_ram"></div></td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-active--show">
-                <td>Swap Summary</td>
-                <td class="result__table--border" colspan="2"><div id="svg_swap"></div></td>
+                <td>System Swap Summary</td>
+                <td class="result__table--border" colspan="2"><div id="svg_system_swap"></div></td>
             </tr>
 
             <!-- Swap Usage -->
 
             <tr class="js-text--default-show">
-                <th class="table__sub-section--bold" colspan="3" scope="row">Swap Usage</th>
+                <th class="table__sub-section--bold" colspan="3" scope="row">System Swap Usage</th>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-inactive--show">
-                <td colspan="3">No swap space available</td>
+                <td colspan="3">System swap space disabled.</td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-active--show">
                 <td>Swap Total</td>
-                <td class="text--align-right"><span class="swap_total_kb"></span></td>
-                <td>Total amount of swap space available.
+                <td class="text--align-right"><span class="system_swap_total_kb"></span></td>
+                <td>Total amount of system swap space available.
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-active--show">
                 <td>Swap Free</td>
-                <td class="text--align-right"><span class="swap_free_kb"></span></td>
-                <td>Amount of swap space that is currently unused.
+                <td class="text--align-right"><span class="system_swap_free_kb"></span></td>
+                <td>Amount of system swap space that is currently unused.
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-active--show">
                 <td>Swap Cache</td>
-                <td class="text--align-right"><span class="swap_cache_kb"></span></td>
+                <td class="text--align-right"><span class="system_swap_cache_kb"></span></td>
                 <td>Memory, which once was swapped out, is swapped back in
-                    but still also is in the swap space. (If memory pressure
+                    but still also is in the system swap space. (If memory pressure
                     is high, these pages don't need to be swapped out
-                    again because they are already in the swap space. This
+                    again because they are already in the system swap space. This
                     saves I/O).
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-system-swap-active--show">
                 <td>Swap Used</td>
-                <td class="text--align-right"><span class="swap_used_kb"></span></td>
-                <td>Amount of used swap space w/o cached swap <br>
+                <td class="text--align-right"><span class="system_swap_used_kb"></span></td>
+                <td>Amount of used system swap space w/o cached swap <br>
                     (<code>SwapUsed = SwapTotal - SwapFree -SwapCache</code>)
                 </td>
             </tr>
@@ -1125,13 +1125,13 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="cgroup_swap_usage_kb"></span></td>
                 <td>Swap memory usage of this cgroup.</td>
             </tr>
-            <tr class="jjs-text--default-hide js-text--display-none js-cgroup-v2-swap-active--show">
+            <tr class="js-text--default-hide js-text--display-none js-cgroup-v2-swap-active--show">
                 <td>Swap limit</td>
                 <td class="text--align-right"><span class="cgroup_swap_limit_kb"></span></td>
                 <td>Maximum swap memory limit set for this cgroup.</td>
             </tr>
             <tr class="js-text--default-hide js-text--display-none js-cgroup-v2-swap-active--show">
-                <td>Number of failed swap allocation</td>
+                <td>Number of failed cgroup swap allocation</td>
                 <td class="text--align-right"><span class="cgroup_swap_failcnt"></span></td>
                 <td>The number of times the cgroup has exceeded its swap limit.</td>
             </tr>

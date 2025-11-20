@@ -59,9 +59,9 @@ class BaseTests(unittest.TestCase):
 
     text_cgroup_swap_activated = "Swap space is enabled for this cgroup."
     text_cgroup_swap_deactivated = "Swap space usage is disabled for this cgroup."
-    text_kernel_swap_space_not_in_use = "physical memory and no swap space"
-    text_kernel_swap_space_are_in_use = "swap space are in use"
-    test_kernel_swap_no_space = "No swap space available"
+    text_kernel_swap_space_not_in_use = "physical memory and no system swap space"
+    text_kernel_swap_space_are_in_use = "system swap space are in use"
+    test_kernel_swap_no_space = "System swap space disabled."
     test_kernel_swap_swap_total = "Swap Total"
 
     text_with_an_oom_score_of = "with an OOM score of"
@@ -237,16 +237,24 @@ class BaseInBrowserTests(BaseTests):
                 "Unexpected OOM score of killed process",
             )
         if self.check_results_swap_cache_kb:
-            swap_cache_kb = self.driver.find_element(By.CLASS_NAME, "swap_cache_kb")
+            swap_cache_kb = self.driver.find_element(
+                By.CLASS_NAME, "system_swap_cache_kb"
+            )
             self.assertEqual(swap_cache_kb.text, self.check_results_swap_cache_kb)
         if self.check_results_swap_used_kb:
-            swap_used_kb = self.driver.find_element(By.CLASS_NAME, "swap_used_kb")
+            swap_used_kb = self.driver.find_element(
+                By.CLASS_NAME, "system_swap_used_kb"
+            )
             self.assertEqual(swap_used_kb.text, self.check_results_swap_used_kb)
         if self.check_results_swap_free_kb:
-            swap_free_kb = self.driver.find_element(By.CLASS_NAME, "swap_free_kb")
+            swap_free_kb = self.driver.find_element(
+                By.CLASS_NAME, "system_swap_free_kb"
+            )
             self.assertEqual(swap_free_kb.text, self.check_results_swap_free_kb)
         if self.check_results_swap_total_kb:
-            swap_total_kb = self.driver.find_element(By.CLASS_NAME, "swap_total_kb")
+            swap_total_kb = self.driver.find_element(
+                By.CLASS_NAME, "system_swap_total_kb"
+            )
             self.assertEqual(swap_total_kb.text, self.check_results_swap_total_kb)
 
         continuous_explanation_text = self.to_continuous_text(
@@ -1039,10 +1047,10 @@ class TestBroswerArchLinux(BaseInBrowserTests):
     check_results_swap_inactive = False
 
     check_explanation_section = {
-        "Physical and swap memory": "system has 16461600 kBytes physical memory and 25165820 kBytes swap space.",
+        "Physical and swap memory": "system has 16461600 kBytes physical memory and 25165820 kBytes system swap space.",
         "Total memory": "That's 41627420 kBytes total.",
         "Use physical memory": "69 % (11513452 kBytes out of 16461600 kBytes) physical memory",
-        "Use swap space": "99 % (25066284 kBytes out of 25165820 kBytes) swap space",
+        "Use swap space": "99 % (25066284 kBytes out of 25165820 kBytes) system swap space",
     }
 
     def test_020_insert_and_analyse_example(self):
@@ -1138,10 +1146,10 @@ class TestBrowserRhel7(BaseInBrowserTests):
     check_results_swap_inactive = False
 
     check_explanation_section = {
-        "Physical and swap memory": "system has 33519336 kBytes physical memory and 8388604 kBytes swap space.",
+        "Physical and swap memory": "system has 33519336 kBytes physical memory and 8388604 kBytes system swap space.",
         "Total memory": "That's 41907940 kBytes total.",
         "Use physical memory": "94 % (31705788 kBytes out of 33519336 kBytes) physical memory",
-        "Use swap space": "99 % (8343236 kBytes out of 8388604 kBytes) swap space",
+        "Use swap space": "99 % (8343236 kBytes out of 8388604 kBytes) system swap space",
     }
 
     def test_020_insert_and_analyse_example(self):
