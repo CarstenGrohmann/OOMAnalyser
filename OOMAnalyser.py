@@ -5780,7 +5780,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         toc_content.innerHTML = new_toc
 
-    def _show_pstable(self):
+    def _show_process_table(self):
         """
         Create and show the process table with additional information
         """
@@ -5997,8 +5997,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         self._show_memory_fragmentation()
         self._show_page_size()
 
-        # generate process table
-        self._show_pstable()
+        self._show_process_table()
         self.pstable_set_sort_triangle()
 
         element = document.getElementById("oom")
@@ -6220,7 +6219,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             self.sort_order = "descending"
             self.sort_psindex_by_column(column_name, True)
 
-        self._show_pstable()
+        self._show_process_table()
         self.pstable_set_sort_triangle()
 
     def sort_psindex_by_column(self, column_name, reverse=False):
