@@ -937,7 +937,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 
         self.assertEqual(
             analyser.oom_result.mem_alloc_failure,
-            OOMAnalyser.OOMMemoryAllocFailureType.failed_below_low_watermark,
+            OOMAnalyser.OOMAllocationFailureReason.FAILED_BELOW_LOW_WATERMARK,
             "Unexpected reason why the memory allocation has failed.",
         )
 
