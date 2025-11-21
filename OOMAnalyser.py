@@ -5799,7 +5799,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         Headlines without an id attribute are not shown.
         """
         new_toc = ""
-        assigned_level = None
+        previous_level = None
+        depth = 0
 
         toc_content = document.querySelectorAll("nav > ul")[0]
 
@@ -5808,23 +5809,38 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 continue
             current_level = int(element.tagName[1])
 
-            # set assigned level to level of first item
-            if assigned_level is None:
-                assigned_level = current_level
+            # Determine nesting changes
+            if previous_level is None:
+                # First item - just open <li>
+                new_toc += '<li><a href="#{}">{}</a>'.format(
+                    element.id, element.textContent
+                )
+            elif current_level > previous_level:
+                # Going deeper (h2 -> h3): open nested <ul> and <li>
+                new_toc += '<ul><li><a href="#{}">{}</a>'.format(
+                    element.id, element.textContent
+                )
+                depth += 1
+            elif current_level < previous_level:
+                # Going back up (h3 -> h2): close nested </ul></li> and open new <li>
+                new_toc += '</li></ul></li><li><a href="#{}">{}</a>'.format(
+                    element.id, element.textContent
+                )
+                depth -= 1
+            else:
+                # Same level: close previous </li> and open new <li>
+                new_toc += '</li><li><a href="#{}">{}</a>'.format(
+                    element.id, element.textContent
+                )
 
-            # close child list if a higher level follows
-            elif current_level < assigned_level:
-                new_toc += "</ul>"
+            previous_level = current_level
 
-            # open child list if a lower level follows
-            elif current_level > assigned_level:
-                new_toc += "<ul>"
-
-            assigned_level = current_level
-
-            new_toc += '<li><a href="#{}">{}</a></li>'.format(
-                element.id, element.textContent
-            )
+        # Close all remaining open tags
+        if previous_level is not None:
+            new_toc += "</li>"
+            while depth > 0:
+                new_toc += "</ul></li>"
+                depth -= 1
 
         toc_content.innerHTML = new_toc
 
