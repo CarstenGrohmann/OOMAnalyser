@@ -576,7 +576,7 @@ class TestPython(BaseTests):
         missing = all_kernel_classes - all_configured_kernels
         assert not missing, f"Missing kernel instances in AllKernelConfigs: {missing}"
 
-    def test_001_trigger_proc_space(self) -> None:
+    def test_010_trigger_proc_space(self) -> None:
         """Test RE to find the name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
@@ -594,7 +594,7 @@ class TestPython(BaseTests):
             match
         ), "Error: re.search('invoked oom-killer') failed for process name with space"
 
-    def test_002_killed_proc_space(self) -> None:
+    def test_020_killed_proc_space(self) -> None:
         """Test RE to find name of the killed process"""
         pattern_key = "global oom: kill process - pid, name and score"
         original_process_name = "sed"
@@ -619,7 +619,7 @@ class TestPython(BaseTests):
                 match
             ), f'Error: Search for process names failed for {description}: "{process_name}"'
 
-    def test_003_OOMEntity_number_of_columns_to_strip(self) -> None:
+    def test_030_OOMEntity_number_of_columns_to_strip(self) -> None:
         """Test stripping useless / leading columns"""
         oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         for pos, line in [
@@ -641,7 +641,61 @@ class TestPython(BaseTests):
                 to_strip == pos
             ), f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {pos}'
 
-    def test_004_extract_block_from_next_pos(self) -> None:
+    def test_031_OOMEntity_remove_kernel_colon(self) -> None:
+        """Test removal of kernel: pattern from OOM log lines"""
+        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+
+        for input_lines, expected, description in [
+            (
+                ["Apr 01 14:13:32 mysrv kernel:CPU: 4 PID: 29481 Comm: sed"],
+                ["Apr 01 14:13:32 mysrv CPU: 4 PID: 29481 Comm: sed"],
+                "kernel: without space (edge case)",
+            ),
+            (
+                ["Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed"],
+                ["Apr 01 14:13:32 mysrv  CPU: 4 PID: 29481 Comm: sed"],
+                "kernel: with space (standard case)",
+            ),
+            (
+                ["Apr 01 14:13:32 mysrv kernel:[11686.888109] Out of memory"],
+                ["Apr 01 14:13:32 mysrv [11686.888109] Out of memory"],
+                "kernel: before timestamp pattern",
+            ),
+            (
+                ["[11686.888109] CPU: 4 PID: 29481 Comm: sed"],
+                ["[11686.888109] CPU: 4 PID: 29481 Comm: sed"],
+                "no kernel: pattern (unchanged)",
+            ),
+            (
+                [
+                    "Apr 01 14:13:32 mysrv kernel:Out of memory: Killed process 29481",
+                    "Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481",
+                    "[11686.888109] Hardware name: HP ProLiant",
+                ],
+                [
+                    "Apr 01 14:13:32 mysrv Out of memory: Killed process 29481",
+                    "Apr 01 14:13:32 mysrv  CPU: 4 PID: 29481",
+                    "[11686.888109] Hardware name: HP ProLiant",
+                ],
+                "multiple lines with mixed patterns",
+            ),
+            (
+                [],
+                [],
+                "empty list",
+            ),
+            (
+                ["kernel:kernel: This is unusual but possible"],
+                [" This is unusual but possible"],
+                "multiple kernel: occurrences (edge case)",
+            ),
+        ]:
+            result = oom_entity._remove_kernel_colon(input_lines)
+            assert (
+                result == expected
+            ), f"Failed test: {description}. Got: {result}, expected: {expected}"
+
+    def test_040_extract_block_from_next_pos(self) -> None:
         """Test extracting a single block (all lines till the next line with a colon)"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -654,7 +708,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 """
         assert text == expected
 
-    def test_005_extract_kernel_version(self) -> None:
+    def test_050_extract_kernel_version(self) -> None:
         """Test extracting the kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -672,7 +726,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             assert analyser._identify_kernel_version(), analyser.oom_result.error_msg
             assert analyser.oom_result.kversion == kversion
 
-    def test_006_choosing_kernel_config(self) -> None:
+    def test_060_choosing_kernel_config(self) -> None:
         """Test choosing the right kernel configuration"""
         for kcfg, kversion in [
             (
@@ -721,7 +775,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 f'kernel version "{kversion}"'
             )
 
-    def test_008_kversion_check(self) -> None:
+    def test_080_kversion_check(self) -> None:
         """Test check for the minimum kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -750,7 +804,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 == expected_result
             ), f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"'
 
-    def test_009_extract_zoneinfo(self) -> None:
+    def test_090_extract_zoneinfo(self) -> None:
         """Test extracting zone usage information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -786,7 +840,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 count == except_count
             ), f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {except_count})'
 
-    def test_010_extract_zoneinfo(self) -> None:
+    def test_100_extract_zoneinfo(self) -> None:
         """Test extracting watermark information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -829,7 +883,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             f"expect: 11 (kernel 6.2.0))"
         )
 
-    def test_011_alloc_failure(self) -> None:
+    def test_110_alloc_failure(self) -> None:
         """Test analysis why the memory allocation could be failed"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -886,7 +940,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             == OOMAnalyser.OOMAllocationFailureReason.FAILED_BELOW_LOW_WATERMARK
         ), "Unexpected reason why the memory allocation has failed."
 
-    def test_012_fragmentation(self) -> None:
+    def test_120_fragmentation(self) -> None:
         """Test memory fragmentation"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -901,7 +955,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             not mem_fragmented
         ), f'Memory of Node {node}, Zone "{zone}" is not fragmented, but reported as fragmented'
 
-    def test_013_page_size(self) -> None:
+    def test_130_page_size(self) -> None:
         """Test determination of the page size"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
