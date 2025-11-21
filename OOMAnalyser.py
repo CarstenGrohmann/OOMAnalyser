@@ -307,19 +307,33 @@ def warning(msg: str) -> None:
 
 def add_to_notifybox(prefix: str, msg: str) -> None:
     """
-    Escaped and add a message to the notification box
+    Escape and add a message to the notification box
 
-    If the message has a prefix "ERROR" or "WARNING" the notification box will be shown.
+    The notification box will be shown for ERROR, INTERNAL ERROR, and WARNING
+    messages. DEBUG messages are added but don't trigger the box to display.
+
+    @param prefix: Message severity level (DEBUG, WARNING, ERROR, INTERNAL ERROR)
+    @param msg: The message text to display
     """
-    if prefix == "DEBUG":
-        css_class = "js-notify_box__msg--debug"
-    elif prefix == "WARNING":
-        css_class = "js-notify_box__msg--warning"
-    else:
-        css_class = "js-notify_box__msg--error"
+    # Map prefix types to CSS classes
+    css_class_map = {
+        "DEBUG": "js-notify_box__msg--debug",
+        "WARNING": "js-notify_box__msg--warning",
+        "ERROR": "js-notify_box__msg--error",
+        "INTERNAL ERROR": "js-notify_box__msg--error",
+    }
+
+    css_class = css_class_map.get(prefix, "js-notify_box__msg--error")
+
+    # Show notification box for non-DEBUG messages
     if prefix != "DEBUG":
         show_element_by_id("notify_box")
+
     notify_box = document.getElementById("notify_box")
+    if not notify_box:
+        console.log("ERROR: notify_box element not found in DOM")
+        return
+
     notification = document.createElement("div")
     notification.classList.add(css_class)
     notification.innerHTML = "{}: {}<br>".format(escape_html(prefix), escape_html(msg))
