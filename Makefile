@@ -120,7 +120,10 @@ websrv: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 #+ Run Selenium based web tests
 test: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
-	DISPLAY=:1 xvfb-run python $(TEST_FILE)
+	@echo "Running Python tests in parallel..."
+	pytest -m python_only -n auto $(TEST_FILE)
+	@echo "Running browser tests sequentially..."
+	DISPLAY=:1 xvfb-run pytest -m browser $(TEST_FILE)
 
 #+ Build release packages
 release: ${JS_OUT_FILE} ${RELEASE_TARGZ} ${RELEASE_ZIP}

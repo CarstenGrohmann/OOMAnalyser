@@ -11,14 +11,15 @@ import re
 import socketserver
 import threading
 import time
-import unittest
 import warnings
-from typing import Dict, List
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
+import pytest
 from selenium import webdriver
 from selenium.common.exceptions import *
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -26,12 +27,18 @@ import OOMAnalyser
 
 
 class MyRequestHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, request, client_address, server, directory=None):
+    def __init__(
+        self,
+        request: Any,
+        client_address: Tuple[str, int],
+        server: socketserver.BaseServer,
+        directory: Optional[str] = None,
+    ) -> None:
         self.directory = os.getcwd()
         super().__init__(request, client_address, server)
 
     # suppress all HTTP request messages
-    def log_message(self, format, *args):
+    def log_message(self, format: str, *args: Any) -> None:
         # super().log_message(format, *args)
         pass
 
@@ -40,7 +47,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 
-class BaseTests(unittest.TestCase):
+class BaseTests:
     text_alloc_failed_below_low_watermark = (
         "The request failed because the free memory would be below the memory low "
         "watermark after its completion."
@@ -66,7 +73,7 @@ class BaseTests(unittest.TestCase):
 
     text_with_an_oom_score_of = "with an OOM score of"
 
-    def get_lines(self, text, count):
+    def get_lines(self, text: str, count: int) -> str:
         """
         Return the number of lines specified by count from the given text
 
@@ -81,21 +88,21 @@ class BaseTests(unittest.TestCase):
         res = "\n".join(lines)
         return res
 
-    def get_first_line(self, text):
+    def get_first_line(self, text: str) -> str:
         """
         Return the first line of the given text
         @type text: str
         """
         return self.get_lines(text, 1)
 
-    def get_last_line(self, text):
+    def get_last_line(self, text: str) -> str:
         """
         Return the last line of the given text
         @type text: str
         """
         return self.get_lines(text, -1)
 
-    def check_meminfo_format_rhel7(self, prefix, oom_text):
+    def check_meminfo_format_rhel7(self, prefix: str, oom_text: str) -> None:
         """
         Check if the example contains a properly formatted "Mem-Info:" block
 
@@ -108,14 +115,12 @@ class BaseTests(unittest.TestCase):
         for line in oom_text.split("\n"):
             if "active_file:1263 " in line:
                 found = True
-                self.assertTrue(
-                    line.startswith(" active_file:1263 "),
-                    f'{prefix}: Unexpected prefix for third "Mem-Info:" block line: >>>{line}<<<',
-                )
-        self.assertTrue(
-            found,
-            f'{prefix}: Missing content "active_file:1263 " in "Mem-Info:" block of\n{oom_text}',
-        )
+                assert line.startswith(
+                    " active_file:1263 "
+                ), f'{prefix}: Unexpected prefix for third "Mem-Info:" block line: >>>{line}<<<'
+        assert (
+            found
+        ), f'{prefix}: Missing content "active_file:1263 " in "Mem-Info:" block of\n{oom_text}'
 
     def to_continuous_text(self, text: str) -> str:
         """
@@ -141,6 +146,10 @@ class BaseTests(unittest.TestCase):
 
 class BaseInBrowserTests(BaseTests):
     """Base class for all tests that run in a browser"""
+
+    # Instance attributes (initialized by setup_browser fixture)
+    httpd: Optional[ThreadedTCPServer]
+    driver: Optional[webdriver.Chrome]
 
     # --- Begin: generic result check configuration ---
     # For each test variant, set these in the child class. An empty value
@@ -187,153 +196,136 @@ class BaseInBrowserTests(BaseTests):
     """Dictionary with category and text pattern to check the summary/explanation section"""
     # --- End: generic result check configuration ---
 
-    def check_all_results(self):
+    def check_all_results(self) -> None:
         """
         Generic result checker for OOM analysis results.
         Skips tests if the corresponding class variable is None.
         """
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
+        assert (
+            h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be displayed"
 
         if self.check_results_proc_name:
             trigger_proc_name = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_name"
             )
-            self.assertEqual(
-                trigger_proc_name.text,
-                self.check_results_proc_name,
-                "Unexpected trigger process name",
-            )
+            assert (
+                trigger_proc_name.text == self.check_results_proc_name
+            ), "Unexpected trigger process name"
         if self.check_results_proc_pid:
             trigger_proc_pid = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_pid"
             )
-            self.assertEqual(
-                trigger_proc_pid.text,
-                self.check_results_proc_pid,
-                f"Unexpected trigger process pid: --{trigger_proc_pid.text}--",
-            )
+            assert (
+                trigger_proc_pid.text == self.check_results_proc_pid
+            ), f"Unexpected trigger process pid: --{trigger_proc_pid.text}--"
         if self.check_results_gfp_mask:
             trigger_proc_gfp_mask = self.driver.find_element(
                 By.CLASS_NAME, "trigger_proc_gfp_mask"
             )
             mask = trigger_proc_gfp_mask.text
-            self.assertEqual(
-                trigger_proc_gfp_mask.text,
-                self.check_results_gfp_mask,
-                f'Unexpected GFP Mask: got: "{mask}", expect: "{self.check_results_gfp_mask}"',
-            )
+            assert (
+                trigger_proc_gfp_mask.text == self.check_results_gfp_mask
+            ), f'Unexpected GFP Mask: got: "{mask}", expect: "{self.check_results_gfp_mask}"'
         if self.check_results_killed_proc_score:
             killed_proc_score = self.driver.find_element(
                 By.CLASS_NAME, "killed_proc_score"
             )
-            self.assertEqual(
-                killed_proc_score.text,
-                self.check_results_killed_proc_score,
-                "Unexpected OOM score of killed process",
-            )
+            assert (
+                killed_proc_score.text == self.check_results_killed_proc_score
+            ), "Unexpected OOM score of killed process"
         if self.check_results_swap_cache_kb:
             swap_cache_kb = self.driver.find_element(
                 By.CLASS_NAME, "system_swap_cache_kb"
             )
-            self.assertEqual(swap_cache_kb.text, self.check_results_swap_cache_kb)
+            assert swap_cache_kb.text == self.check_results_swap_cache_kb
         if self.check_results_swap_used_kb:
             swap_used_kb = self.driver.find_element(
                 By.CLASS_NAME, "system_swap_used_kb"
             )
-            self.assertEqual(swap_used_kb.text, self.check_results_swap_used_kb)
+            assert swap_used_kb.text == self.check_results_swap_used_kb
         if self.check_results_swap_free_kb:
             swap_free_kb = self.driver.find_element(
                 By.CLASS_NAME, "system_swap_free_kb"
             )
-            self.assertEqual(swap_free_kb.text, self.check_results_swap_free_kb)
+            assert swap_free_kb.text == self.check_results_swap_free_kb
         if self.check_results_swap_total_kb:
             swap_total_kb = self.driver.find_element(
                 By.CLASS_NAME, "system_swap_total_kb"
             )
-            self.assertEqual(swap_total_kb.text, self.check_results_swap_total_kb)
+            assert swap_total_kb.text == self.check_results_swap_total_kb
 
         continuous_explanation_text = self.to_continuous_text(
             self.driver.find_element(By.ID, "explanation").text
         )
         for expected in self.check_explanation_expected_statements:
-            self.assertTrue(
-                expected in continuous_explanation_text,
-                f'Missing statement "{expected}" in summary section: >{continuous_explanation_text}<',
-            )
+            assert (
+                expected in continuous_explanation_text
+            ), f'Missing statement "{expected}" in summary section: >{continuous_explanation_text}<'
         for unexpected in self.check_explanation_unexpected_statements:
-            self.assertTrue(
-                unexpected not in continuous_explanation_text,
-                f'Unexpected statement "{unexpected}" in summary section: >{continuous_explanation_text}<',
-            )
+            assert (
+                unexpected not in continuous_explanation_text
+            ), f'Unexpected statement "{unexpected}" in summary section: >{continuous_explanation_text}<'
 
         result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
         if self.check_results_result_table_expected:
             for expected in self.check_results_result_table_expected:
-                self.assertTrue(
-                    expected in result_table.text,
-                    f'Missing statement in result table: "{expected}"',
-                )
+                assert (
+                    expected in result_table.text
+                ), f'Missing statement in result table: "{expected}"'
         if self.check_results_result_table_unexpected:
             for unexpected in self.check_results_result_table_unexpected:
-                self.assertTrue(
-                    unexpected not in result_table.text,
-                    f'Unexpected statement in result table: "{unexpected}"',
-                )
+                assert (
+                    unexpected not in result_table.text
+                ), f'Unexpected statement in result table: "{unexpected}"'
 
         # check text pattern in summary section
         for category in self.check_explanation_section:
             pattern = self.check_explanation_section[category]
-            self.assertTrue(
-                pattern in continuous_explanation_text,
-                f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<',
-            )
+            assert (
+                pattern in continuous_explanation_text
+            ), f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<'
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
         if self.check_results_mem_node_info_start:
-            self.assertEqual(
-                mem_node_info.text[: len(self.check_results_mem_node_info_start)],
-                self.check_results_mem_node_info_start,
-                "Unexpected memory chunks",
-            )
+            assert (
+                mem_node_info.text[: len(self.check_results_mem_node_info_start)]
+                == self.check_results_mem_node_info_start
+            ), "Unexpected memory chunks"
         if self.check_results_mem_node_info_end:
-            self.assertEqual(
-                mem_node_info.text[-len(self.check_results_mem_node_info_end) :],
-                self.check_results_mem_node_info_end,
-                "Unexpected memory information about hugepages",
-            )
+            assert (
+                mem_node_info.text[-len(self.check_results_mem_node_info_end) :]
+                == self.check_results_mem_node_info_end
+            ), "Unexpected memory information about hugepages"
 
         mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
         if self.check_results_mem_watermarks_start:
-            self.assertEqual(
-                mem_watermarks.text[: len(self.check_results_mem_watermarks_start)],
-                self.check_results_mem_watermarks_start,
-                "Unexpected memory watermarks",
-            )
+            assert (
+                mem_watermarks.text[: len(self.check_results_mem_watermarks_start)]
+                == self.check_results_mem_watermarks_start
+            ), "Unexpected memory watermarks"
         if self.check_results_mem_watermarks_end:
-            self.assertEqual(
-                mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :],
-                self.check_results_mem_watermarks_end,
-                "Unexpected lowmem_reserve values",
-            )
+            assert (
+                mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :]
+                == self.check_results_mem_watermarks_end
+            ), "Unexpected lowmem_reserve values"
 
         if self.check_results_column_header:
             header = self.driver.find_element(By.ID, "pstable_header")
-            self.assertTrue(
-                self.check_results_column_header in header.text,
-                f'Missing column header "{self.check_results_column_header}"',
-            )
+            assert (
+                self.check_results_column_header in header.text
+            ), f'Missing column header "{self.check_results_column_header}"'
 
         if self.check_results_swap_active:
             self.check_swap_active()
         if self.check_results_swap_inactive:
             self.check_swap_inactive()
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup_browser(self) -> Generator[None, None, None]:
+        """Setup browser and HTTP server for tests"""
         warnings.simplefilter("ignore", ResourceWarning)
 
         ThreadedTCPServer.allow_reuse_address = True
@@ -352,12 +344,14 @@ class BaseInBrowserTests(BaseTests):
         self.driver = webdriver.Chrome(service=s)
         self.driver.get("http://127.0.0.1:8000/OOMAnalyser.html")
 
-    def tearDown(self):
+        yield  # Test runs here
+
+        # Teardown
         self.driver.close()
         self.httpd.shutdown()
         self.httpd.server_close()
 
-    def assert_on_warn(self):
+    def assert_on_warn(self) -> None:
         notify_box = self.driver.find_element(By.ID, "notify_box")
         try:
             warning = notify_box.find_element(
@@ -366,30 +360,30 @@ class BaseInBrowserTests(BaseTests):
         except NoSuchElementException:
             pass
         else:
-            self.fail(f'Unexpected warning message: "{warning.text}"')
+            pytest.fail(f'Unexpected warning message: "{warning.text}"')
 
-    def assert_on_error(self):
+    def assert_on_error(self) -> None:
         error = self.get_first_error_msg()
         if error:
-            self.fail(f'Unexpected error message: "{error}"')
+            pytest.fail(f'Unexpected error message: "{error}"')
 
         for event in self.driver.get_log("browser"):
             # ignore favicon.ico errors
             if "favicon.ico" in event["message"]:
                 continue
-            self.fail(f'Error on browser console reported: "{event}"')
+            pytest.fail(f'Error on browser console reported: "{event}"')
 
-    def assert_on_warn_error(self):
+    def assert_on_warn_error(self) -> None:
         self.assert_on_warn()
         self.assert_on_error()
 
-    def click_analyse_button(self):
+    def click_analyse_button(self) -> None:
         analyse = self.driver.find_element(
             By.XPATH, '//button[text()="Analyse OOM block"]'
         )
         analyse.click()
 
-    def click_reset_button(self):
+    def click_reset_button(self) -> None:
         reset = self.driver.find_element(By.XPATH, '//button[text()="Reset form"]')
         if reset.is_displayed():
             reset.click()
@@ -400,7 +394,7 @@ class BaseInBrowserTests(BaseTests):
             new_analysis.click()
         self.assert_on_warn_error()
 
-    def clear_notification_box(self):
+    def clear_notification_box(self) -> None:
         """Clear notification box"""
         # Selenium doesn't provide an interface to delete objects.
         # Remove all notification entries with JS.
@@ -413,7 +407,7 @@ class BaseInBrowserTests(BaseTests):
             """
         )
 
-    def get_first_error_msg(self):
+    def get_first_error_msg(self) -> str:
         """
         Return the first (oldest) error message from error notification box or an empty
         string if no error message exists.
@@ -429,114 +423,102 @@ class BaseInBrowserTests(BaseTests):
         except NoSuchElementException:
             return ""
 
-    def insert_example(self, select_value):
+    def insert_example(self, select_value: str) -> None:
         """
         Select and insert an example from the combobox
 
         @param str select_value: Option value to specify the example
         """
         textarea = self.driver.find_element(By.ID, "textarea_oom")
-        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
+        assert textarea.get_attribute("value") == "", "Empty textarea expected"
         select_element = self.driver.find_element(By.ID, "examples")
         select = Select(select_element)
         option_values = [o.get_attribute("value") for o in select.options]
-        self.assertTrue(
-            select_value in option_values,
-            f"Missing proper option for example {select_value}",
-        )
+        assert (
+            select_value in option_values
+        ), f"Missing proper option for example {select_value}"
         select.select_by_value(select_value)
-        self.assertNotEqual(
-            textarea.get_attribute("value"), "", "Missing OOM text in textarea"
-        )
+        assert textarea.get_attribute("value") != "", "Missing OOM text in textarea"
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertFalse(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be not displayed",
-        )
+        assert (
+            not h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be not displayed"
 
-    def analyse_oom(self, text):
+    def analyse_oom(self, text: str) -> None:
         """
         Insert text and run analysis
 
         :param str text: OOM text to analyse
         """
         textarea = self.driver.find_element(By.ID, "textarea_oom")
-        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
+        assert textarea.get_attribute("value") == "", "Empty textarea expected"
         textarea.send_keys(text)
 
-        self.assertNotEqual(
-            textarea.get_attribute("value"), "", "Missing OOM text in textarea"
-        )
+        assert textarea.get_attribute("value") != "", "Missing OOM text in textarea"
 
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertFalse(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be not displayed",
-        )
+        assert (
+            not h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be not displayed"
 
         self.clear_notification_box()
         self.click_analyse_button()
 
-    def check_swap_inactive(self):
+    def check_swap_inactive(self) -> None:
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
-        self.assertTrue(
-            self.text_kernel_swap_space_not_in_use in continuous_text,
-            f'Missing statement "{self.text_kernel_swap_space_not_in_use}"',
-        )
-        self.assertTrue(
-            self.text_kernel_swap_space_are_in_use not in continuous_text,
-            f'Unexpected statement "{self.text_kernel_swap_space_are_in_use}"',
-        )
+        assert (
+            self.text_kernel_swap_space_not_in_use in continuous_text
+        ), f'Missing statement "{self.text_kernel_swap_space_not_in_use}"'
+        assert (
+            self.text_kernel_swap_space_are_in_use not in continuous_text
+        ), f'Unexpected statement "{self.text_kernel_swap_space_are_in_use}"'
 
-    def check_swap_active(self):
+    def check_swap_active(self) -> None:
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
-        self.assertTrue(
-            self.text_kernel_swap_space_are_in_use in continuous_text,
-            f'Missing statement "{self.text_kernel_swap_space_are_in_use}"',
-        )
+        assert (
+            self.text_kernel_swap_space_are_in_use in continuous_text
+        ), f'Missing statement "{self.text_kernel_swap_space_are_in_use}"'
 
 
+@pytest.mark.browser
 class TestInBrowser(BaseInBrowserTests):
     """Test OOM web page in a browser"""
 
-    def test_010_load_page(self):
+    def test_010_load_page(self) -> None:
         """Test if the page is loading"""
         assert "OOMAnalyser" in self.driver.title
 
-    def test_020_load_js(self):
+    def test_020_load_js(self) -> None:
         """Test if JS is loaded"""
         elem = self.driver.find_element(By.ID, "version")
-        self.assertIsNotNone(elem.text, "Version statement not set - JS not loaded")
+        assert elem.text is not None, "Version statement not set - JS not loaded"
 
-    def test_033_empty_textarea(self):
+    def test_033_empty_textarea(self) -> None:
         """Test "Analyse OOM block" with an empty textarea"""
         textarea = self.driver.find_element(By.ID, "textarea_oom")
-        self.assertEqual(textarea.get_attribute("value"), "", "Empty textarea expected")
+        assert textarea.get_attribute("value") == "", "Empty textarea expected"
         # textarea.send_keys(text)
 
-        self.assertEqual(
-            textarea.get_attribute("value"),
-            "",
-            "Expected empty text area, but text found",
-        )
+        assert (
+            textarea.get_attribute("value") == ""
+        ), "Expected empty text area, but text found"
 
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertFalse(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be not displayed",
-        )
+        assert (
+            not h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be not displayed"
 
         self.clear_notification_box()
         self.click_analyse_button()
-        self.assertEqual(
-            self.get_first_error_msg(),
-            "ERROR: Empty OOM text. Please insert an OOM message block.",
+        assert (
+            self.get_first_error_msg()
+            == "ERROR: Empty OOM text. Please insert an OOM message block."
         )
         self.click_reset_button()
 
-    def test_034_begin_but_no_end(self):
+    def test_034_begin_but_no_end(self) -> None:
         """Test incomplete OOM text - just the beginning"""
         example = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -544,27 +526,27 @@ sed cpuset=/ mems_allowed=0-1
 CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
         self.analyse_oom(example)
-        self.assertEqual(
-            self.get_first_error_msg(),
-            "ERROR: The inserted OOM is incomplete! The initial pattern was "
-            "found but not the final.",
+        assert (
+            self.get_first_error_msg()
+            == "ERROR: The inserted OOM is incomplete! The initial pattern was "
+            "found but not the final."
         )
         self.click_reset_button()
 
-    def test_035_no_begin_but_end(self):
+    def test_035_no_begin_but_end(self) -> None:
         """Test incomplete OOM text - just the end"""
         example = """\
 Out of memory: Kill process 6576 (java) score 651 or sacrifice child
 Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
         """
         self.analyse_oom(example)
-        self.assertEqual(
-            self.get_first_error_msg(),
-            "ERROR: Failed to extract kernel version from OOM text",
+        assert (
+            self.get_first_error_msg()
+            == "ERROR: Failed to extract kernel version from OOM text"
         )
         self.click_reset_button()
 
-    def test_090_scroll_to_top(self):
+    def test_090_scroll_to_top(self) -> None:
         """Test scrolling to the top of the page"""
         # scroll to the bottom of the page
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -574,15 +556,14 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
         # Check if the page is scrolled to the top
         time.sleep(3)  # to ensure that the smooth scroll is finished
         scroll_position = self.driver.execute_script("return window.scrollY;")
-        self.assertEqual(
-            0,
-            scroll_position,
-            f"Page should be scrolled to the top, but is currently on position {scroll_position}",
-        )
+        assert (
+            0 == scroll_position
+        ), f"Page should be scrolled to the top, but is currently on position {scroll_position}"
 
 
+@pytest.mark.python_only
 class TestPython(BaseTests):
-    def test_000_configured(self):
+    def test_000_configured(self) -> None:
         """Check if all kernel classes are instantiated in OOMAnalyser.AllKernelConfigs"""
         all_kernel_classes = {
             cls.__name__
@@ -593,12 +574,9 @@ class TestPython(BaseTests):
             inst.__class__.__name__ for inst in OOMAnalyser.AllKernelConfigs
         }
         missing = all_kernel_classes - all_configured_kernels
-        self.assertFalse(
-            missing,
-            f"Missing kernel instances in AllKernelConfigs: {missing}",
-        )
+        assert not missing, f"Missing kernel instances in AllKernelConfigs: {missing}"
 
-    def test_001_trigger_proc_space(self):
+    def test_001_trigger_proc_space(self) -> None:
         """Test RE to find the name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)
         pattern = OOMAnalyser.OOMAnalyser.oom_result.kconfig.EXTRACT_PATTERN[
@@ -606,19 +584,17 @@ class TestPython(BaseTests):
         ][0]
         rec = re.compile(pattern, re.MULTILINE)
         match = rec.search(first)
-        self.assertTrue(
-            match,
-            "Error: re.search('invoked oom-killer') failed for simple process name",
-        )
+        assert (
+            match
+        ), "Error: re.search('invoked oom-killer') failed for simple process name"
 
         first = first.replace("sed", "VM Monitoring Task")
         match = rec.search(first)
-        self.assertTrue(
-            match,
-            "Error: re.search('invoked oom-killer') failed for process name with space",
-        )
+        assert (
+            match
+        ), "Error: re.search('invoked oom-killer') failed for process name with space"
 
-    def test_002_killed_proc_space(self):
+    def test_002_killed_proc_space(self) -> None:
         """Test RE to find name of the killed process"""
         pattern_key = "global oom: kill process - pid, name and score"
         original_process_name = "sed"
@@ -639,12 +615,11 @@ class TestPython(BaseTests):
         for process_name, description in test_process_names:
             text = original_text.replace(original_process_name, process_name)
             match = rec.search(text)
-            self.assertTrue(
-                match,
-                f'Error: Search for process names failed for {description}: "{process_name}"',
-            )
+            assert (
+                match
+            ), f'Error: Search for process names failed for {description}: "{process_name}"'
 
-    def test_003_OOMEntity_number_of_columns_to_strip(self):
+    def test_003_OOMEntity_number_of_columns_to_strip(self) -> None:
         """Test stripping useless / leading columns"""
         oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         for pos, line in [
@@ -662,13 +637,11 @@ class TestPython(BaseTests):
             ),
         ]:
             to_strip = oom_entity._number_of_columns_to_strip(line)
-            self.assertEqual(
-                to_strip,
-                pos,
-                f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {pos}',
-            )
+            assert (
+                to_strip == pos
+            ), f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {pos}'
 
-    def test_004_extract_block_from_next_pos(self):
+    def test_004_extract_block_from_next_pos(self) -> None:
         """Test extracting a single block (all lines till the next line with a colon)"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -679,9 +652,9 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
  ffff8804182079c8 ffffffff81681157 ffffffff810eab9c ffff8804182fe910
  ffff8804182fe928 0000000000000202 ffff880182272f10 ffff8804182079b8
 """
-        self.assertEqual(text, expected)
+        assert text == expected
 
-    def test_005_extract_kernel_version(self):
+    def test_005_extract_kernel_version(self) -> None:
         """Test extracting the kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -696,12 +669,10 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ),
         ]:
             analyser.oom_entity.text = text
-            self.assertTrue(
-                analyser._identify_kernel_version(), analyser.oom_result.error_msg
-            )
-            self.assertEqual(analyser.oom_result.kversion, kversion)
+            assert analyser._identify_kernel_version(), analyser.oom_result.error_msg
+            assert analyser.oom_result.kversion == kversion
 
-    def test_006_choosing_kernel_config(self):
+    def test_006_choosing_kernel_config(self) -> None:
         """Test choosing the right kernel configuration"""
         for kcfg, kversion in [
             (
@@ -741,21 +712,16 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             analyser = OOMAnalyser.OOMAnalyser(oom)
 
             kernel_found = analyser._identify_kernel_version()
-            self.assertTrue(
-                kernel_found,
-                f'Failed to identify kernel from string "{kversion}"',
-            )
+            assert kernel_found, f'Failed to identify kernel from string "{kversion}"'
 
             analyser._choose_kernel_config()
             result = analyser.oom_result.kconfig
-            self.assertEqual(
-                type(result),
-                type(kcfg),
+            assert type(result) == type(kcfg), (
                 f'Mismatch between expected kernel config "{type(kcfg)}" and chosen config "{type(result)}" for '
-                f'kernel version "{kversion}"',
+                f'kernel version "{kversion}"'
             )
 
-    def test_008_kversion_check(self):
+    def test_008_kversion_check(self) -> None:
         """Test check for the minimum kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -779,24 +745,23 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ""), True),
             ("3.10.0-514.6.1.el7.x86_64 #1", (3, 9, ""), True),
         ):
-            self.assertEqual(
-                analyser._check_kversion_greater_equal(kversion, min_version),
-                expected_result,
-                f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"',
-            )
+            assert (
+                analyser._check_kversion_greater_equal(kversion, min_version)
+                == expected_result
+            ), f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"'
 
-    def test_009_extract_zoneinfo(self):
+    def test_009_extract_zoneinfo(self) -> None:
         """Test extracting zone usage information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+        assert success, "OOM analysis failed"
 
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (3, 10, ".el7."),
-            "Wrong KernelConfig release",
-        )
+        assert analyser.oom_result.kconfig.release == (
+            3,
+            10,
+            ".el7.",
+        ), "Wrong KernelConfig release"
         buddyinfo = analyser.oom_result.buddyinfo
         for zone, order, node, except_count in [
             ("Normal", 6, 0, 0),  # order 6 - page size 256kB
@@ -812,31 +777,27 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("Normal", "total_free_kb_per_node", 0, 38260),
             ("Normal", "total_free_kb_per_node", 1, 50836),
         ]:
-            self.assertTrue(
-                zone in buddyinfo, f"Missing details for zone {zone} in buddy info"
-            )
-            self.assertTrue(
-                order in buddyinfo[zone],
-                f'Missing details for order "{order}" in buddy info',
-            )
+            assert zone in buddyinfo, f"Missing details for zone {zone} in buddy info"
+            assert (
+                order in buddyinfo[zone]
+            ), f'Missing details for order "{order}" in buddy info'
             count = buddyinfo[zone][order][node]
-            self.assertTrue(
-                count == except_count,
-                f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {except_count})',
-            )
+            assert (
+                count == except_count
+            ), f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {except_count})'
 
-    def test_010_extract_zoneinfo(self):
+    def test_010_extract_zoneinfo(self) -> None:
         """Test extracting watermark information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+        assert success, "OOM analysis failed"
 
-        self.assertEqual(
-            analyser.oom_result.kconfig.release,
-            (3, 10, ".el7."),
-            "Wrong KernelConfig release",
-        )
+        assert analyser.oom_result.kconfig.release == (
+            3,
+            10,
+            ".el7.",
+        ), "Wrong KernelConfig release"
         watermarks = analyser.oom_result.watermarks
         for zone, node, level, except_level in [
             ("Normal", 0, "free", 36692),
@@ -848,53 +809,42 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("DMA32", 0, "free", 59728),
             ("DMA32", 0, "low", 9788),
         ]:
-            self.assertTrue(
-                zone in watermarks,
-                f"Missing details for zone {zone} in memory watermarks",
-            )
-            self.assertTrue(
-                node in watermarks[zone],
-                f'Missing details for node "{node}" in memory watermarks',
-            )
-            self.assertTrue(
-                level in watermarks[zone][node],
-                f'Missing details for level "{level}" in memory watermarks',
-            )
+            assert (
+                zone in watermarks
+            ), f"Missing details for zone {zone} in memory watermarks"
+            assert (
+                node in watermarks[zone]
+            ), f'Missing details for node "{node}" in memory watermarks'
+            assert (
+                level in watermarks[zone][node]
+            ), f'Missing details for level "{level}" in memory watermarks'
             level = watermarks[zone][node][level]
-            self.assertTrue(
-                level == except_level,
-                f'Wrong watermark level for node {node} in zone "{zone}" (got: {level}, expect {except_level})',
-            )
+            assert (
+                level == except_level
+            ), f'Wrong watermark level for node {node} in zone "{zone}" (got: {level}, expect {except_level})'
         node = analyser.oom_result.details["trigger_proc_numa_node"]
-        self.assertTrue(
-            node == 0, f"Wrong node with memory shortage (got: {node}, expect: 0)"
-        )
-        self.assertEqual(
-            analyser.oom_result.kconfig.MAX_ORDER,
-            11,  # This is a hard-coded value as extracted from kernel 6.2.0
+        assert node == 0, f"Wrong node with memory shortage (got: {node}, expect: 0)"
+        assert analyser.oom_result.kconfig.MAX_ORDER == 11, (
             f"Unexpected number of chunk sizes (got: {analyser.oom_result.kconfig.MAX_ORDER}, "
-            f"expect: 11 (kernel 6.2.0))",
+            f"expect: 11 (kernel 6.2.0))"
         )
 
-    def test_011_alloc_failure(self):
+    def test_011_alloc_failure(self) -> None:
         """Test analysis why the memory allocation could be failed"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+        assert success, "OOM analysis failed"
 
-        self.assertEqual(
-            analyser.oom_result.oom_type,
-            OOMAnalyser.OOMType.KERNEL_AUTOMATIC,
-            "OOM triggered manually",
-        )
-        self.assertTrue(analyser.oom_result.buddyinfo, "Missing buddyinfo")
-        self.assertTrue(
+        assert (
+            analyser.oom_result.oom_type == OOMAnalyser.OOMType.KERNEL_AUTOMATIC
+        ), "OOM triggered manually"
+        assert analyser.oom_result.buddyinfo, "Missing buddyinfo"
+        assert (
             "trigger_proc_order" in analyser.oom_result.details
-            and "trigger_proc_mem_zone" in analyser.oom_result.details,
-            "Missing trigger_proc_order and/or trigger_proc_mem_zone",
-        )
-        self.assertTrue(analyser.oom_result.watermarks, "Missing watermark information")
+            and "trigger_proc_mem_zone" in analyser.oom_result.details
+        ), "Missing trigger_proc_order and/or trigger_proc_mem_zone"
+        assert analyser.oom_result.watermarks, "Missing watermark information"
 
         for zone, order, node, expected_result in [
             ("DMA", 0, 0, True),
@@ -911,11 +861,9 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ("Normal", 9, 1, False),
         ]:
             result = analyser._check_free_chunks(order, zone, node)
-            self.assertEqual(
-                result,
-                expected_result,
+            assert result == expected_result, (
                 f"Wrong result of the check for free chunks with the same or higher order for Node {node}, "
-                f'Zone "{zone}" and order {order} (got: {result}, expected {expected_result})',
+                f'Zone "{zone}" and order {order} (got: {result}, expected {expected_result})'
             )
 
         # Search node with memory shortage: watermark "free" < "min"
@@ -928,53 +876,47 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             analyser.oom_result.details["trigger_proc_mem_zone"] = zone
             analyser._search_node_with_memory_shortage()
             node = analyser.oom_result.details["trigger_proc_numa_node"]
-            self.assertEqual(
-                node,
-                expected_node,
+            assert node == expected_node, (
                 f'Wrong result if a node has memory shortage in zone "{zone}" (got: {node}, '
-                f"expected {expected_node})",
+                f"expected {expected_node})"
             )
 
-        self.assertEqual(
-            analyser.oom_result.mem_alloc_failure,
-            OOMAnalyser.OOMAllocationFailureReason.FAILED_BELOW_LOW_WATERMARK,
-            "Unexpected reason why the memory allocation has failed.",
-        )
+        assert (
+            analyser.oom_result.mem_alloc_failure
+            == OOMAnalyser.OOMAllocationFailureReason.FAILED_BELOW_LOW_WATERMARK
+        ), "Unexpected reason why the memory allocation has failed."
 
-    def test_012_fragmentation(self):
+    def test_012_fragmentation(self) -> None:
         """Test memory fragmentation"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+        assert success, "OOM analysis failed"
         zone = analyser.oom_result.details["trigger_proc_mem_zone"]
         node = analyser.oom_result.details["trigger_proc_numa_node"]
         mem_fragmented = not analyser._check_free_chunks(
             analyser.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
         )
-        self.assertFalse(
-            mem_fragmented,
-            f'Memory of Node {node}, Zone "{zone}" is not fragmented, but reported as fragmented',
-        )
+        assert (
+            not mem_fragmented
+        ), f'Memory of Node {node}, Zone "{zone}" is not fragmented, but reported as fragmented'
 
-    def test_013_page_size(self):
+    def test_013_page_size(self) -> None:
         """Test determination of the page size"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
-        self.assertTrue(success, "OOM analysis failed")
+        assert success, "OOM analysis failed"
 
         page_size_kb = analyser.oom_result.details["page_size_kb"]
-        self.assertEqual(
-            page_size_kb, 4, f"Unexpected page size (got {page_size_kb}, expect: 4)"
-        )
-        self.assertEqual(
-            analyser.oom_result.details["_page_size_guessed"],
-            False,
-            "Page size is guessed and not determined",
-        )
+        assert (
+            page_size_kb == 4
+        ), f"Unexpected page size (got {page_size_kb}, expect: 4)"
+        assert (
+            analyser.oom_result.details["_page_size_guessed"] == False
+        ), "Page size is guessed and not determined"
 
-    def test_014_size_to_human_readable(self):
+    def test_014_size_to_human_readable(self) -> None:
         """Test convertion of size in bytes to a human-readable value"""
         for value, expected in [
             (0, "0 Bytes"),
@@ -984,13 +926,12 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             (12345678901234, "11.2 TB"),
         ]:
             formatted = OOMAnalyser.OOMDisplay._size_to_human_readable(value)
-            self.assertEqual(
-                formatted,
-                expected,
-                f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})",
-            )
+            assert (
+                formatted == expected
+            ), f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})"
 
 
+@pytest.mark.browser
 class TestBroswerArchLinux(BaseInBrowserTests):
     """Test ArchLinux 6.1.1 OOM web page in a browser"""
 
@@ -1053,14 +994,14 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         "Use swap space": "99 % (25066284 kBytes out of 25165820 kBytes) system swap space",
     }
 
-    def test_020_insert_and_analyse_example(self):
+    def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing ArchLinux 6.1.1 example"""
         self.clear_notification_box()
         self.insert_example("ArchLinux")
         self.click_analyse_button()
         self.check_all_results()
 
-    def test_030_removal_of_leading_but_useless_columns(self):
+    def test_030_removal_of_leading_but_useless_columns(self) -> None:
         """
         Test removal of leading but useless columns with an ArchLinux example
 
@@ -1097,6 +1038,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
             self.click_reset_button()
 
 
+@pytest.mark.browser
 class TestBrowserRhel7(BaseInBrowserTests):
     """Test RHEL7 OOM web page in a browser"""
 
@@ -1152,14 +1094,14 @@ class TestBrowserRhel7(BaseInBrowserTests):
         "Use swap space": "99 % (8343236 kBytes out of 8388604 kBytes) system swap space",
     }
 
-    def test_020_insert_and_analyse_example(self):
+    def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing RHEL7 example"""
         self.clear_notification_box()
         self.insert_example("RHEL7")
         self.click_analyse_button()
         self.check_all_results()
 
-    def test_030_removal_of_leading_but_useless_columns(self):
+    def test_030_removal_of_leading_but_useless_columns(self) -> None:
         """
         Test removal of leading but useless columns with RHEL7 example
 
@@ -1189,7 +1131,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
             self.check_all_results()
             self.click_reset_button()
 
-    def test_040_loading_journalctl_input(self):
+    def test_040_loading_journalctl_input(self) -> None:
         """Test loading input from journalctl
 
         The second part of the "Mem-Info:" block as starting with the third
@@ -1232,7 +1174,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
             self.check_all_results()
             self.click_reset_button()
 
-    def test_050_trigger_proc_space(self):
+    def test_050_trigger_proc_space(self) -> None:
         """Test trigger process name contains a space"""
         example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace("sed", "VM Monitoring Task")
@@ -1240,12 +1182,11 @@ class TestBrowserRhel7(BaseInBrowserTests):
         self.analyse_oom(example)
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
+        assert (
+            h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be displayed"
 
-    def test_060_kill_proc_space(self):
+    def test_060_kill_proc_space(self) -> None:
         """Test killed process name contains a space"""
         example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace("mysqld", "VM Monitoring Task")
@@ -1253,12 +1194,11 @@ class TestBrowserRhel7(BaseInBrowserTests):
         self.analyse_oom(example)
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
-        self.assertTrue(
-            h3_summary.is_displayed(),
-            "Analysis details incl. <h3>Summary</h3> should be displayed",
-        )
+        assert (
+            h3_summary.is_displayed()
+        ), "Analysis details incl. <h3>Summary</h3> should be displayed"
 
-    def test_070_manually_triggered_OOM(self):
+    def test_070_manually_triggered_OOM(self) -> None:
         """Test for manually triggered OOM"""
         example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace("order=0", "order=-1")
@@ -1267,16 +1207,14 @@ class TestBrowserRhel7(BaseInBrowserTests):
 
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
-        self.assertTrue(
-            self.text_oom_triggered_manually in continuous_text,
-            f'Missing statement "{self.text_oom_triggered_manually}"',
-        )
-        self.assertTrue(
-            self.text_oom_triggered_automatically not in continuous_text,
-            f'Unexpected statement "{self.text_oom_triggered_automatically}"',
-        )
+        assert (
+            self.text_oom_triggered_manually in continuous_text
+        ), f'Missing statement "{self.text_oom_triggered_manually}"'
+        assert (
+            self.text_oom_triggered_automatically not in continuous_text
+        ), f'Unexpected statement "{self.text_oom_triggered_automatically}"'
 
-    def test_080_swap_deactivated(self):
+    def test_080_swap_deactivated(self) -> None:
         """Test w/o swap or with deactivated swap"""
         example = OOMAnalyser.OOMDisplay.example_rhel7
         example = example.replace("Total swap = 8388604kB", "Total swap = 0kB")
@@ -1297,6 +1235,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
         self.check_swap_inactive()
 
 
+@pytest.mark.browser
 class TestBrowserUbuntu2110(BaseInBrowserTests):
     """Test Ubuntu 21.10 OOM web page in a browser"""
 
@@ -1341,7 +1280,7 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         "Use physical memory": "9 % (209520 kBytes out of 2096632 kBytes) physical memory",
     }
 
-    def test_020_insert_and_analyse_example(self):
+    def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing Ubuntu 21.10 example"""
         self.clear_notification_box()
         self.insert_example("Ubuntu_2110")
@@ -1349,6 +1288,7 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         self.check_all_results()
 
 
+@pytest.mark.browser
 class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
     """Test cases for Proxmox Cgroup OOM example"""
 
@@ -1381,7 +1321,7 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
         "Resident memory": "It uses 12781340 kBytes of the resident memory.",
     }
 
-    def test_020_insert_and_analyse_example(self):
+    def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing Proxmox cgroup OOM example"""
         self.clear_notification_box()
         self.insert_example("Proxmox_cgroup_oom")
@@ -1389,5 +1329,5 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
         self.check_all_results()
 
 
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
+# Tests are now run using pytest
+# Run with: pytest test.py
