@@ -144,6 +144,28 @@ class BaseTests:
         return continuous
 
 
+# Common test data for parametrized tests
+LOG_PREFIXES = [
+    "[11686.888109] ",
+    "Apr 01 14:13:32 mysrv: ",
+    "Apr 01 14:13:32 mysrv kernel: ",
+    "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
+    "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
+    "kernel:",
+    "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
+]
+
+LOG_PREFIX_IDS = [
+    "timestamp-only",
+    "syslog-prefix",
+    "syslog-kernel",
+    "syslog-warning",
+    "syslog-kernel-timestamp",
+    "kernel-only",
+    "syslog-warning-2",
+]
+
+
 class BaseInBrowserTests(BaseTests):
     """Base class for all tests that run in a browser"""
 
@@ -627,7 +649,22 @@ class TestPython(BaseTests):
             match
         ), "Error: re.search('invoked oom-killer') failed for process name with space"
 
-    def test_020_killed_proc_space(self) -> None:
+    @pytest.mark.parametrize(
+        "process_name,description",
+        [
+            pytest.param("sed", "simple process name", id="simple"),
+            pytest.param(
+                "VM Monitoring Task", "process name with spaces", id="with-spaces"
+            ),
+            pytest.param(
+                "kworker/0:1",
+                "process name with special characters (slash and colon)",
+                id="special-chars",
+            ),
+            pytest.param("php-fpm", "process name with hyphen", id="hyphen"),
+        ],
+    )
+    def test_020_killed_proc_space(self, process_name, description) -> None:
         """Test RE to find name of the killed process"""
         pattern_key = "global oom: kill process - pid, name and score"
         original_process_name = "sed"
@@ -637,69 +674,68 @@ class TestPython(BaseTests):
         ][0]
         rec = re.compile(pattern, re.MULTILINE)
 
-        # Test various process names
-        test_process_names = [
-            ("sed", "simple process name"),
-            ("VM Monitoring Task", "process name with spaces"),
-            ("kworker/0:1", "process name with special characters (slash and colon)"),
-            ("php-fpm", "process name with hyphen"),
-        ]
+        text = original_text.replace(original_process_name, process_name)
+        match = rec.search(text)
+        assert (
+            match
+        ), f'Error: Search for process names failed for {description}: "{process_name}"'
 
-        for process_name, description in test_process_names:
-            text = original_text.replace(original_process_name, process_name)
-            match = rec.search(text)
-            assert (
-                match
-            ), f'Error: Search for process names failed for {description}: "{process_name}"'
-
-    def test_030_OOMEntity_number_of_columns_to_strip(self) -> None:
-        """Test stripping useless / leading columns"""
-        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
-        for pos, line in [
-            (
+    @pytest.mark.parametrize(
+        "expected_pos,line",
+        [
+            pytest.param(
                 1,
                 "[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                id="timestamp-only",
             ),
-            (
+            pytest.param(
                 5,
                 "Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                id="syslog-prefix",
             ),
-            (
+            pytest.param(
                 6,
                 "Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                id="syslog-timestamp",
             ),
-        ]:
-            to_strip = oom_entity._number_of_columns_to_strip(line)
-            assert (
-                to_strip == pos
-            ), f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {pos}'
-
-    def test_031_OOMEntity_remove_kernel_colon(self) -> None:
-        """Test removal of kernel: pattern from OOM log lines"""
+        ],
+    )
+    def test_030_OOMEntity_number_of_columns_to_strip(self, expected_pos, line) -> None:
+        """Test stripping useless / leading columns"""
         oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        to_strip = oom_entity._number_of_columns_to_strip(line)
+        assert (
+            to_strip == expected_pos
+        ), f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {expected_pos}'
 
-        for input_lines, expected, description in [
-            (
+    @pytest.mark.parametrize(
+        "input_lines,expected,description",
+        [
+            pytest.param(
                 ["Apr 01 14:13:32 mysrv kernel:CPU: 4 PID: 29481 Comm: sed"],
                 ["Apr 01 14:13:32 mysrv CPU: 4 PID: 29481 Comm: sed"],
                 "kernel: without space (edge case)",
+                id="no-space",
             ),
-            (
+            pytest.param(
                 ["Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed"],
                 ["Apr 01 14:13:32 mysrv  CPU: 4 PID: 29481 Comm: sed"],
                 "kernel: with space (standard case)",
+                id="with-space",
             ),
-            (
+            pytest.param(
                 ["Apr 01 14:13:32 mysrv kernel:[11686.888109] Out of memory"],
                 ["Apr 01 14:13:32 mysrv [11686.888109] Out of memory"],
                 "kernel: before timestamp pattern",
+                id="before-timestamp",
             ),
-            (
+            pytest.param(
                 ["[11686.888109] CPU: 4 PID: 29481 Comm: sed"],
                 ["[11686.888109] CPU: 4 PID: 29481 Comm: sed"],
                 "no kernel: pattern (unchanged)",
+                id="no-kernel-pattern",
             ),
-            (
+            pytest.param(
                 [
                     "Apr 01 14:13:32 mysrv kernel:Out of memory: Killed process 29481",
                     "Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481",
@@ -711,22 +747,31 @@ class TestPython(BaseTests):
                     "[11686.888109] Hardware name: HP ProLiant",
                 ],
                 "multiple lines with mixed patterns",
+                id="multiple-lines",
             ),
-            (
+            pytest.param(
                 [],
                 [],
                 "empty list",
+                id="empty",
             ),
-            (
+            pytest.param(
                 ["kernel:kernel: This is unusual but possible"],
                 [" This is unusual but possible"],
                 "multiple kernel: occurrences (edge case)",
+                id="multiple-occurrences",
             ),
-        ]:
-            result = oom_entity._remove_kernel_colon(input_lines)
-            assert (
-                result == expected
-            ), f"Failed test: {description}. Got: {result}, expected: {expected}"
+        ],
+    )
+    def test_031_OOMEntity_remove_kernel_colon(
+        self, input_lines, expected, description
+    ) -> None:
+        """Test removal of kernel: pattern from OOM log lines"""
+        oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        result = oom_entity._remove_kernel_colon(input_lines)
+        assert (
+            result == expected
+        ), f"Failed test: {description}. Got: {result}, expected: {expected}"
 
     def test_040_extract_block_from_next_pos(self) -> None:
         """Test extracting a single block (all lines till the next line with a colon)"""
@@ -741,103 +786,183 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
 """
         assert text == expected
 
-    def test_050_extract_kernel_version(self) -> None:
+    @pytest.mark.parametrize(
+        "text,kversion",
+        [
+            pytest.param(
+                "CPU: 0 PID: 19163 Comm: kworker/0:0 Tainted: G           OE     5.4.0-80-lowlatency #90~18.04.1-Ubuntu",
+                "5.4.0-80-lowlatency",
+                id="ubuntu-5.4",
+            ),
+            pytest.param(
+                "CPU: 4 PID: 1 Comm: systemd Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
+                "3.10.0-1062.9.1.el7.x86_64",
+                id="rhel7-3.10",
+            ),
+        ],
+    )
+    def test_050_extract_kernel_version(self, text, kversion) -> None:
         """Test extracting the kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
-        for text, kversion in [
-            (
-                "CPU: 0 PID: 19163 Comm: kworker/0:0 Tainted: G           OE     5.4.0-80-lowlatency #90~18.04.1-Ubuntu",
-                "5.4.0-80-lowlatency",
-            ),
-            (
-                "CPU: 4 PID: 1 Comm: systemd Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
-                "3.10.0-1062.9.1.el7.x86_64",
-            ),
-        ]:
-            analyser.oom_entity.text = text
-            assert analyser._identify_kernel_version(), analyser.oom_result.error_msg
-            assert analyser.oom_result.kversion == kversion
+        analyser.oom_entity.text = text
+        assert analyser._identify_kernel_version(), analyser.oom_result.error_msg
+        assert analyser.oom_result.kversion == kversion
 
-    def test_060_choosing_kernel_config(self) -> None:
-        """Test choosing the right kernel configuration"""
-        for kcfg, kversion in [
-            (
+    @pytest.mark.parametrize(
+        "kcfg,kversion",
+        [
+            pytest.param(
                 OOMAnalyser.KernelConfig_6_11(),
                 "CPU: 4 UID: 123456 PID: 29481 Comm: sed Not tainted 6.12.0 #1",
+                id="6.11",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_5_18(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.23.0 #1",
+                id="5.18",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_5_12(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.13.0-514 #1",
+                id="5.12",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_5_8(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.8.0-514 #1",
+                id="5.8",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_5_4(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 5.5.1 #1",
+                id="5.4",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_4_6(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 4.6.0-514 #1",
+                id="4.6",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.KernelConfig_3_10_EL7(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-1062.9.1.el7.x86_64 #1",
+                id="3.10-el7",
             ),
-            (
+            pytest.param(
                 OOMAnalyser.BaseKernelConfig(),
                 "CPU: 4 PID: 29481 Comm: sed Not tainted 2.33.0 #1",
+                id="2.33-base",
             ),
-        ]:
-            oom = OOMAnalyser.OOMEntity(kversion)
-            analyser = OOMAnalyser.OOMAnalyser(oom)
+        ],
+    )
+    def test_060_choosing_kernel_config(self, kcfg, kversion) -> None:
+        """Test choosing the right kernel configuration"""
+        oom = OOMAnalyser.OOMEntity(kversion)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
 
-            kernel_found = analyser._identify_kernel_version()
-            assert kernel_found, f'Failed to identify kernel from string "{kversion}"'
+        kernel_found = analyser._identify_kernel_version()
+        assert kernel_found, f'Failed to identify kernel from string "{kversion}"'
 
-            analyser._choose_kernel_config()
-            result = analyser.oom_result.kconfig
-            assert type(result) == type(kcfg), (
-                f'Mismatch between expected kernel config "{type(kcfg)}" and chosen config "{type(result)}" for '
-                f'kernel version "{kversion}"'
-            )
+        analyser._choose_kernel_config()
+        result = analyser.oom_result.kconfig
+        assert type(result) == type(kcfg), (
+            f'Mismatch between expected kernel config "{type(kcfg)}" and chosen '
+            f'config "{type(result)}" for kernel version "{kversion}"'
+        )
 
-    def test_080_kversion_check(self) -> None:
+    @pytest.mark.parametrize(
+        "kversion,min_version,expected_result",
+        [
+            pytest.param("5.19-rc6", (5, 16, ""), True, id="5.19-rc6-ge-5.16"),
+            pytest.param("5.19-rc6", (5, 19, ""), True, id="5.19-rc6-ge-5.19"),
+            pytest.param("5.19-rc6", (5, 20, ""), False, id="5.19-rc6-lt-5.20"),
+            pytest.param("5.18.6-arch1-1", (5, 18, ""), True, id="5.18-arch-ge-5.18"),
+            pytest.param("5.18.6-arch1-1", (5, 1, ""), True, id="5.18-arch-ge-5.1"),
+            pytest.param("5.18.6-arch1-1", (5, 19, ""), False, id="5.18-arch-lt-5.19"),
+            pytest.param(
+                "5.13.0-1028-aws #31~20.04.1-Ubuntu",
+                (5, 14, ""),
+                False,
+                id="5.13-aws-lt-5.14",
+            ),
+            pytest.param(
+                "5.13.0-1028-aws #31~20.04.1-Ubuntu",
+                (5, 13, ""),
+                True,
+                id="5.13-aws-ge-5.13",
+            ),
+            pytest.param(
+                "5.13.0-1028-aws #31~20.04.1-Ubuntu",
+                (5, 13, "-aws"),
+                True,
+                id="5.13-aws-with-string",
+            ),
+            pytest.param(
+                "5.13.0-1028-aws #31~20.04.1-Ubuntu",
+                (5, 13, "not_in_version"),
+                False,
+                id="5.13-aws-wrong-string",
+            ),
+            pytest.param(
+                "5.13.0-1028-aws #31~20.04.1-Ubuntu",
+                (5, 12, ""),
+                True,
+                id="5.13-aws-ge-5.12",
+            ),
+            pytest.param("4.14.288", (5, 0, ""), False, id="4.14-lt-5.0"),
+            pytest.param("4.14.288", (4, 14, ""), True, id="4.14-ge-4.14"),
+            pytest.param(
+                "3.10.0-514.6.1.el7.x86_64 #1",
+                (3, 11, ""),
+                False,
+                id="3.10-el7-lt-3.11",
+            ),
+            pytest.param(
+                "3.10.0-514.6.1.el7.x86_64 #1",
+                (3, 10, ".el7."),
+                True,
+                id="3.10-el7-with-string",
+            ),
+            pytest.param(
+                "3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ""), True, id="3.10-el7-ge-3.10"
+            ),
+            pytest.param(
+                "3.10.0-514.6.1.el7.x86_64 #1", (3, 9, ""), True, id="3.10-el7-ge-3.9"
+            ),
+        ],
+    )
+    def test_080_kversion_check(self, kversion, min_version, expected_result) -> None:
         """Test check for the minimum kernel version"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
+        assert (
+            analyser._check_kversion_greater_equal(kversion, min_version)
+            == expected_result
+        ), f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"'
 
-        for kversion, min_version, expected_result in (
-            ("5.19-rc6", (5, 16, ""), True),
-            ("5.19-rc6", (5, 19, ""), True),
-            ("5.19-rc6", (5, 20, ""), False),
-            ("5.18.6-arch1-1", (5, 18, ""), True),
-            ("5.18.6-arch1-1", (5, 1, ""), True),
-            ("5.18.6-arch1-1", (5, 19, ""), False),
-            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 14, ""), False),
-            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, ""), True),
-            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, "-aws"), True),
-            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 13, "not_in_version"), False),
-            ("5.13.0-1028-aws #31~20.04.1-Ubuntu", (5, 12, ""), True),
-            ("4.14.288", (5, 0, ""), False),
-            ("4.14.288", (4, 14, ""), True),
-            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 11, ""), False),
-            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ".el7."), True),
-            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 10, ""), True),
-            ("3.10.0-514.6.1.el7.x86_64 #1", (3, 9, ""), True),
-        ):
-            assert (
-                analyser._check_kversion_greater_equal(kversion, min_version)
-                == expected_result
-            ), f'Failed to compare kernel version "{kversion}" with minimum version "{min_version}"'
-
-    def test_090_extract_zoneinfo(self) -> None:
+    @pytest.mark.parametrize(
+        "zone,order,node,expect_count",
+        [
+            pytest.param("Normal", 6, 0, 0, id="Normal-order6-node0"),
+            pytest.param("Normal", 6, 1, 2, id="Normal-order6-node1"),
+            pytest.param("Normal", 6, "free_chunks_total", 2, id="Normal-order6-total"),
+            pytest.param("Normal", 0, 0, 1231, id="Normal-order0-node0"),
+            pytest.param("Normal", 0, 1, 2245, id="Normal-order0-node1"),
+            pytest.param(
+                "Normal", 0, "free_chunks_total", 3476, id="Normal-order0-total"
+            ),
+            pytest.param("DMA", 5, 0, 1, id="DMA-order5-node0"),
+            pytest.param("DMA", 5, "free_chunks_total", 1, id="DMA-order5-total"),
+            pytest.param("DMA32", 4, 0, 157, id="DMA32-order4-node0"),
+            pytest.param("DMA32", 4, "free_chunks_total", 157, id="DMA32-order4-total"),
+            pytest.param(
+                "Normal", "total_free_kb_per_node", 0, 38260, id="Normal-total_kb-node0"
+            ),
+            pytest.param(
+                "Normal", "total_free_kb_per_node", 1, 50836, id="Normal-total_kb-node1"
+            ),
+        ],
+    )
+    def test_090_extract_zoneinfo(self, zone, order, node, expect_count) -> None:
         """Test extracting zone usage information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -850,30 +975,29 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ".el7.",
         ), "Wrong KernelConfig release"
         buddyinfo = analyser.oom_result.buddyinfo
-        for zone, order, node, except_count in [
-            ("Normal", 6, 0, 0),  # order 6 - page size 256kB
-            ("Normal", 6, 1, 2),  # order 6 - page size 256kB
-            ("Normal", 6, "free_chunks_total", 0 + 2),  # order 6 - page size 256kB
-            ("Normal", 0, 0, 1231),  # order 0 - page size 4kB
-            ("Normal", 0, 1, 2245),  # order 0 - page size 4kB
-            ("Normal", 0, "free_chunks_total", 1231 + 2245),  # order 0 - page size 4kB
-            ("DMA", 5, 0, 1),  # order 5 - page size 128kB
-            ("DMA", 5, "free_chunks_total", 1),  # order 5 - page size 128kB
-            ("DMA32", 4, 0, 157),  # order 4 - page size 64k
-            ("DMA32", 4, "free_chunks_total", 157),  # order 4 - page size 64k
-            ("Normal", "total_free_kb_per_node", 0, 38260),
-            ("Normal", "total_free_kb_per_node", 1, 50836),
-        ]:
-            assert zone in buddyinfo, f"Missing details for zone {zone} in buddy info"
-            assert (
-                order in buddyinfo[zone]
-            ), f'Missing details for order "{order}" in buddy info'
-            count = buddyinfo[zone][order][node]
-            assert (
-                count == except_count
-            ), f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {except_count})'
+        assert zone in buddyinfo, f"Missing details for zone {zone} in buddy info"
+        assert (
+            order in buddyinfo[zone]
+        ), f'Missing details for order "{order}" in buddy info'
+        count = buddyinfo[zone][order][node]
+        assert (
+            count == expect_count
+        ), f'Wrong chunk count for order {order} in zone "{zone}" for node "{node}" (got: {count}, expect {expect_count})'
 
-    def test_100_extract_zoneinfo(self) -> None:
+    @pytest.mark.parametrize(
+        "zone,node,level_name,expect_level",
+        [
+            pytest.param("Normal", 0, "free", 36692, id="Normal-node0-free"),
+            pytest.param("Normal", 0, "min", 36784, id="Normal-node0-min"),
+            pytest.param("Normal", 1, "low", 56804, id="Normal-node1-low"),
+            pytest.param("Normal", 1, "high", 68164, id="Normal-node1-high"),
+            pytest.param("DMA", 0, "free", 15872, id="DMA-node0-free"),
+            pytest.param("DMA", 0, "high", 60, id="DMA-node0-high"),
+            pytest.param("DMA32", 0, "free", 59728, id="DMA32-node0-free"),
+            pytest.param("DMA32", 0, "low", 9788, id="DMA32-node0-low"),
+        ],
+    )
+    def test_100_extract_zoneinfo(self, zone, node, level_name, expect_level) -> None:
         """Test extracting watermark information"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
@@ -886,38 +1010,55 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             ".el7.",
         ), "Wrong KernelConfig release"
         watermarks = analyser.oom_result.watermarks
-        for zone, node, level, except_level in [
-            ("Normal", 0, "free", 36692),
-            ("Normal", 0, "min", 36784),
-            ("Normal", 1, "low", 56804),
-            ("Normal", 1, "high", 68164),
-            ("DMA", 0, "free", 15872),
-            ("DMA", 0, "high", 60),
-            ("DMA32", 0, "free", 59728),
-            ("DMA32", 0, "low", 9788),
-        ]:
-            assert (
-                zone in watermarks
-            ), f"Missing details for zone {zone} in memory watermarks"
-            assert (
-                node in watermarks[zone]
-            ), f'Missing details for node "{node}" in memory watermarks'
-            assert (
-                level in watermarks[zone][node]
-            ), f'Missing details for level "{level}" in memory watermarks'
-            level = watermarks[zone][node][level]
-            assert (
-                level == except_level
-            ), f'Wrong watermark level for node {node} in zone "{zone}" (got: {level}, expect {except_level})'
-        node = analyser.oom_result.details["trigger_proc_numa_node"]
-        assert node == 0, f"Wrong node with memory shortage (got: {node}, expect: 0)"
+        assert (
+            zone in watermarks
+        ), f"Missing details for zone {zone} in memory watermarks"
+        assert (
+            node in watermarks[zone]
+        ), f'Missing details for node "{node}" in memory watermarks'
+        assert (
+            level_name in watermarks[zone][node]
+        ), f'Missing details for level "{level_name}" in memory watermarks'
+        level = watermarks[zone][node][level_name]
+        assert (
+            level == expect_level
+        ), f'Wrong watermark level for node {node} in zone "{zone}" (got: {level}, expect {expect_level})'
+        numa_node = analyser.oom_result.details["trigger_proc_numa_node"]
+        assert (
+            numa_node == 0
+        ), f"Wrong node with memory shortage (got: {numa_node}, expect: 0)"
+
+    def test_105_max_order(self):
+        """Check that the kernel configuration MAX_ORDER matches the expected value."""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        assert success, "OOM analysis failed"
+
         assert analyser.oom_result.kconfig.MAX_ORDER == 11, (
             f"Unexpected number of chunk sizes (got: {analyser.oom_result.kconfig.MAX_ORDER}, "
             f"expect: 11 (kernel 6.2.0))"
         )
 
-    def test_110_alloc_failure(self) -> None:
-        """Test analysis why the memory allocation could be failed"""
+    @pytest.mark.parametrize(
+        "zone,order,node,expected_result",
+        [
+            pytest.param("DMA", 0, 0, True, id="DMA-order0-node0"),
+            pytest.param("DMA", 6, 0, True, id="DMA-order6-node0"),
+            pytest.param("DMA32", 0, 0, True, id="DMA32-order0-node0"),
+            pytest.param("DMA32", 10, 0, False, id="DMA32-order10-node0"),
+            pytest.param("Normal", 0, 0, True, id="Normal-order0-node0"),
+            pytest.param("Normal", 0, 1, True, id="Normal-order0-node1"),
+            pytest.param("Normal", 6, 0, False, id="Normal-order6-node0"),
+            pytest.param("Normal", 6, 1, True, id="Normal-order6-node1"),
+            pytest.param("Normal", 7, 0, False, id="Normal-order7-node0"),
+            pytest.param("Normal", 7, 1, True, id="Normal-order7-node1"),
+            pytest.param("Normal", 9, 0, False, id="Normal-order9-node0"),
+            pytest.param("Normal", 9, 1, False, id="Normal-order9-node1"),
+        ],
+    )
+    def test_110a_check_free_chunks(self, zone, order, node, expected_result) -> None:
+        """Test checking for free memory chunks"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
         analyser = OOMAnalyser.OOMAnalyser(oom)
         success = analyser.analyse()
@@ -933,40 +1074,45 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         ), "Missing trigger_proc_order and/or trigger_proc_mem_zone"
         assert analyser.oom_result.watermarks, "Missing watermark information"
 
-        for zone, order, node, expected_result in [
-            ("DMA", 0, 0, True),
-            ("DMA", 6, 0, True),
-            ("DMA32", 0, 0, True),
-            ("DMA32", 10, 0, False),
-            ("Normal", 0, 0, True),
-            ("Normal", 0, 1, True),
-            ("Normal", 6, 0, False),
-            ("Normal", 6, 1, True),
-            ("Normal", 7, 0, False),
-            ("Normal", 7, 1, True),
-            ("Normal", 9, 0, False),
-            ("Normal", 9, 1, False),
-        ]:
-            result = analyser._check_free_chunks(order, zone, node)
-            assert result == expected_result, (
-                f"Wrong result of the check for free chunks with the same or higher order for Node {node}, "
-                f'Zone "{zone}" and order {order} (got: {result}, expected {expected_result})'
-            )
+        result = analyser._check_free_chunks(order, zone, node)
+        assert result == expected_result, (
+            f"Wrong result of the check for free chunks with the same or higher order for Node {node}, "
+            f'Zone "{zone}" and order {order} (got: {result}, expected {expected_result})'
+        )
 
-        # Search node with memory shortage: watermark "free" < "min"
-        for zone, expected_node in [
-            ("DMA", None),
-            ("DMA32", None),
-            ("Normal", 0),
-        ]:
-            # override zone with test data and trigger extracting node
-            analyser.oom_result.details["trigger_proc_mem_zone"] = zone
-            analyser._search_node_with_memory_shortage()
-            node = analyser.oom_result.details["trigger_proc_numa_node"]
-            assert node == expected_node, (
-                f'Wrong result if a node has memory shortage in zone "{zone}" (got: {node}, '
-                f"expected {expected_node})"
-            )
+    @pytest.mark.parametrize(
+        "zone,expected_node",
+        [
+            pytest.param("DMA", None, id="DMA"),
+            pytest.param("DMA32", None, id="DMA32"),
+            pytest.param("Normal", 0, id="Normal"),
+        ],
+    )
+    def test_110b_search_node_with_memory_shortage(self, zone, expected_node) -> None:
+        """Test searching for node with memory shortage"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        assert success, "OOM analysis failed"
+
+        assert (
+            analyser.oom_result.oom_type == OOMAnalyser.OOMType.KERNEL_AUTOMATIC
+        ), "OOM triggered manually"
+        assert analyser.oom_result.buddyinfo, "Missing buddyinfo"
+        assert (
+            "trigger_proc_order" in analyser.oom_result.details
+            and "trigger_proc_mem_zone" in analyser.oom_result.details
+        ), "Missing trigger_proc_order and/or trigger_proc_mem_zone"
+        assert analyser.oom_result.watermarks, "Missing watermark information"
+
+        # override zone with test data and trigger extracting node
+        analyser.oom_result.details["trigger_proc_mem_zone"] = zone
+        analyser._search_node_with_memory_shortage()
+        node = analyser.oom_result.details["trigger_proc_numa_node"]
+        assert node == expected_node, (
+            f'Wrong result if a node has memory shortage in zone "{zone}" (got: {node}, '
+            f"expected {expected_node})"
+        )
 
         assert (
             analyser.oom_result.mem_alloc_failure
@@ -1003,19 +1149,22 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             analyser.oom_result.details["_page_size_guessed"] == False
         ), "Page size is guessed and not determined"
 
-    def test_014_size_to_human_readable(self) -> None:
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            pytest.param(0, "0 Bytes", id="0-bytes"),
+            pytest.param(123, "123 Bytes", id="123-bytes"),
+            pytest.param(1234567, "1.2 MB", id="1.2-mb"),
+            pytest.param(9876543210, "9.2 GB", id="9.2-gb"),
+            pytest.param(12345678901234, "11.2 TB", id="11.2-tb"),
+        ],
+    )
+    def test_014_size_to_human_readable(self, value, expected) -> None:
         """Test convertion of size in bytes to a human-readable value"""
-        for value, expected in [
-            (0, "0 Bytes"),
-            (123, "123 Bytes"),
-            (1234567, "1.2 MB"),
-            (9876543210, "9.2 GB"),
-            (12345678901234, "11.2 TB"),
-        ]:
-            formatted = OOMAnalyser.OOMDisplay._size_to_human_readable(value)
-            assert (
-                formatted == expected
-            ), f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})"
+        formatted = OOMAnalyser.OOMDisplay._size_to_human_readable(value)
+        assert (
+            formatted == expected
+        ), f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})"
 
 
 @pytest.mark.browser
@@ -1088,7 +1237,8 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         self.click_analyse_button()
         self.check_all_results()
 
-    def test_030_removal_of_leading_but_useless_columns(self) -> None:
+    @pytest.mark.parametrize("prefix", LOG_PREFIXES, ids=LOG_PREFIX_IDS)
+    def test_030_removal_of_leading_but_useless_columns(self, prefix: str) -> None:
         """
         Test removal of leading but useless columns with an ArchLinux example
 
@@ -1102,27 +1252,19 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
         self.check_all_results()
         self.click_reset_button()
-        for prefix in [
-            "[11686.888109] ",
-            "Apr 01 14:13:32 mysrv: ",
-            "Apr 01 14:13:32 mysrv kernel: ",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
-            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
-            "kernel:",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-        ]:
-            lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
-            new_lines = []
-            for line in lines:
-                if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                    new_line = f'{" " * len(prefix)}{line}'
-                else:
-                    new_line = f"{prefix}{line}"
-                new_lines.append(new_line)
-            oom_text = "\n".join(new_lines)
-            self.analyse_oom(oom_text)
-            self.check_all_results()
-            self.click_reset_button()
+
+        lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
+        new_lines = []
+        for line in lines:
+            if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+                new_line = f'{" " * len(prefix)}{line}'
+            else:
+                new_line = f"{prefix}{line}"
+            new_lines.append(new_line)
+        oom_text = "\n".join(new_lines)
+        self.analyse_oom(oom_text)
+        self.check_all_results()
+        self.click_reset_button()
 
 
 @pytest.mark.browser
@@ -1188,7 +1330,8 @@ class TestBrowserRhel7(BaseInBrowserTests):
         self.click_analyse_button()
         self.check_all_results()
 
-    def test_030_removal_of_leading_but_useless_columns(self) -> None:
+    @pytest.mark.parametrize("prefix", LOG_PREFIXES, ids=LOG_PREFIX_IDS)
+    def test_030_removal_of_leading_but_useless_columns(self, prefix: str) -> None:
         """
         Test removal of leading but useless columns with RHEL7 example
 
@@ -1202,64 +1345,61 @@ class TestBrowserRhel7(BaseInBrowserTests):
         self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
         self.check_all_results()
         self.click_reset_button()
-        for prefix in [
-            "[11686.888109] ",
-            "Apr 01 14:13:32 mysrv: ",
-            "Apr 01 14:13:32 mysrv kernel: ",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel: ",
-            "Apr 01 14:13:32 mysrv kernel: [11686.888109] ",
-            "kernel:",
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-        ]:
-            lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            lines = [f"{prefix}{line}" for line in lines]
-            oom_text = "\n".join(lines)
-            self.analyse_oom(oom_text)
-            self.check_all_results()
-            self.click_reset_button()
 
-    def test_040_loading_journalctl_input(self) -> None:
+        lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+        lines = [f"{prefix}{line}" for line in lines]
+        oom_text = "\n".join(lines)
+        self.analyse_oom(oom_text)
+        self.check_all_results()
+        self.click_reset_button()
+
+    @pytest.mark.parametrize(
+        "prefix",
+        [
+            pytest.param(
+                "Apr 01 14:13:32 mysrv <kern.warning> kernel:", id="syslog-warning"
+            ),
+            pytest.param("[1234567.654321]", id="timestamp-only"),
+        ],
+    )
+    def test_040_loading_journalctl_input(self, prefix: str) -> None:
         """Test loading input from journalctl
 
         The second part of the "Mem-Info:" block as starting with the third
         line has not a prefix like the lines before and after it. It is
         indented only by a single space.
         """
-        for prefix in [
-            "Apr 01 14:13:32 mysrv <kern.warning> kernel:",
-            "[1234567.654321]",
-        ]:
-            # prepare example
-            example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-            res = []
+        # prepare example
+        example_lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
+        res = []
 
-            # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
-            for line in example_lines:
-                if "#012" in line:
-                    res.extend(line.split("#012"))
-                else:
-                    res.append(line)
-            example_lines = res
-            res = []
-
-            # add date/time prefix except for "Mem-Info:" block
-            for line in example_lines:
-                if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                    line = f"{prefix} {line}"
+        # unescape #012 - see OOMAnalyser.OOMEntity._rsyslog_unescape_lf()
+        for line in example_lines:
+            if "#012" in line:
+                res.extend(line.split("#012"))
+            else:
                 res.append(line)
-            example = "\n".join(res)
+        example_lines = res
+        res = []
 
-            self.check_meminfo_format_rhel7(
-                f'Unprocessed example with prefix "{prefix}"', example
-            )
-            oom = OOMAnalyser.OOMEntity(example)
-            self.check_meminfo_format_rhel7(
-                f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
-            )
+        # add date/time prefix except for "Mem-Info:" block
+        for line in example_lines:
+            if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+                line = f"{prefix} {line}"
+            res.append(line)
+        example = "\n".join(res)
 
-            self.analyse_oom(example)
-            self.check_all_results()
-            self.click_reset_button()
+        self.check_meminfo_format_rhel7(
+            f'Unprocessed example with prefix "{prefix}"', example
+        )
+        oom = OOMAnalyser.OOMEntity(example)
+        self.check_meminfo_format_rhel7(
+            f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
+        )
+
+        self.analyse_oom(example)
+        self.check_all_results()
+        self.click_reset_button()
 
     def test_050_trigger_proc_space(self) -> None:
         """Test trigger process name contains a space"""
