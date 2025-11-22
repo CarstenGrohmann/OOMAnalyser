@@ -4,7 +4,7 @@
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 
-.PHONY: help clean distclean venv venv-clean venv-freeze build websrv test
+.PHONY: help clean distclean venv venv-clean venv-freeze build websrv test test-serial test-parallel
 
 # Makefile defaults
 SHELL             = /bin/sh
@@ -118,12 +118,23 @@ websrv: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	$(PYTHON3_BIN) -m http.server 8080 --bind 127.0.0.1
 
 #+ Run Selenium based web tests
-test: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
+test: test-parallel
+
+#+ Run Selenium based web tests with parallel browser execution
+test-parallel: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
+	. $(VIRTUAL_ENV_DIR)/bin/activate
+	@echo "Running Python tests in parallel..."
+	pytest -m python_only -n auto $(TEST_FILE)
+	@echo "Running browser tests in parallel (2 workers)..."
+	xvfb-run --auto-display pytest -m browser -n 2 $(TEST_FILE)
+
+#+ Run Selenium based web tests sequentially (slower, for debugging)
+test-serial: $(VIRTUAL_ENV_DIR)/bin/activate ${JS_OUT_FILE}
 	. $(VIRTUAL_ENV_DIR)/bin/activate
 	@echo "Running Python tests in parallel..."
 	pytest -m python_only -n auto $(TEST_FILE)
 	@echo "Running browser tests sequentially..."
-	DISPLAY=:1 xvfb-run pytest -m browser $(TEST_FILE)
+	xvfb-run --auto-display pytest -m browser $(TEST_FILE)
 
 #+ Build release packages
 release: ${JS_OUT_FILE} ${RELEASE_TARGZ} ${RELEASE_ZIP}

@@ -42,7 +42,7 @@ tasks:
       ls -l OOMAnalyser.html OOMAnalyser.js
   - test: |
       cd OOMAnalyser
-      make test
+      make test-serial
 triggers:
   - action: email
     condition: failure
