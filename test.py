@@ -205,18 +205,16 @@ class BaseInBrowserTests(BaseTests):
     """Dictionary with category and text pattern to check the summary/explanation section"""
     # --- End: generic result check configuration ---
 
-    def check_all_results(self) -> None:
-        """
-        Generic result checker for OOM analysis results.
-        Skips tests if the corresponding check_results value is empty.
-        """
+    def _check_initial_validation(self) -> None:
+        """Validate no warnings/errors and summary section is displayed."""
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
         assert (
             h3_summary.is_displayed()
         ), "Analysis details incl. <h3>Summary</h3> should be displayed"
 
-        # Mapping of check_results keys to CSS class names and error messages
+    def _check_simple_fields(self) -> None:
+        """Validate simple equality checks for configured fields."""
         simple_checks = {
             "proc_name": ("trigger_proc_name", "Unexpected trigger process name"),
             "proc_pid": (
@@ -236,8 +234,6 @@ class BaseInBrowserTests(BaseTests):
             "swap_free_kb": ("system_swap_free_kb", "Unexpected swap free size"),
             "swap_total_kb": ("system_swap_total_kb", "Unexpected swap total size"),
         }
-
-        # Generic loop for simple equality checks
         for key, (css_class, error_msg) in simple_checks.items():
             expected_value = self.check_results.get(key, "")
             if expected_value:
@@ -247,6 +243,8 @@ class BaseInBrowserTests(BaseTests):
                     actual=actual_value, expected=expected_value
                 )
 
+    def _check_explanation_content(self) -> None:
+        """Validate explanation section content (expected, unexpected, patterns)."""
         continuous_explanation_text = self.to_continuous_text(
             self.driver.find_element(By.ID, "explanation").text
         )
@@ -258,7 +256,14 @@ class BaseInBrowserTests(BaseTests):
             assert (
                 unexpected not in continuous_explanation_text
             ), f'Unexpected statement "{unexpected}" in summary section: >{continuous_explanation_text}<'
+        for category in self.check_explanation_section:
+            pattern = self.check_explanation_section[category]
+            assert (
+                pattern in continuous_explanation_text
+            ), f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<'
 
+    def _check_result_table_content(self) -> None:
+        """Validate result table content (expected and unexpected text)."""
         result_table = self.driver.find_element(By.CLASS_NAME, "result__table")
         if self.check_results_result_table_expected:
             for expected in self.check_results_result_table_expected:
@@ -271,47 +276,71 @@ class BaseInBrowserTests(BaseTests):
                     unexpected not in result_table.text
                 ), f'Unexpected statement in result table: "{unexpected}"'
 
-        # check text pattern in summary section
-        for category in self.check_explanation_section:
-            pattern = self.check_explanation_section[category]
-            assert (
-                pattern in continuous_explanation_text
-            ), f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<'
-
+    def _check_memory_node_info(self) -> None:
+        """Validate memory node information section."""
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
         if self.check_results.get("mem_node_info_start"):
             expected_start = self.check_results["mem_node_info_start"]
-            assert (
-                mem_node_info.text[: len(expected_start)] == expected_start
-            ), "Unexpected memory chunks"
+            actual_start = mem_node_info.text[: len(expected_start)]
+            assert actual_start == expected_start, (
+                f"Unexpected memory chunks at start: "
+                f'expected "{expected_start}", got "{actual_start}"'
+            )
         if self.check_results.get("mem_node_info_end"):
             expected_end = self.check_results["mem_node_info_end"]
-            assert (
-                mem_node_info.text[-len(expected_end) :] == expected_end
-            ), "Unexpected memory information about hugepages"
+            actual_end = mem_node_info.text[-len(expected_end) :]
+            assert actual_end == expected_end, (
+                f"Unexpected memory information about hugepages at end: "
+                f'expected "{expected_end}", got "{actual_end}"'
+            )
 
+    def _check_memory_watermarks(self) -> None:
+        """Validate memory watermarks section."""
         mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
         if self.check_results.get("mem_watermarks_start"):
             expected_start = self.check_results["mem_watermarks_start"]
-            assert (
-                mem_watermarks.text[: len(expected_start)] == expected_start
-            ), "Unexpected memory watermarks"
+            actual_start = mem_watermarks.text[: len(expected_start)]
+            assert actual_start == expected_start, (
+                f"Unexpected memory watermarks at start: "
+                f'expected "{expected_start}", got "{actual_start}"'
+            )
         if self.check_results.get("mem_watermarks_end"):
             expected_end = self.check_results["mem_watermarks_end"]
-            assert (
-                mem_watermarks.text[-len(expected_end) :] == expected_end
-            ), "Unexpected lowmem_reserve values"
+            actual_end = mem_watermarks.text[-len(expected_end) :]
+            assert actual_end == expected_end, (
+                f"Unexpected lowmem_reserve values at end: "
+                f'expected "{expected_end}", got "{actual_end}"'
+            )
 
+    def _check_column_header(self) -> None:
+        """Validate process table column header."""
         if self.check_results.get("column_header"):
             header = self.driver.find_element(By.ID, "pstable_header")
-            assert (
-                self.check_results["column_header"] in header.text
-            ), f'Missing column header "{self.check_results["column_header"]}"'
+            expected_header = self.check_results["column_header"]
+            assert expected_header in header.text, (
+                f'Missing column header "{expected_header}" in header text: '
+                f'"{header.text}"'
+            )
 
+    def _check_swap_state(self) -> None:
+        """Validate swap state (active or inactive)."""
         if self.check_results.get("swap_active", "not set") == "check":
             self.check_swap_active()
         if self.check_results.get("swap_inactive", "not set") == "check":
             self.check_swap_inactive()
+
+    def check_all_results(self) -> None:
+        """
+        Generic result checker for OOM analysis results.
+        """
+        self._check_initial_validation()
+        self._check_simple_fields()
+        self._check_explanation_content()
+        self._check_result_table_content()
+        self._check_memory_node_info()
+        self._check_memory_watermarks()
+        self._check_column_header()
+        self._check_swap_state()
 
     @pytest.fixture(autouse=True)
     def setup_browser(self) -> Generator[None, None, None]:
