@@ -347,45 +347,80 @@ class BaseInBrowserTests(BaseTests):
         """Setup browser and HTTP server for tests"""
         warnings.simplefilter("ignore", ResourceWarning)
 
-        ThreadedTCPServer.allow_reuse_address = True
-        # Use port 0 for automatic port assignment to enable parallel test execution
-        http_srv = ThreadedTCPServer(("127.0.0.1", 0), MyRequestHandler)
-        server_thread = threading.Thread(target=http_srv.serve_forever, args=(0.1,))
-        server_thread.daemon = True
-        server_thread.start()
+        http_srv = self._create_http_server()
+        actual_port = self._start_http_server(http_srv)
 
-        # Get actual assigned port for parallel execution
-        actual_port = http_srv.server_address[1]
+        self._configure_webdriver_manager()
 
-        # silent Webdriver Manager
-        os.environ["WDM_LOG_LEVEL"] = "0"
-
-        # store driver locally
-        os.environ["WDM_LOCAL"] = "1"
-
-        # Configure Chrome for performance
-        chrome_options = Options()
-        chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-logging")
-        chrome_options.add_argument("--log-level=3")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--disable-background-timer-throttling")
-        chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-        chrome_options.add_argument("--disable-renderer-backgrounding")
-        chrome_options.page_load_strategy = "eager"
-
-        s = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=s, options=chrome_options)
-        self.driver.set_page_load_timeout(10)
+        # Setup browser
+        chrome_options = self._create_chrome_options()
+        self.driver = self._create_webdriver(chrome_options)
         self.driver.get(f"http://127.0.0.1:{actual_port}/OOMAnalyser.html")
 
         yield  # Test runs here
 
-        # Teardown
+        self._cleanup_browser(http_srv)
+
+    @staticmethod
+    def _create_chrome_options() -> Options:
+        """
+        Create optimized Chrome options for headless testing.
+
+        @return: Configured Chrome options
+        """
+        chrome_options = Options()
+
+        # Performance and stability options
+        performance_args = [
+            "--headless=new",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--disable-logging",
+            "--log-level=3",
+            "--window-size=1920,1080",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+        ]
+
+        for arg in performance_args:
+            chrome_options.add_argument(arg)
+
+        chrome_options.page_load_strategy = "eager"
+
+        return chrome_options
+
+    @staticmethod
+    def _create_http_server() -> ThreadedTCPServer:
+        """Create HTTP server with automatic port assignment."""
+        ThreadedTCPServer.allow_reuse_address = True
+        return ThreadedTCPServer(("127.0.0.1", 0), MyRequestHandler)
+
+    @staticmethod
+    def _start_http_server(http_srv: ThreadedTCPServer) -> int:
+        """Start HTTP server in background thread and return assigned port."""
+        server_thread = threading.Thread(target=http_srv.serve_forever, args=(0.1,))
+        server_thread.daemon = True
+        server_thread.start()
+        return http_srv.server_address[1]
+
+    @staticmethod
+    def _configure_webdriver_manager() -> None:
+        """Configure WebDriver Manager environment variables."""
+        os.environ["WDM_LOG_LEVEL"] = "0"
+        os.environ["WDM_LOCAL"] = "1"
+
+    def _create_webdriver(self, chrome_options: Options) -> webdriver.Chrome:
+        """Create and configure Chrome WebDriver."""
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.set_page_load_timeout(10)
+        return driver
+
+    def _cleanup_browser(self, http_srv: ThreadedTCPServer) -> None:
+        """Cleanup browser and HTTP server."""
         self.driver.close()
         http_srv.shutdown()
         http_srv.server_close()
@@ -519,6 +554,51 @@ class BaseInBrowserTests(BaseTests):
         assert (
             self.text_kernel_swap_space_are_in_use in continuous_text
         ), f'Missing statement "{self.text_kernel_swap_space_are_in_use}"'
+
+    def _test_prefix_removal(
+        self, example: str, prefix: str, handle_meminfo_special: bool = False
+    ) -> None:
+        """
+        Generic test for removal of leading but useless columns.
+
+        @param example: OOM example text
+        @param prefix: Prefix to add to each line
+        @param handle_meminfo_special: If True, handle Mem-Info block specially
+        """
+        # First pass: original example
+        self.analyse_oom(example)
+        self.check_all_results()
+        self.click_reset_button()
+
+        # Second pass: with prefix
+        lines = example.split("\n")
+        new_lines = []
+
+        for line in lines:
+            if (
+                handle_meminfo_special
+                and OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
+            ):
+                new_line = f'{" " * len(prefix)}{line}'
+            else:
+                new_line = f"{prefix}{line}"
+            new_lines.append(new_line)
+
+        oom_text = "\n".join(new_lines)
+        self.analyse_oom(oom_text)
+        self.check_all_results()
+        self.click_reset_button()
+
+    def _test_insert_and_analyse(self, example_name: str) -> None:
+        """
+        Generic test for inserting and analysing an example.
+
+        @param example_name: Name of example to select from dropdown
+        """
+        self.clear_notification_box()
+        self.insert_example(example_name)
+        self.click_analyse_button()
+        self.check_all_results()
 
 
 @pytest.mark.browser
@@ -1228,10 +1308,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing ArchLinux 6.1.1 example"""
-        self.clear_notification_box()
-        self.insert_example("ArchLinux")
-        self.click_analyse_button()
-        self.check_all_results()
+        self._test_insert_and_analyse("ArchLinux")
 
     @pytest.mark.parametrize("prefix", LOG_PREFIXES, ids=LOG_PREFIX_IDS)
     def test_030_removal_of_leading_but_useless_columns(self, prefix: str) -> None:
@@ -1245,22 +1322,11 @@ class TestBroswerArchLinux(BaseInBrowserTests):
 
         @see: TestRhel7.test_030_removal_of_leading_but_useless_columns()
         """
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example_archlinux_6_1_1)
-        self.check_all_results()
-        self.click_reset_button()
-
-        lines = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1.split("\n")
-        new_lines = []
-        for line in lines:
-            if OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
-                new_line = f'{" " * len(prefix)}{line}'
-            else:
-                new_line = f"{prefix}{line}"
-            new_lines.append(new_line)
-        oom_text = "\n".join(new_lines)
-        self.analyse_oom(oom_text)
-        self.check_all_results()
-        self.click_reset_button()
+        self._test_prefix_removal(
+            OOMAnalyser.OOMDisplay.example_archlinux_6_1_1,
+            prefix,
+            handle_meminfo_special=True,
+        )
 
 
 @pytest.mark.browser
@@ -1320,10 +1386,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing RHEL7 example"""
-        self.clear_notification_box()
-        self.insert_example("RHEL7")
-        self.click_analyse_button()
-        self.check_all_results()
+        self._test_insert_and_analyse("RHEL7")
 
     @pytest.mark.parametrize("prefix", LOG_PREFIXES, ids=LOG_PREFIX_IDS)
     def test_030_removal_of_leading_but_useless_columns(self, prefix: str) -> None:
@@ -1337,16 +1400,9 @@ class TestBrowserRhel7(BaseInBrowserTests):
 
         @see: TestArchLinux.test_030_removal_of_leading_but_useless_columns()
         """
-        self.analyse_oom(OOMAnalyser.OOMDisplay.example_rhel7)
-        self.check_all_results()
-        self.click_reset_button()
-
-        lines = OOMAnalyser.OOMDisplay.example_rhel7.split("\n")
-        lines = [f"{prefix}{line}" for line in lines]
-        oom_text = "\n".join(lines)
-        self.analyse_oom(oom_text)
-        self.check_all_results()
-        self.click_reset_button()
+        self._test_prefix_removal(
+            OOMAnalyser.OOMDisplay.example_rhel7, prefix, handle_meminfo_special=False
+        )
 
     @pytest.mark.parametrize(
         "prefix",
@@ -1501,10 +1557,7 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing Ubuntu 21.10 example"""
-        self.clear_notification_box()
-        self.insert_example("Ubuntu_2110")
-        self.click_analyse_button()
-        self.check_all_results()
+        self._test_insert_and_analyse("Ubuntu_2110")
 
 
 @pytest.mark.browser
@@ -1539,10 +1592,7 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing Proxmox cgroup OOM example"""
-        self.clear_notification_box()
-        self.insert_example("Proxmox_cgroup_oom")
-        self.click_analyse_button()
-        self.check_all_results()
+        self._test_insert_and_analyse("Proxmox_cgroup_oom")
 
 
 # Tests are now run using pytest
