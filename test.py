@@ -175,22 +175,24 @@ class BaseInBrowserTests(BaseTests):
     # --- Begin: generic result check configuration ---
     # For each test variant, set these in the child class. An empty value
     # disables the corresponding check.
-    check_results_gfp_mask: str = ""
-    """Expected text in the GFP mask field in results table"""
-    check_results_proc_name: str = ""
-    """Expected text in the process name field in results table"""
-    check_results_proc_pid: str = ""
-    """Expected text in the process pid field in results table"""
-    check_results_killed_proc_score: str = ""
-    """Expected text in the killed process OOM score field in results table"""
-    check_results_swap_cache_kb: str = ""
-    """Expected text in the swap cache field in results table"""
-    check_results_swap_used_kb: str = ""
-    """Expected text in the swap used field in results table"""
-    check_results_swap_free_kb: str = ""
-    """Expected text in the swap free field in results table"""
-    check_results_swap_total_kb: str = ""
-    """Expected text in the swap total field in results table"""
+    check_results: Dict[str, str] = {
+        "gfp_mask": "",  # Expected text in the GFP mask field
+        "proc_name": "",  # Expected text in the process name field
+        "proc_pid": "",  # Expected text in the process pid field
+        "killed_proc_score": "",  # Expected OOM score of killed process
+        "swap_cache_kb": "",  # Expected swap cache size
+        "swap_used_kb": "",  # Expected swap used size
+        "swap_free_kb": "",  # Expected swap free size
+        "swap_total_kb": "",  # Expected swap total size
+        "swap_active": "no check",  # Set to "check" to verify swap is active
+        "swap_inactive": "no check",  # Set to "check" to verify swap is inactive
+        "mem_node_info_start": "",  # Expected start text in memory node info
+        "mem_node_info_end": "",  # Expected end text in memory node info
+        "mem_watermarks_start": "",  # Expected start text in watermarks
+        "mem_watermarks_end": "",  # Expected end text in watermarks
+        "column_header": "",  # Expected column header in process table
+    }
+    """Dictionary of expected values for result validation. Empty string disables check."""
     check_explanation_expected_statements: List[str] = []
     """List of text patterns that must be found in the summary/explanation section"""
     check_explanation_unexpected_statements: List[str] = []
@@ -199,20 +201,6 @@ class BaseInBrowserTests(BaseTests):
     """List of text patterns that must be found in the result table"""
     check_results_result_table_unexpected: List[str] = []
     """List of text patterns that must not be found in the result table"""
-    check_results_mem_node_info_start: str = ""
-    """Expected start text in the memory node info section"""
-    check_results_mem_node_info_end: str = ""
-    """Expected end text in the memory node info section"""
-    check_results_mem_watermarks_start: str = ""
-    """Expected start text in the memory watermarks section"""
-    check_results_mem_watermarks_end: str = ""
-    """Expected end text in the memory watermarks section"""
-    check_results_column_header: str = ""
-    """Expected text in the column header of the process table"""
-    check_results_swap_active: bool = True
-    """Enabled to check that system swap space is used"""
-    check_results_swap_inactive: bool = True
-    """Enabled to check that system swap space is disabled"""
     check_explanation_section: Dict[str, str] = {}
     """Dictionary with category and text pattern to check the summary/explanation section"""
     # --- End: generic result check configuration ---
@@ -220,7 +208,7 @@ class BaseInBrowserTests(BaseTests):
     def check_all_results(self) -> None:
         """
         Generic result checker for OOM analysis results.
-        Skips tests if the corresponding class variable is None.
+        Skips tests if the corresponding check_results value is empty.
         """
         self.assert_on_warn_error()
         h3_summary = self.driver.find_element(By.XPATH, '//h3[text()="Summary"]')
@@ -228,55 +216,36 @@ class BaseInBrowserTests(BaseTests):
             h3_summary.is_displayed()
         ), "Analysis details incl. <h3>Summary</h3> should be displayed"
 
-        if self.check_results_proc_name:
-            trigger_proc_name = self.driver.find_element(
-                By.CLASS_NAME, "trigger_proc_name"
-            )
-            assert (
-                trigger_proc_name.text == self.check_results_proc_name
-            ), "Unexpected trigger process name"
-        if self.check_results_proc_pid:
-            trigger_proc_pid = self.driver.find_element(
-                By.CLASS_NAME, "trigger_proc_pid"
-            )
-            assert (
-                trigger_proc_pid.text == self.check_results_proc_pid
-            ), f"Unexpected trigger process pid: --{trigger_proc_pid.text}--"
-        if self.check_results_gfp_mask:
-            trigger_proc_gfp_mask = self.driver.find_element(
-                By.CLASS_NAME, "trigger_proc_gfp_mask"
-            )
-            mask = trigger_proc_gfp_mask.text
-            assert (
-                trigger_proc_gfp_mask.text == self.check_results_gfp_mask
-            ), f'Unexpected GFP Mask: got: "{mask}", expect: "{self.check_results_gfp_mask}"'
-        if self.check_results_killed_proc_score:
-            killed_proc_score = self.driver.find_element(
-                By.CLASS_NAME, "killed_proc_score"
-            )
-            assert (
-                killed_proc_score.text == self.check_results_killed_proc_score
-            ), "Unexpected OOM score of killed process"
-        if self.check_results_swap_cache_kb:
-            swap_cache_kb = self.driver.find_element(
-                By.CLASS_NAME, "system_swap_cache_kb"
-            )
-            assert swap_cache_kb.text == self.check_results_swap_cache_kb
-        if self.check_results_swap_used_kb:
-            swap_used_kb = self.driver.find_element(
-                By.CLASS_NAME, "system_swap_used_kb"
-            )
-            assert swap_used_kb.text == self.check_results_swap_used_kb
-        if self.check_results_swap_free_kb:
-            swap_free_kb = self.driver.find_element(
-                By.CLASS_NAME, "system_swap_free_kb"
-            )
-            assert swap_free_kb.text == self.check_results_swap_free_kb
-        if self.check_results_swap_total_kb:
-            swap_total_kb = self.driver.find_element(
-                By.CLASS_NAME, "system_swap_total_kb"
-            )
-            assert swap_total_kb.text == self.check_results_swap_total_kb
+        # Mapping of check_results keys to CSS class names and error messages
+        simple_checks = {
+            "proc_name": ("trigger_proc_name", "Unexpected trigger process name"),
+            "proc_pid": (
+                "trigger_proc_pid",
+                "Unexpected trigger process pid: --{actual}--",
+            ),
+            "gfp_mask": (
+                "trigger_proc_gfp_mask",
+                'Unexpected GFP Mask: got: "{actual}", expect: "{expected}"',
+            ),
+            "killed_proc_score": (
+                "killed_proc_score",
+                "Unexpected OOM score of killed process",
+            ),
+            "swap_cache_kb": ("system_swap_cache_kb", "Unexpected swap cache size"),
+            "swap_used_kb": ("system_swap_used_kb", "Unexpected swap used size"),
+            "swap_free_kb": ("system_swap_free_kb", "Unexpected swap free size"),
+            "swap_total_kb": ("system_swap_total_kb", "Unexpected swap total size"),
+        }
+
+        # Generic loop for simple equality checks
+        for key, (css_class, error_msg) in simple_checks.items():
+            expected_value = self.check_results.get(key, "")
+            if expected_value:
+                element = self.driver.find_element(By.CLASS_NAME, css_class)
+                actual_value = element.text
+                assert actual_value == expected_value, error_msg.format(
+                    actual=actual_value, expected=expected_value
+                )
 
         continuous_explanation_text = self.to_continuous_text(
             self.driver.find_element(By.ID, "explanation").text
@@ -310,38 +279,38 @@ class BaseInBrowserTests(BaseTests):
             ), f'{category}: Pattern "{pattern}" not found in summary section: >{continuous_explanation_text}<'
 
         mem_node_info = self.driver.find_element(By.CLASS_NAME, "mem_node_info")
-        if self.check_results_mem_node_info_start:
+        if self.check_results.get("mem_node_info_start"):
+            expected_start = self.check_results["mem_node_info_start"]
             assert (
-                mem_node_info.text[: len(self.check_results_mem_node_info_start)]
-                == self.check_results_mem_node_info_start
+                mem_node_info.text[: len(expected_start)] == expected_start
             ), "Unexpected memory chunks"
-        if self.check_results_mem_node_info_end:
+        if self.check_results.get("mem_node_info_end"):
+            expected_end = self.check_results["mem_node_info_end"]
             assert (
-                mem_node_info.text[-len(self.check_results_mem_node_info_end) :]
-                == self.check_results_mem_node_info_end
+                mem_node_info.text[-len(expected_end) :] == expected_end
             ), "Unexpected memory information about hugepages"
 
         mem_watermarks = self.driver.find_element(By.CLASS_NAME, "mem_watermarks")
-        if self.check_results_mem_watermarks_start:
+        if self.check_results.get("mem_watermarks_start"):
+            expected_start = self.check_results["mem_watermarks_start"]
             assert (
-                mem_watermarks.text[: len(self.check_results_mem_watermarks_start)]
-                == self.check_results_mem_watermarks_start
+                mem_watermarks.text[: len(expected_start)] == expected_start
             ), "Unexpected memory watermarks"
-        if self.check_results_mem_watermarks_end:
+        if self.check_results.get("mem_watermarks_end"):
+            expected_end = self.check_results["mem_watermarks_end"]
             assert (
-                mem_watermarks.text[-len(self.check_results_mem_watermarks_end) :]
-                == self.check_results_mem_watermarks_end
+                mem_watermarks.text[-len(expected_end) :] == expected_end
             ), "Unexpected lowmem_reserve values"
 
-        if self.check_results_column_header:
+        if self.check_results.get("column_header"):
             header = self.driver.find_element(By.ID, "pstable_header")
             assert (
-                self.check_results_column_header in header.text
-            ), f'Missing column header "{self.check_results_column_header}"'
+                self.check_results["column_header"] in header.text
+            ), f'Missing column header "{self.check_results["column_header"]}"'
 
-        if self.check_results_swap_active:
+        if self.check_results.get("swap_active", "not set") == "check":
             self.check_swap_active()
-        if self.check_results_swap_inactive:
+        if self.check_results.get("swap_inactive", "not set") == "check":
             self.check_swap_inactive()
 
     @pytest.fixture(autouse=True)
@@ -1189,14 +1158,21 @@ class TestBroswerArchLinux(BaseInBrowserTests):
     #  __GFP_COMP                                 0x40000
     #  __GFP_ZERO                                   0x100
     #                                       sum: 0x140dca
-    check_results_gfp_mask = "0x140dca (GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO)"
-    check_results_proc_name = "doxygen"
-    check_results_proc_pid = "473206"
-    check_results_killed_proc_score = ""
-    check_results_swap_cache_kb = "99452 kBytes"
-    check_results_swap_used_kb = "25066284 kBytes"
-    check_results_swap_free_kb = "84 kBytes"
-    check_results_swap_total_kb = "25165820 kBytes"
+    check_results = {
+        "gfp_mask": "0x140dca (GFP_HIGHUSER_MOVABLE|__GFP_COMP|__GFP_ZERO)",
+        "proc_name": "doxygen",
+        "proc_pid": "473206",
+        "swap_cache_kb": "99452 kBytes",
+        "swap_used_kb": "25066284 kBytes",
+        "swap_free_kb": "84 kBytes",
+        "swap_total_kb": "25165820 kBytes",
+        "swap_active": "check",
+        "mem_node_info_start": "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB",
+        "mem_node_info_end": "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+        "mem_watermarks_start": "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB",
+        "mem_watermarks_end": "lowmem_reserve[]: 0 0 0 0 0",
+        "column_header": "Page Table Bytes",
+    }
     check_explanation_expected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
@@ -1213,15 +1189,6 @@ class TestBroswerArchLinux(BaseInBrowserTests):
     ]
     check_results_result_table_expected = [BaseTests.test_kernel_swap_swap_total]
     check_results_result_table_unexpected = [BaseTests.test_kernel_swap_no_space]
-    check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 0*64kB"
-    check_results_mem_node_info_end = "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
-    check_results_mem_watermarks_start = (
-        "Node 0 DMA free:13312kB boost:0kB min:64kB low:80kB"
-    )
-    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
-    check_results_column_header = "Page Table Bytes"
-    check_results_swap_active = True
-    check_results_swap_inactive = False
 
     check_explanation_section = {
         "Physical and swap memory": "system has 16461600 kBytes physical memory and 25165820 kBytes system swap space.",
@@ -1282,14 +1249,22 @@ class TestBrowserRhel7(BaseInBrowserTests):
     #    __GFP_MOVABLE           0x08
     #  __GFP_COLD               0x100
     #                    sum: 0x201da
-    check_results_gfp_mask = "0x201da (GFP_HIGHUSER_MOVABLE | __GFP_COLD)"
-    check_results_proc_name = "sed"
-    check_results_proc_pid = "29481"
-    check_results_killed_proc_score = "651"
-    check_results_swap_cache_kb = "45368 kBytes"
-    check_results_swap_used_kb = "8343236 kBytes"
-    check_results_swap_free_kb = "0 kBytes"
-    check_results_swap_total_kb = "8388604 kBytes"
+    check_results = {
+        "gfp_mask": "0x201da (GFP_HIGHUSER_MOVABLE | __GFP_COLD)",
+        "proc_name": "sed",
+        "proc_pid": "29481",
+        "killed_proc_score": "651",
+        "swap_cache_kb": "45368 kBytes",
+        "swap_used_kb": "8343236 kBytes",
+        "swap_free_kb": "0 kBytes",
+        "swap_total_kb": "8388604 kBytes",
+        "swap_active": "check",
+        "mem_node_info_start": "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB",
+        "mem_node_info_end": "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+        "mem_watermarks_start": "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB",
+        "mem_watermarks_end": "lowmem_reserve[]: 0 0 0 0",
+        "column_header": "Page Table Entries",
+    }
     check_explanation_expected_statements = [
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
@@ -1306,15 +1281,6 @@ class TestBrowserRhel7(BaseInBrowserTests):
     ]
     check_results_result_table_expected = [BaseTests.test_kernel_swap_swap_total]
     check_results_result_table_unexpected = [BaseTests.test_kernel_swap_no_space]
-    check_results_mem_node_info_start = "Node 0 DMA: 0*4kB 0*8kB 0*16kB 0*32kB 2*64kB"
-    check_results_mem_node_info_end = "Node 1 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
-    check_results_mem_watermarks_start = (
-        "Node 0 DMA free:15872kB min:40kB low:48kB high:60kB"
-    )
-    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0"
-    check_results_column_header = "Page Table Entries"
-    check_results_swap_active = True
-    check_results_swap_inactive = False
 
     check_explanation_section = {
         "Physical and swap memory": "system has 33519336 kBytes physical memory and 8388604 kBytes system swap space.",
@@ -1474,7 +1440,15 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
     #    __GFP_IO                    0x40
     #    __GFP_FS                    0x80
     #                  sum:          0xCC0
-    check_results_gfp_mask = "0xcc0 (GFP_KERNEL)"
+    check_results = {
+        "gfp_mask": "0xcc0 (GFP_KERNEL)",
+        "swap_inactive": "check",
+        "mem_node_info_start": "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB",
+        "mem_node_info_end": "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB",
+        "mem_watermarks_start": "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB",
+        "mem_watermarks_end": "lowmem_reserve[]: 0 0 0 0 0",
+        "column_header": "Page Table Bytes",
+    }
     check_explanation_expected_statements = [
         BaseTests.text_oom_triggered_manually,
         BaseTests.text_kernel_swap_space_not_in_use,
@@ -1490,17 +1464,6 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
     ]
     check_results_result_table_expected = [BaseTests.test_kernel_swap_no_space]
     check_results_result_table_unexpected = [BaseTests.test_kernel_swap_swap_total]
-    check_results_mem_node_info_start = (
-        "Node 0 DMA: 1*4kB (U) 1*8kB (U) 1*16kB (U) 1*32kB"
-    )
-    check_results_mem_node_info_end = "Node 0 hugepages_total=0 hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB"
-    check_results_mem_watermarks_start = (
-        "Node 0 DMA free:15036kB min:352kB low:440kB high:528kB"
-    )
-    check_results_mem_watermarks_end = "lowmem_reserve[]: 0 0 0 0 0"
-    check_results_column_header = "Page Table Bytes"
-    check_results_swap_active = False
-    check_results_swap_inactive = True
 
     check_explanation_section = {
         "Physical and swap memory": "system has 2096632 kBytes physical memory",
@@ -1539,9 +1502,6 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
         text_oom_triggered_automatically,
         BaseTests.text_cgroup_swap_deactivated,
     ]
-
-    check_results_swap_active = False
-    check_results_swap_inactive = False
 
     check_explanation_section = {
         "Terminated process": 'The process "php-fpm" (PID 3902942) has been terminated.',
