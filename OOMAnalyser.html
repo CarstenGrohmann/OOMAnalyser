@@ -400,23 +400,37 @@ function goBack() {
 // Add listener after the document has been loaded completely
 window.addEventListener('DOMContentLoaded', function() {
     let dropArea = document.getElementById('input');
-    dropArea.addEventListener('drop', file_dragged, false);
+    if (dropArea) {
+        dropArea.addEventListener('drop', file_dragged, false);
+        dropArea.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
+    }
 })
 
 // Event handler triggered if a file has been dragged
 function file_dragged(event) {
-    let file = event.dataTransfer.files[0]
-    event.preventDefault()
-    read_and_display_file(file)
+    event.preventDefault();
+    if (!event.dataTransfer || !event.dataTransfer.files || event.dataTransfer.files.length === 0) {
+        return false;
+    }
+    let file = event.dataTransfer.files[0];
+    read_and_display_file(file);
     return true;
 }
 
 // Read and display local file
 function read_and_display_file(file) {
+    if (!file) {
+        return;
+    }
     let reader = new FileReader();
     reader.onload = function(e) {
-        let textarea_oom = document.getElementById('textarea_oom')
-        textarea_oom.value = reader.result;
+        let textarea_oom = document.getElementById('textarea_oom');
+        if (textarea_oom) {
+            textarea_oom.value = reader.result;
+        }
+    }
+    reader.onerror = function(e) {
+        console.error('Error reading file:', e);
     }
     reader.readAsText(file);
 }
