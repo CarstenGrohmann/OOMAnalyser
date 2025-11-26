@@ -428,7 +428,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         text += `Details: ${errorObj.__args__} <br>`
     }
     if ('stack' in errorObj && errorObj.stack !== undefined) {
-        text += `Stack trace:</br>${errorObj.stack.replaceAll('\n', '<br>')}`
+        text += `Stack trace:</br>${errorObj.stack.replace(/\n/g, '<br>')}`
     }
 
     let notify_box = document.getElementById('notify_box')
