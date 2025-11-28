@@ -509,11 +509,10 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     without an Internet connection.
 </p>
 <p>
-    This project is written in <a href="https://www.python.org">Python</a> and uses
-    <a href="https://www.transcrypt.org/">Transcrypt</a> to translate Python code into JavaScript.
+    This project is written in <a href="https://www.python.org" target="_blank" rel="noopener noreferrer">Python</a> and uses
+    <a href="https://www.transcrypt.org/" target="_blank" rel="noopener noreferrer">Transcrypt</a> to translate Python code into JavaScript.
 </p>
 
-<p>
 <div class="terminal notify_box js-text--default-hide js-text--display-none" id="notify_box"></div>
 
 <div class="js-text--default-show" id="input">
@@ -875,7 +874,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="killed_proc_file_rss_kb"></span></td>
                 <td>
                     Resident file mapping pages <br> Files which have been mapped into RAM (with
-                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2).</a>)
+                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html" target="_blank" rel="noopener noreferrer">mmap(2).</a>)
                 </td>
             </tr>
             <tr class="js-text--default-hide">
@@ -1037,8 +1036,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Unevictable Pages <br> (unevictable)</td>
                 <td class="text--align-right"><span class="unevictable_pages"></span></td>
                 <td>Unevictable memory. It can't be swapped out because the pages are owned by ramfs or protected by
-                    <a href="https://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank">mlock(3)</a> /
-                    <a href="https://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank">shmctl(SHM_LOCK)</a>.
+                    <a href="https://man7.org/linux/man-pages/man3/mlock.5.html" target="_blank" rel="noopener noreferrer">mlock(3)</a> /
+                    <a href="https://man7.org/linux/man-pages/man2/shmctl.2.html" target="_blank" rel="noopener noreferrer">shmctl(SHM_LOCK)</a>.
                     Unevictable pages are managed by the kernels LRU framework.
                 </td>
             </tr>
@@ -1070,7 +1069,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                     <br>
                     Additional details are listed in
-                    <a href="https://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank">slabinfo(5)</a> also.
+                    <a href="https://man7.org/linux/man-pages/man5/slabinfo.5.html" target="_blank" rel="noopener noreferrer">slabinfo(5)</a> also.
                 </td>
             </tr>
             <tr class="js-text--default-hide">
@@ -1086,7 +1085,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="mapped_pages"></span></td>
                 <td>
                     Files which have been mapped into memory (with
-                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>), such as libraries.
+                    <a href="https://man7.org/linux/man-pages/man2/mmap.2.html" target="_blank" rel="noopener noreferrer">mmap(2)</a>), such as libraries.
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
                 </td>
             </tr>
@@ -1095,7 +1094,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td class="text--align-right"><span class="shmem_pages"></span></td>
                 <td>
                     Amount of memory consumed in
-                    <a href="https://man7.org/linux/man-pages/man5/tmpfs.5.html">tmpfs(5)</a>
+                    <a href="https://man7.org/linux/man-pages/man5/tmpfs.5.html" target="_blank" rel="noopener noreferrer">tmpfs(5)</a>
                     filesystems, System V and POSIX shared memory, as well as
                     shared anonymous mappings (<code>MAP_SHARED|MAP_ANONYMOUS</code>).
                     <a class="a__footnote" href="#footnote-proc_meminfo5">[1]</a>
@@ -1264,12 +1263,12 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Shared Memory <br> (shmem)</td>
                 <td class="text--align-right"><span class="cgroup_memory_shmem_bytes"></span></td>
                 <td>Amount of cached filesystem data that is swap-backed,
-                    such as tmpfs, shm segments, shared anonymous <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>)s.</td>
+                    such as tmpfs, shm segments, shared anonymous <a href="https://man7.org/linux/man-pages/man2/mmap.2.html" target="_blank" rel="noopener noreferrer">mmap(2)</a>)s.</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Memory directly mapped to files <br/> (file_mapped)</td>
                 <td class="text--align-right"><span class="cgroup_memory_file_mapped_bytes"></span></td>
-                <td>Amount of cached filesystem data mapped with <a href="https://man7.org/linux/man-pages/man2/mmap.2.html">mmap(2)</a>).</td>
+                <td>Amount of cached filesystem data mapped with <a href="https://man7.org/linux/man-pages/man2/mmap.2.html" target="_blank" rel="noopener noreferrer">mmap(2)</a>).</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Dirty file pages <br/> (file_dirty)</td>
@@ -1325,7 +1324,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Unevictable memory <br/> (unevictable)</td>
                 <td class="text--align-right"><span class="cgroup_memory_unevictable_bytes"></span></td>
                 <td>Memory locked or otherwise not reclaimable (e.g.,
-                    <a href="https://man7.org/linux/man-pages/man2/mlock.2.html">mlock(2).</a>).
+                    <a href="https://man7.org/linux/man-pages/man2/mlock.2.html" target="_blank" rel="noopener noreferrer">mlock(2).</a>).
                 </td>
             </tr>
             <tr class="js-text--default-hide">
@@ -1450,7 +1449,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                 <td>Lazy free pages <br/> (pglazyfree)</td>
                 <td class="text--align-right"><span class="cgroup_memory_pglazyfree_bytes"></span></td>
                 <td>Amount of pages postponed to be freed under memory pressure (e.g., by
-                    <a href="https://man7.org/linux/man-pages/man2/madvise.2.html"><code>MADV_FREE</code></a>).</td>
+                    <a href="https://man7.org/linux/man-pages/man2/madvise.2.html" target="_blank" rel="noopener noreferrer"><code>MADV_FREE</code></a>).</td>
             </tr>
             <tr class="js-text--default-hide">
                 <td>Lazy freed pages <br/> (pglazyfreed)</td>
@@ -1641,7 +1640,8 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h2 id="h2-footnotes">Footnotes</h2>
     <ol>
-        <li id="footnote-proc_meminfo5"><cite><a href="https://man7.org/linux/man-pages/man5/proc_meminfo.5.html" target="_blank">
+        <li id="footnote-proc_meminfo5"><cite>
+            <a href="https://man7.org/linux/man-pages/man5/proc_meminfo.5.html" target="_blank" rel="noopener noreferrer">
             proc_meminfo(5) - /proc/meminfo - memory usage</a></cite> (<a href="#" onclick="goBack()">Go Back</a>)
         </li>
     </ol>
@@ -1650,58 +1650,58 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 <h2 id="infos">Further Information</h2>
 <ol>
     <li>
-        <a href="https://carstengrohmann.de/oomanalyser.html">Project Page</a>
+        <a href="https://carstengrohmann.de/oomanalyser.html" target="_blank" rel="noopener noreferrer">Project Page</a>
     </li>
     <li>
-        <a href="https://git.sr.ht/~carstengrohmann/OOMAnalyser">Source Code</a>
-        (mirrored on <a href="https://github.com/CarstenGrohmann/OOMAnalyser">GitHub</a>)
+        <a href="https://git.sr.ht/~carstengrohmann/OOMAnalyser" target="_blank" rel="noopener noreferrer">Source Code</a>
+        (mirrored on <a href="https://github.com/CarstenGrohmann/OOMAnalyser" target="_blank" rel="noopener noreferrer">GitHub</a>)
     </li>
     <li>
-        <a href="https://www.transcrypt.org/">Transcrypt</a>
+        <a href="https://www.transcrypt.org/" target="_blank" rel="noopener noreferrer">Transcrypt</a>
     </li>
     <li>
-        <a href="https://man7.org/">Linux man pages online</a>
+        <a href="https://man7.org/" target="_blank" rel="noopener noreferrer">Linux man pages online</a>
     </li>
     <li>How to read and decode OOM messages
         <ol>
             <li>
-                <a href="https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures">
+                <a href="https://utcc.utoronto.ca/~cks/space/blog/linux/DecodingPageAllocFailures" target="_blank" rel="noopener noreferrer">
                     Decoding the Linux kernel's page allocation failure messages
                 </a>
             </li>
             <li>
-                <a href="http://elearningmedium.com/linux-kernel-oom-log-analysis/">Linux Kernel OOM Log Analysis</a>
+                <a href="http://elearningmedium.com/linux-kernel-oom-log-analysis/" target="_blank" rel="noopener noreferrer">Linux Kernel OOM Log Analysis</a>
             </li>
             <li>
-                <a href="https://community.wandisco.com/s/article/Guide-to-Out-of-Memory-OOM-events-and-decoding-their-logging">
+                <a href="https://community.wandisco.com/s/article/Guide-to-Out-of-Memory-OOM-events-and-decoding-their-logging" target="_blank" rel="noopener noreferrer">
                     Out of Memory events and decoding their logging
                 </a>
             </li>
         </ol>
     </li>
-    <li><a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git">Kernel Source code</a>
+    <li><a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git" target="_blank" rel="noopener noreferrer">Kernel Source code</a>
         starting points:
         <ol>
             <li>
-                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c">
+                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/oom_kill.c" target="_blank" rel="noopener noreferrer">
                     <code>mm/omm_kill.c</code></a>
-                at <a href="https://kernel.org/">kernel.org</a> or more comfortable
-                <a href="https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c">
+                at <a href="https://kernel.org/" target="_blank" rel="noopener noreferrer">kernel.org</a> or more comfortable
+                <a href="https://elixir.bootlin.com/linux/latest/source/mm/oom_kill.c" target="_blank" rel="noopener noreferrer">
                     <code>mm/omm_kill.c</code></a>
-                at <a href="https://elixir.bootlin.com/">elixir.bootlin.com</a>
+                at <a href="https://elixir.bootlin.com/" target="_blank" rel="noopener noreferrer">elixir.bootlin.com</a>
             </li>
             <li>
-                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/page_alloc.c">
+                <a href="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/page_alloc.c" target="_blank" rel="noopener noreferrer">
                     <code>mm/page_alloc.c:zone_watermark_ok()</code></a>
-                at <a href="https://kernel.org/">kernel.org</a> or more comfortable
-                <a href="https://elixir.bootlin.com/linux/latest/source/mm/page_alloc.c#L4074">
+                at <a href="https://kernel.org/" target="_blank" rel="noopener noreferrer">kernel.org</a> or more comfortable
+                <a href="https://elixir.bootlin.com/linux/latest/source/mm/page_alloc.c#L4074" target="_blank" rel="noopener noreferrer">
                     <code>mm/page_alloc.c:zone_watermark_ok()</code></a>
-                at <a href="https://elixir.bootlin.com/">elixir.bootlin.com</a>
+                at <a href="https://elixir.bootlin.com/" target="_blank" rel="noopener noreferrer">elixir.bootlin.com</a>
             </li>
         </ol>
     </li>
     <li>
-        The <a href="https://docs.kernel.org/admin-guide/sysctl/vm.html">&quot;Documentation for
+        The <a href="https://docs.kernel.org/admin-guide/sysctl/vm.html" target="_blank" rel="noopener noreferrer">&quot;Documentation for
             <code>/proc/sys/vm/</code>&quot;</a> contains explanations to some of the memory compaction settings.
     </li>
 </ol>
@@ -1726,7 +1726,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.7.0...master"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.7.0...master" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 
@@ -1749,7 +1749,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.6.0...v0.7.0"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.6.0...v0.7.0" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 
@@ -1774,7 +1774,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.5.0...v0.6.0"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.5.0...v0.6.0" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 
@@ -1798,7 +1798,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.4.0...v0.5.0"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.4.0...v0.5.0" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 
@@ -1822,7 +1822,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.3.0...v0.4.0"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.3.0...v0.4.0" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 
@@ -1845,7 +1845,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 -->
     <h4>Note</h4>
     See the
-    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.2.0...v0.3.0"
+    <a href="https://github.com/CarstenGrohmann/OOMAnalyser/compare/v0.2.0...v0.3.0" target="_blank" rel="noopener noreferrer"
        title="commit history">commit history</a>
     of the repository for a full list of changes.
 </div>
@@ -1876,7 +1876,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     OOMAnalyser <span id="version"></span> |
     Copyright (C) 2017-2025 Carsten Grohmann |
     <a href="javascript:void(0);" onclick="OOMAnalyser.toggle('license')" title="Show / hide license text">License: MIT</a> |
-    <a href="https://sr.ht/~carstengrohmann/OOMAnalyser/" title="Source code on Sourcehut">Source Code on Sourcehut</a>
+    <a href="https://sr.ht/~carstengrohmann/OOMAnalyser/" target="_blank" rel="noopener noreferrer" title="Source code on Sourcehut">Source Code on Sourcehut</a>
 </div>
 
 <div class="license__text js-text--display-none" id="license">
