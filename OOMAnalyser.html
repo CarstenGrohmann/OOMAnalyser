@@ -439,19 +439,45 @@ function read_and_display_file(file) {
 
 // Report uncaught errors to the user
 window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
-    let text = `INTERNAL ERROR:<br>${msg} at ${url}:${lineNo}:${columnNo}<br> `
-    if ('__args__' in errorObj && errorObj.__args__ !== undefined) {
-        text += `Details: ${errorObj.__args__} <br>`
-    }
-    if ('stack' in errorObj && errorObj.stack !== undefined) {
-        text += `Stack trace:</br>${errorObj.stack.replace(/\n/g, '<br>')}`
+    let notify_box = document.getElementById('notify_box')
+    if (!notify_box) {
+        console.error('Error notification box not found in DOM')
+        return true
     }
 
-    let notify_box = document.getElementById('notify_box')
     notify_box.classList.remove('js-text--display-none')
     let notification = document.createElement('div')
     notification.classList.add('js-notify_box__msg--error')
-    notification.innerHTML = text
+
+    // Create structured error display safely using textContent to prevent XSS
+    let errorTitle = document.createElement('strong')
+    errorTitle.textContent = 'INTERNAL ERROR:'
+    notification.appendChild(errorTitle)
+    notification.appendChild(document.createElement('br'))
+
+    let errorMsg = document.createTextNode(`${msg} at ${url}:${lineNo}:${columnNo}`)
+    notification.appendChild(errorMsg)
+    notification.appendChild(document.createElement('br'))
+
+    if (errorObj && '__args__' in errorObj && errorObj.__args__ !== undefined) {
+        let details = document.createTextNode(`Details: ${errorObj.__args__}`)
+        notification.appendChild(details)
+        notification.appendChild(document.createElement('br'))
+    }
+
+    if (errorObj && 'stack' in errorObj && errorObj.stack !== undefined) {
+        let stackLabel = document.createTextNode('Stack trace:')
+        notification.appendChild(stackLabel)
+        notification.appendChild(document.createElement('br'))
+
+        // Split stack by newlines and create text nodes
+        let stackLines = errorObj.stack.split('\n')
+        stackLines.forEach(line => {
+            notification.appendChild(document.createTextNode(line))
+            notification.appendChild(document.createElement('br'))
+        })
+    }
+
     notify_box.appendChild(notification)
 
     // true - don't propagate the event to the default handler
