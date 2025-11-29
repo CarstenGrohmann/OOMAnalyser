@@ -425,6 +425,20 @@ function read_and_display_file(file) {
     if (!file) {
         return;
     }
+
+    // Feature detection for FileReader API
+    if (!window.FileReader) {
+        alert('Error: Your browser does not support the FileReader API. Please use a modern browser.');
+        return;
+    }
+
+    // File size validation (limit to 50MB to prevent browser hang)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+        alert('Error: File is too large. Maximum supported file size is 50MB.\n\nFile size: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+        return;
+    }
+
     let reader = new FileReader();
     reader.onload = function(e) {
         let textarea_oom = document.getElementById('textarea_oom');
@@ -434,6 +448,7 @@ function read_and_display_file(file) {
     }
     reader.onerror = function(e) {
         console.error('Error reading file:', e);
+        alert('Error: Failed to read file. Please ensure the file is accessible and try again.');
     }
     reader.readAsText(file);
 }
