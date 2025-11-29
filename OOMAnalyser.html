@@ -560,7 +560,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <p>
         Go back to
-        <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        <a href="#" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.reset_form();" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
 
@@ -1558,44 +1558,44 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
                         <thead id="pstable_header">
                             <tr>
                                 <td class="pstable__row-numeric--width"><span>pid</span>
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col0" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(0)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col0" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(0);"></a>
                                 </td>
                                 <td class="pstable__row-numeric--width">uid
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col1" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(1)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col1" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(1);"></a>
                                 </td>
                                 <td class="pstable__row-numeric--width">tgid
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col2" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(2)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col2" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(2);"></a>
                                 </td>
                                 <td class="pstable__row-pages--width">total_vm
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col3" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(3)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col3" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(3);"></a>
                                 </td>
                                 <td class="pstable__row-pages--width">rss
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col4" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(4)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col4" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(4);"></a>
                                 </td>
                                 <td class="pstable__row-pages--width">nr_ptes
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col5" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(5)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col5" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(5);"></a>
                                 </td>
                                 <td class="pstable__row-pages--width">swapents
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col6" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(6)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col6" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(6);"></a>
                                 </td>
                                 <td class="pstable__row-oom-score-adj--width">oom_score_adj
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col7" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(7)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col7" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(7);"></a>
                                 </td>
                                 <td class="pstable__row-notes--width">name
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col8" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(8)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col8" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(8);"></a>
                                 </td>
                                 <td class="pstable__row-notes--width">notes
-                                    <a class="pstable__row-sort--width" href="javascript:void(0);"
-                                       id="js-pstable_sort_col9" onclick="OOMAnalyser.OOMDisplayInstance.sort_pstable(9)"></a>
+                                    <a class="pstable__row-sort--width" href="#"
+                                       id="js-pstable_sort_col9" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.sort_pstable(9);"></a>
                                 </td>
                             </tr>
                         </thead>
@@ -1636,7 +1636,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <tbody id="tbody_initial_oom">
             <tr>
                 <th colspan="3" scope="row">Entire OOM Message
-                    <a class="a--small" href="javascript:void(0);" id="oom_toggle_msg" onclick="OOMAnalyser.OOMDisplayInstance.toggle_oom()" title="Click to show/hide full OOM message">(click to hide)</a>
+                    <a class="a--small" href="#" id="oom_toggle_msg" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.toggle_oom();" title="Click to show/hide full OOM message">(click to hide)</a>
                 </th>
             </tr>
             <tr class="js-text--default-hide">
@@ -1650,7 +1650,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
     <p>
         Go back to
-        <a href="javascript:void(0);" onclick="OOMAnalyser.OOMDisplayInstance.reset_form()" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
+        <a href="#" onclick="event.preventDefault(); OOMAnalyser.OOMDisplayInstance.reset_form();" title="Run a new analysis">&quot;Step 1 - Enter your OOM message&quot;</a>
         to run a new analysis.
     </p>
 
@@ -1724,7 +1724,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
 <div>
     <h2 class="h2--no-newline" id="changes">Changelog</h2>
-    <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('changelog')"
+    <a class="a--small" href="#" onclick="event.preventDefault(); OOMAnalyser.toggle('changelog');"
        title="Show / hide news">(click to show / hide)</a>
 </div>
 
@@ -1868,7 +1868,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
 <div>
     <h2 class="h2--no-newline" id="install">Local Installation</h2>
-    <a class="a--small" href="javascript:void(0);" onclick="OOMAnalyser.toggle('installation')"
+    <a class="a--small" href="#" onclick="event.preventDefault(); OOMAnalyser.toggle('installation');"
        title="Show / hide installation guide">(click to show / hide)</a>
 </div>
 
@@ -1891,7 +1891,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 <div class="footer">
     OOMAnalyser <span id="version"></span> |
     Copyright (C) 2017-2025 Carsten Grohmann |
-    <a href="javascript:void(0);" onclick="OOMAnalyser.toggle('license')" title="Show / hide license text">License: MIT</a> |
+    <a href="#" onclick="event.preventDefault(); OOMAnalyser.toggle('license');" title="Show / hide license text">License: MIT</a> |
     <a href="https://sr.ht/~carstengrohmann/OOMAnalyser/" target="_blank" rel="noopener noreferrer" title="Source code on Sourcehut">Source Code on Sourcehut</a>
 </div>
 
