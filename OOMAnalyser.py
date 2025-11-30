@@ -4573,7 +4573,7 @@ class OOMAnalyser:
         self.oom_result.details["trigger_proc_requested_memory_pages"] = (
             2 ** self.oom_result.details["trigger_proc_order"]
         )
-        self.oom_result.details["trigger_proc_requested_memory_pages_kb"] = (
+        self.oom_result.details["trigger_proc_requested_memory_kb"] = (
             self.oom_result.details["trigger_proc_requested_memory_pages"]
             * self.oom_result.details["page_size_kb"]
         )
