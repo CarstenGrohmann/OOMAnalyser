@@ -5953,7 +5953,12 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             element.removeChild(element.firstChild)
 
         # remove svg charts
-        for element_id in ("svg_system_swap", "svg_ram"):
+        for element_id in (
+            "svg_system_swap",
+            "svg_ram",
+            "svg_cgroup_v1_swap",
+            "svg_cgroup_v2_swap",
+        ):
             element = document.getElementById(element_id)
             while element.firstChild:
                 element.removeChild(element.firstChild)
@@ -6047,7 +6052,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         Show all extracted details as well as additionally generated information
         """
         self._show_all_items()
-        self._show_ram_usage()
+        self._show_system_ram_usage()
         if self.oom_result.oom_type in [
             OOMType.KERNEL_MANUAL,
             OOMType.KERNEL_AUTOMATIC,
@@ -6120,8 +6125,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         else:
             show_elements_by_selector(".js-pagesize-determined--show")
 
-    def _show_ram_usage(self):
-        """Generate RAM usage diagram"""
+    def _show_system_ram_usage(self):
+        """Generate system RAM usage diagram"""
         ram_title_attr = (
             ("Active mem", "active_anon_pages"),
             ("Inactive mem", "inactive_anon_pages"),
@@ -6163,7 +6168,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                 self._show_cgroup_v2_swap_usage()
 
     def _show_cgroup_v1_swap_usage(self):
-        """Show/hide cgroup v1 swap space"""
+        """Show/hide cgroup v1 swap space and generate a usage diagram"""
         if self.oom_result.details["cgroup_memory_swap_limit_kb"] == 0:
             hide_elements_by_selector(".js-cgroup-v1-swap-active--show")
             show_elements_by_selector(".js-cgroup-swap-inactive--show")
@@ -6176,12 +6181,23 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             show_elements_by_selector(".js-cgroup-swap-unlimited--show")
         else:
+            usage = self.oom_result.details["cgroup_memory_swap_usage_kb"]
+            limit = self.oom_result.details["cgroup_memory_swap_limit_kb"]
+            free = limit - usage
+            svg = SVGChart()
+            svg_cgroup_swap = svg.generate_chart(
+                "Cgroup Memory+Swap Summary",
+                ("Mem+Swap Used", usage),
+                ("Mem+Swap Free", free),
+            )
+            elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v1_swap")
+            elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
             show_elements_by_selector(".js-cgroup-v1-swap-active--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
 
     def _show_cgroup_v2_swap_usage(self):
-        """Show/hide cgroup v2 swap space"""
+        """Show/hide cgroup v2 swap space and generate a usage diagram"""
         if self.oom_result.details["cgroup_swap_limit_kb"] == 0:
             hide_elements_by_selector(".js-cgroup-v2-swap-active--show")
             show_elements_by_selector(".js-cgroup-swap-inactive--show")
@@ -6194,6 +6210,17 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             show_elements_by_selector(".js-cgroup-swap-unlimited--show")
         else:
+            usage = self.oom_result.details["cgroup_swap_usage_kb"]
+            limit = self.oom_result.details["cgroup_swap_limit_kb"]
+            free = limit - usage
+            svg = SVGChart()
+            svg_cgroup_swap = svg.generate_chart(
+                "Cgroup Swap Summary",
+                ("Swap Used", usage),
+                ("Swap Free", free),
+            )
+            elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v2_swap")
+            elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
             show_elements_by_selector(".js-cgroup-v2-swap-active--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")

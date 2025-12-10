@@ -1591,9 +1591,74 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
     }
 
     def test_020_insert_and_analyse_example(self) -> None:
-        """Test loading and analysing Proxmox cgroup OOM example"""
+        """Test loading and analyzing Proxmox cgroup OOM example"""
         self._test_insert_and_analyse("Proxmox_cgroup_oom")
 
+        # Verify that cgroup swap SVG is NOT shown when swap is disabled
+        container_id = "svg_cgroup_v2_swap"
+        svg_elem = self.driver.find_element(By.ID, container_id)
+        assert svg_elem is not None, f'SVG container element "{container_id}" not found'
 
-# Tests are now run using pytest
-# Run with: pytest test.py
+        svg_content = svg_elem.get_attribute("innerHTML")
+        assert (
+            not svg_content or svg_content.strip() == ""
+        ), "SVG content should be empty when swap is disabled"
+
+        assert (
+            not svg_elem.is_displayed()
+        ), "Cgroup v2 swap SVG should be hidden when swap is disabled"
+
+    def test_030_cgroup_v1_swap_svg(self) -> None:
+        """Test cgroup v1 swap SVG diagram generation"""
+        example = OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom
+        example = example.replace(
+            "swap: usage 0kB, limit 0kB, failcnt 0",
+            "memory+swap: usage 33308672kB, limit 35405824kB, failcnt 100",
+        )
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        element_id = "svg_cgroup_v1_swap"
+        svg_elem = self.driver.find_element(By.ID, element_id)
+        assert svg_elem is not None, f'SVG container element "{element_id}" not found'
+
+        assert (
+            svg_elem.is_displayed()
+        ), "Cgroup v1 swap SVG should be visible when swap is enabled"
+
+        svg_content = svg_elem.get_attribute("innerHTML")
+        assert svg_content, "SVG content is empty"
+        assert "<svg" in svg_content, "No SVG element in container"
+        for text, error_msg in [
+            ("Cgroup Memory+Swap Summary", "SVG title missing"),
+            ("Mem+Swap Used", "SVG label missing"),
+            ("Mem+Swap Free", "SVG label missing"),
+        ]:
+            assert text in svg_content, f'{error_msg}: "{text}"'
+
+    def test_040_cgroup_v2_swap_svg(self) -> None:
+        """Test cgroup v2 swap SVG diagram generation"""
+        example = OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom
+        example = example.replace(
+            "swap: usage 0kB, limit 0kB", "swap: usage 2097152kB, limit 4194304kB"
+        )
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        element_id = "svg_cgroup_v2_swap"
+        svg_elem = self.driver.find_element(By.ID, element_id)
+        assert svg_elem is not None, f'SVG container element "{element_id}" not found'
+
+        assert (
+            svg_elem.is_displayed()
+        ), "Cgroup v2 swap SVG should be visible when swap is enabled"
+
+        svg_content = svg_elem.get_attribute("innerHTML")
+        assert svg_content, "SVG content is empty"
+        assert "<svg" in svg_content, "No SVG element in container"
+        for text, error_msg in [
+            ("Cgroup Swap Summary", "SVG title missing"),
+            ("Swap Used", "SVG label missing"),
+            ("Swap Free", "SVG label missing"),
+        ]:
+            assert text in svg_content, f'{error_msg}: "{text}"'
