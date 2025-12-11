@@ -4679,6 +4679,7 @@ class OOMAnalyser:
                 platform = desc
                 break
 
+        # platform identifier will only set, if it's not part of the kernel version
         if ".el7uek" in kernel_version:
             dist = "Oracle Linux 7 (Unbreakable Enterprise Kernel)"
         elif ".el7" in kernel_version:
@@ -4688,10 +4689,15 @@ class OOMAnalyser:
         elif ".el5" in kernel_version:
             dist = "RHEL 5/CentOS 5"
         elif "ARCH" in kernel_version or "-arch" in kernel_version:
-            # ArchLinux has not platform identifier in the kernel version
             dist = "Arch Linux"
             platform = "x86 64-bit"
-        elif "-generic" in kernel_version:
+        elif "-aws" in kernel_version:
+            dist = "Ubuntu on AWS"
+            platform = "x86 64-bit"
+        elif "-azure" in kernel_version:
+            dist = "Ubuntu on Azure"
+            platform = "x86 64-bit"
+        elif "-generic" in kernel_version or "-lowlatency" in kernel_version:
             dist = "Ubuntu"
             platform = "x86 64-bit"
         elif "-amd64" in kernel_version:
@@ -4700,6 +4706,18 @@ class OOMAnalyser:
         elif "-pve" in kernel_version:
             dist = "Proxmox (Debian)"
             platform = "x86 64-bit"
+        elif ".fc" in kernel_version:
+            dist = "Fedora"
+
+        # generic platform detection
+        if platform == "unknown":
+            if "x86_64" in kernel_version or "amd64" in kernel_version:
+                platform = "x86 64-bit"
+            elif "aarch64" in kernel_version or "arm64" in kernel_version:
+                platform = "ARM 64-bit"
+            elif "i686" in kernel_version or "i586" in kernel_version:
+                platform = "x86 32-bit"
+
         self.oom_result.details["dist"] = dist
         self.oom_result.details["platform"] = platform
 

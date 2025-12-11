@@ -1244,6 +1244,96 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             formatted == expected
         ), f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})"
 
+    @pytest.mark.parametrize(
+        "kernel_version,expected_dist,expected_platform",
+        [
+            pytest.param(
+                "3.10.0-1062.9.1.el7.x86_64",
+                "RHEL 7/CentOS 7",
+                "x86 64-bit",
+                id="rhel7-x86_64-alt",
+            ),
+            pytest.param(
+                "2.6.32-696.el6.x86_64",
+                "RHEL 6/CentOS 6",
+                "x86 64-bit",
+                id="rhel6-x86_64",
+            ),
+            pytest.param(
+                "4.14.35-1902.3.2.el7uek.x86_64",
+                "Oracle Linux 7 (Unbreakable Enterprise Kernel)",
+                "x86 64-bit",
+                id="oracle-uek",
+            ),
+            pytest.param(
+                "6.8.0-78-generic", "Ubuntu", "x86 64-bit", id="ubuntu-6.8-generic"
+            ),
+            pytest.param(
+                "5.13.0-1031-aws", "Ubuntu on AWS", "x86 64-bit", id="ubuntu-aws-5.13"
+            ),
+            pytest.param(
+                "5.11.0-1021-azure",
+                "Ubuntu on Azure",
+                "x86 64-bit",
+                id="ubuntu-azure-5.11",
+            ),
+            pytest.param(
+                "5.10.0-21-amd64", "Debian", "x86 64-bit", id="debian-5.10-amd64"
+            ),
+            pytest.param(
+                "6.1.0-18-amd64", "Debian", "x86 64-bit", id="debian-6.1-amd64"
+            ),
+            pytest.param(
+                "6.1.1-arch1-1", "Arch Linux", "x86 64-bit", id="arch-6.1-x86_64"
+            ),
+            pytest.param(
+                "5.15.107-2-pve",
+                "Proxmox (Debian)",
+                "x86 64-bit",
+                id="proxmox-5.15-pve",
+            ),
+            pytest.param(
+                "6.5.6-300.fc39.x86_64", "Fedora", "x86 64-bit", id="fedora-39-x86_64"
+            ),
+            # ARM64/aarch64 platforms
+            pytest.param(
+                "5.15.0-78-generic", "Ubuntu", "x86 64-bit", id="ubuntu-arm64-generic"
+            ),
+            pytest.param("6.1.21-v8+", "unknown", "unknown", id="raspberry-pi-arm64"),
+            # Lowlatency Ubuntu
+            pytest.param(
+                "5.4.0-80-lowlatency", "Ubuntu", "x86 64-bit", id="ubuntu-lowlatency"
+            ),
+            # Unknown/vanilla kernel
+            pytest.param("6.6.0", "unknown", "unknown", id="vanilla-kernel"),
+        ],
+    )
+    def test_140_determinate_platform_and_distribution(
+        self, kernel_version, expected_dist, expected_platform
+    ) -> None:
+        """Test determination of platform and distribution from kernel version strings"""
+        oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+
+        # Set kernel version in details
+        analyser.oom_result.details["kernel_version"] = kernel_version
+
+        # Call the function to test
+        analyser._determinate_platform_and_distribution()
+
+        # Verify results
+        actual_dist = analyser.oom_result.details["dist"]
+        actual_platform = analyser.oom_result.details["platform"]
+
+        assert actual_dist == expected_dist, (
+            f'Wrong distribution for kernel version "{kernel_version}": '
+            f'got "{actual_dist}", expected "{expected_dist}"'
+        )
+        assert actual_platform == expected_platform, (
+            f'Wrong platform for kernel version "{kernel_version}": '
+            f'got "{actual_platform}", expected "{expected_platform}"'
+        )
+
 
 @pytest.mark.browser
 class TestBroswerArchLinux(BaseInBrowserTests):
