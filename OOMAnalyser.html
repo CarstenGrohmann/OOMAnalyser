@@ -661,10 +661,12 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <div id="explanation">
         <div class="js-text--default-hide js-text--display-none js-oom-cgroup-v1--show js-oom-cgroup-v2--show">
             <p>
-                The cgroup-local OOM killer was automatically triggered because the memory usage inside a specific
-                control group exceeded its configured limit. Unlike a global OOM event, the system itself still had
+                The cgroup-local OOM killer was automatically triggered because the memory usage inside a control group
+                <span class="js-text--default-hide js-text--display-none js-oom-cgroup-v1--show">v1</span>
+                <span class="js-text--default-hide js-text--display-none js-oom-cgroup-v2--show">v2</span>
+                exceeded its configured limit. Unlike a global OOM event, the system itself still had
                 free memory available. The cgroup-local OOM killer evaluates the tasks within that cgroup, assigns
-                scores, and terminates the process with the highest score in order to bring the group’s memory
+                scores, and terminates the process with the highest score in order to bring the group's memory
                 consumption back within limits.
             </p>
         </div>
