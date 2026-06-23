@@ -1334,6 +1334,54 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             f'got "{actual_platform}", expected "{expected_platform}"'
         )
 
+    @pytest.mark.parametrize(
+        "example_attr,expected_processes",
+        [
+            pytest.param(
+                "example_rhel7",
+                {
+                    390: "systemd-journal",
+                    433: "systemd-udevd",
+                    868: "sshd",
+                    6576: "mysqld",
+                    10635: "sftp-server",
+                },
+                id="rhel7-full-names"
+            ),
+            pytest.param(
+                "example_ubuntu2110",
+                {
+                    323: "systemd-journal",
+                    542: "systemd-timesyn",
+                    608: "networkd-dispat",
+                    857: "(sd-pam)",
+                    651: "unattended-upgr",
+                },
+                id="ubuntu2110-full-names"
+            ),
+        ],
+    )
+    def test_150_process_table_full_names(self, example_attr, expected_processes) -> None:
+        """Test that the process table regex extracts full names across different log styles"""
+        raw_text = getattr(OOMAnalyser.OOMDisplay, example_attr)
+
+        # Run a full analysis pass to populate the internal process table dictionary
+        oom = OOMAnalyser.OOMEntity(raw_text)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        success = analyser.analyse()
+        assert success, "OOM analysis failed"
+
+        # Grab the generated process table indexed by PID
+        pstable = analyser.oom_result.details["_pstable"]
+
+        # Assert that every targeted PID exists and maps to its name
+        for pid, expected_name in expected_processes.items():
+            assert pid in pstable, f"PID {pid} was missed by the process table parser in '{example_attr}'"
+            actual_name = pstable[pid]["name"]
+            assert actual_name == expected_name, (
+                f"Process name did not match for PID {pid} in template '{example_attr}'! "
+                f"Expected exact match: '{expected_name}', but found extracted: '{actual_name}'"
+            )
 
 @pytest.mark.browser
 class TestBroswerArchLinux(BaseInBrowserTests):
