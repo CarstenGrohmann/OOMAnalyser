@@ -743,7 +743,6 @@ class BaseKernelConfig:
         r"min:(?P<min>\d+)kB "
         r"low:(?P<low>\d+)kB "
         r"high:(?P<high>\d+)kB "
-        r".*?"
     )
     """
     RE to extract watermark information in a memory zone
@@ -2767,7 +2766,6 @@ class KernelConfig_5_16(KernelConfig_5_14):
         r"min:(?P<min>\d+)kB "
         r"low:(?P<low>\d+)kB "
         r"high:(?P<high>\d+)kB "
-        r".*?"
     )
 
 
