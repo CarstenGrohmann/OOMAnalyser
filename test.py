@@ -693,6 +693,37 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             final_position == 0
         ), f"Page should be at top (0), but is at {final_position}"
 
+    @pytest.mark.parametrize(
+        "toggle_id,content_id",
+        [
+            pytest.param("changelog_toggle", "changelog", id="changelog"),
+            pytest.param("installation_toggle", "installation", id="installation"),
+            pytest.param("license_toggle", "license", id="license"),
+        ],
+    )
+    def test_100_show_hide_toggle(self, toggle_id, content_id) -> None:
+        """Test that the "click to show / hide" links toggle section visibility"""
+        content = self.driver.find_element(By.ID, content_id)
+        assert (
+            not content.is_displayed()
+        ), f'Section "{content_id}" should be hidden by default'
+
+        toggle = self.driver.find_element(By.ID, toggle_id)
+        toggle.click()
+        WebDriverWait(self.driver, 5).until(
+            lambda driver: driver.find_element(By.ID, content_id).is_displayed(),
+            message=f'Section "{content_id}" should be visible after clicking "{toggle_id}"',
+        )
+
+        toggle.click()
+        WebDriverWait(self.driver, 5).until(
+            lambda driver: not driver.find_element(By.ID, content_id).is_displayed(),
+            message=f'Section "{content_id}" should be hidden after clicking "{toggle_id}" again',
+        )
+
+        # A renamed/missing handler raises a JS console error on click
+        self.assert_on_warn_error()
+
 
 @pytest.mark.python_only
 class TestPython(BaseTests):

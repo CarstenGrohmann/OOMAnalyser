@@ -470,32 +470,32 @@ window.addEventListener('DOMContentLoaded', function() {
     });
 
     // Toggle section handlers (changelog, installation, license)
-    let changelogToggle = document.querySelector('a[onclick*="toggle(\'changelog\')"]');
+    let changelogToggle = document.getElementById('changelog_toggle');
     if (changelogToggle) {
         changelogToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            OOMAnalyser.toggle('changelog');
+            OOMAnalyser.toggle_visibility_by_id('changelog');
         });
     }
 
-    let installationToggle = document.querySelector('a[onclick*="toggle(\'installation\')"]');
+    let installationToggle = document.getElementById('installation_toggle');
     if (installationToggle) {
         installationToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            OOMAnalyser.toggle('installation');
+            OOMAnalyser.toggle_visibility_by_id('installation');
         });
     }
 
-    let licenseToggle = document.querySelector('a[onclick*="toggle(\'license\')"]');
+    let licenseToggle = document.getElementById('license_toggle');
     if (licenseToggle) {
         licenseToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            OOMAnalyser.toggle('license');
+            OOMAnalyser.toggle_visibility_by_id('license');
         });
     }
 
     // Go back link handler
-    let goBackLink = document.querySelector('a[onclick="goBack()"]');
+    let goBackLink = document.getElementById('goback_link');
     if (goBackLink) {
         goBackLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -1766,7 +1766,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <ol>
         <li id="footnote-proc_meminfo5"><cite>
             <a href="https://man7.org/linux/man-pages/man5/proc_meminfo.5.html" target="_blank" rel="noopener noreferrer">
-            proc_meminfo(5) - /proc/meminfo - memory usage</a></cite> (<a href="#">Go Back</a>)
+            proc_meminfo(5) - /proc/meminfo - memory usage</a></cite> (<a href="#" id="goback_link">Go Back</a>)
         </li>
     </ol>
 </div>
@@ -1832,7 +1832,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
 <div>
     <h2 class="h2--no-newline" id="changes">Changelog</h2>
-    <a class="a--small" href="#" title="Show / hide news">(click to show / hide)</a>
+    <a class="a--small" href="#" id="changelog_toggle" title="Show / hide news">(click to show / hide)</a>
 </div>
 
 <div class="js-text--default-hide js-text--display-none" id="changelog">
@@ -1990,7 +1990,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 
 <div>
     <h2 class="h2--no-newline" id="install">Local Installation</h2>
-    <a class="a--small" href="#" title="Show / hide installation guide">(click to show / hide)</a>
+    <a class="a--small" href="#" id="installation_toggle" title="Show / hide installation guide">(click to show / hide)</a>
 </div>
 
 <div class="js-text--default-hide js-text--display-none" id="installation">
@@ -2012,7 +2012,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
 <div class="footer">
     OOMAnalyser <span id="version"></span> |
     Copyright (C) 2017-2025 Carsten Grohmann |
-    <a href="#" title="Show / hide license text">License: MIT</a> |
+    <a href="#" id="license_toggle" title="Show / hide license text">License: MIT</a> |
     <a href="https://sr.ht/~carstengrohmann/OOMAnalyser/" target="_blank" rel="noopener noreferrer" title="Source code on Sourcehut">Source Code on Sourcehut</a>
 </div>
 
