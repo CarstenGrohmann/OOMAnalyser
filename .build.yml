@@ -26,8 +26,9 @@ tasks:
       #  - openssl-1.1 is required to install via pip from https sources
       #  - libffi7 is required to install Transcrypt
       yay -Sy --noconfirm openssl-1.1 libffi7 python37
-      # install JS bundler
-      yay -Sy --noconfirm rollup
+      # install npm and JS bundler
+      yay -Sy --noconfirm npm
+      sudo npm install -g rollup
       # install selenium helper and browser to run tests later
       yay -Sy --noconfirm chromedriver google-chrome
   - setup_venv: |
