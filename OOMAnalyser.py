@@ -733,7 +733,7 @@ class BaseKernelConfig:
 
     REC_PROCESS_LINE = re.compile(
         r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
-        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*"
+        r"(?P<nr_ptes_pages>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*$"
     )
     """Match content of process table"""
 
@@ -2253,7 +2253,7 @@ class KernelConfig_4_15(KernelConfig_4_14):
     # pr_info("[ pid ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
     REC_PROCESS_LINE = re.compile(
         r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
-        r"(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*"
+        r"(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*$"
     )
 
     pstable_items = [
