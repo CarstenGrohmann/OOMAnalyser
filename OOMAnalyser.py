@@ -343,6 +343,14 @@ def add_to_notifybox(prefix: str, msg: str) -> None:
     console.log("{}: {}".format(prefix, msg))
 
 
+class KernelRelease:
+    """Index constants for the release tuple (major, minor, suffix)"""
+
+    MAJOR = 0
+    MINOR = 1
+    SUFFIX = 2
+
+
 class BaseKernelConfig:
     """Base class for all kernel-specific configuration"""
 
@@ -3961,9 +3969,9 @@ class OOMAnalyser:
             self.oom_result.kconfig = BaseKernelConfig()
         debug(
             "Choose kernel config {}.{}{}".format(
-                self.oom_result.kconfig.release[0],
-                self.oom_result.kconfig.release[1],
-                self.oom_result.kconfig.release[2],
+                self.oom_result.kconfig.release[KernelRelease.MAJOR],
+                self.oom_result.kconfig.release[KernelRelease.MINOR],
+                self.oom_result.kconfig.release[KernelRelease.SUFFIX],
             )
         )
 
@@ -4123,9 +4131,9 @@ class OOMAnalyser:
                         k,
                         self.oom_result.kversion,
                         pattern_type,
-                        self.oom_result.kconfig.release[0],
-                        self.oom_result.kconfig.release[1],
-                        self.oom_result.kconfig.release[2],
+                        self.oom_result.kconfig.release[KernelRelease.MAJOR],
+                        self.oom_result.kconfig.release[KernelRelease.MINOR],
+                        self.oom_result.kconfig.release[KernelRelease.SUFFIX],
                     )
                 )
             else:

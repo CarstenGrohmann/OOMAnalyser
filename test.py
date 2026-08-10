@@ -746,9 +746,13 @@ class TestPython(BaseTests):
             (
                 type(c)
                 for c in OOMAnalyser.AllKernelConfigs
-                if type(c) is not OOMAnalyser.BaseKernelConfig and c.release[2] == ""
+                if type(c) is not OOMAnalyser.BaseKernelConfig
+                and c.release[OOMAnalyser.KernelRelease.SUFFIX] == ""
             ),
-            key=lambda cls: (cls.release[0], cls.release[1]),
+            key=lambda cls: (
+                cls.release[OOMAnalyser.KernelRelease.MAJOR],
+                cls.release[OOMAnalyser.KernelRelease.MINOR],
+            ),
         )
         for i in range(1, len(main_chain)):
             child_cls = main_chain[i]
