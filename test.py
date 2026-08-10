@@ -740,6 +740,28 @@ class TestPython(BaseTests):
         missing = all_kernel_classes - all_configured_kernels
         assert not missing, f"Missing kernel instances in AllKernelConfigs: {missing}"
 
+    def test_001_kernel_config_inheritance_chain(self) -> None:
+        """Each main-line KernelConfig must inherit from the immediately preceding version."""
+        main_chain = [OOMAnalyser.BaseKernelConfig] + sorted(
+            (
+                type(c)
+                for c in OOMAnalyser.AllKernelConfigs
+                if type(c) is not OOMAnalyser.BaseKernelConfig and c.release[2] == ""
+            ),
+            key=lambda cls: (cls.release[0], cls.release[1]),
+        )
+        for i in range(1, len(main_chain)):
+            child_cls = main_chain[i]
+            parent_cls = child_cls.__mro__[1]
+            expected_cls = main_chain[i - 1]
+            assert (
+                parent_cls is expected_cls
+            ), "{} inherits from {} but expected {}".format(
+                child_cls.__name__,
+                parent_cls.__name__,
+                expected_cls.__name__,
+            )
+
     def test_010_trigger_proc_space(self) -> None:
         """Test RE to find the name of the trigger process"""
         first = self.get_first_line(OOMAnalyser.OOMDisplay.example_rhel7)

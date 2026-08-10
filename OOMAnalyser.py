@@ -2664,7 +2664,7 @@ class KernelConfig_5_12(KernelConfig_5_11):
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_512)
 
 
-class KernelConfig_5_14(KernelConfig_5_9):
+class KernelConfig_5_14(KernelConfig_5_12):
     # Supported changes:
     #  * update GFP flags
 
