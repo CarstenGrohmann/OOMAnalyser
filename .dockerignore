@@ -1,8 +1,7 @@
-# Files to be ignored by Git
-#
-# Copyright (c) 2017-2026 Carsten Grohmann
+# Copyright (c) 2022-2026 Carsten Grohmann
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
+.git/
 
 # Byte-compiled / optimized / DLL files
 *.py[cod]
