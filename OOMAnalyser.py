@@ -487,7 +487,7 @@ class BaseKernelConfig:
             r"^memory: usage (?P<cgroup_memory_usage_kb>\d+)kB, "
             r"limit (?P<cgroup_memory_limit_kb>\d+)kB, "
             r"failcnt (?P<cgroup_memory_failcnt>\d+)",
-            OOMPatternMatchRule.CGROUP_V2_MANDATORY,
+            OOMPatternMatchRule.CGROUP_ALL_MANDATORY,
         ),
         "cgroup v1 oom: kmem usage": (
             # 3.8: memcg: kmem accounting basic infrastructure (510fc4e11b772fd60f2c545c64d4c55abd07ce36)
