@@ -5270,6 +5270,7 @@ oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,glob
 Out of memory: Killed process 473206 (doxygen) total-vm:30290680kB, anon-rss:9234320kB, file-rss:4kB, shmem-rss:0kB, UID:504 pgtables:59264kB oom_score_adj:0
 oom_reaper: reaped process 473206 (doxygen), now anon-rss:0kB, file-rss:0kB, shmem-rss:0kB
     """
+    """Arch Linux 6.1.1: global kernel OOM, doxygen triggers and is killed (~9 GB anon-rss), OOM reaper active."""
 
     example_proxmox_cgroup_oom = """\
 [Di Aug 12 03:54:03 2025] php-fpm invoked oom-killer: gfp_mask=0x1100cca(GFP_HIGHUSER_MOVABLE), order=0, oom_score_adj=0
@@ -5432,6 +5433,7 @@ oom_reaper: reaped process 473206 (doxygen), now anon-rss:0kB, file-rss:0kB, shm
 [Di Aug 12 03:54:03 2025] oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),cpuset=docker-a59e4e7d3090c04c6ce5a4b7a8bc85228eb9b96ac00b1284643a8c7c11dda661.scope,mems_allowed=0,oom_memcg=/lxc/39004,task_memcg=/lxc/39004/ns/system.slice/docker-a59e4e7d3090c04c6ce5a4b7a8bc85228eb9b96ac00b1284643a8c7c11dda661.scope,task=php-fpm,pid=3902942,uid=1000
 [Di Aug 12 03:54:03 2025] Memory cgroup out of memory: Killed process 3902942 (php-fpm) total-vm:14740176kB, anon-rss:12625252kB, file-rss:0kB, shmem-rss:156088kB, UID:1000 pgtables:26388kB oom_score_adj:0
     """
+    """Proxmox VE 5.15 (pve kernel): cgroup v2 OOM inside LXC container /lxc/39004, php-fpm triggers and is killed, swap disabled."""
 
     example_rhel7 = """\
 sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0
@@ -5579,6 +5581,7 @@ Total swap = 8388604kB
 Out of memory: Kill process 6576 (mysqld) score 651 or sacrifice child
 Killed process 6576 (mysqld) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0kB, shmem-rss:0kB
 """
+    """RHEL 7 (kernel 3.10, old log format): global kernel OOM on a 2-NUMA-node system, sed triggers, mysqld is killed."""
 
     example_ubuntu2110 = """\
 kworker/0:2 invoked oom-killer: gfp_mask=0xcc0(GFP_KERNEL), order=-1, oom_score_adj=0
@@ -5651,6 +5654,7 @@ Tasks state (memory values in pages):
 oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=/,mems_allowed=0,global_oom,task_memcg=/system.slice/unattended-upgrades.service,task=unattended-upgr,pid=651,uid=0
 Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:8380kB, file-rss:12548kB, shmem-rss:0kB, UID:0 pgtables:104kB oom_score_adj:0
 """
+    """Ubuntu 21.10 (kernel 5.13): OOM triggered via SysRq-f (moom_callback), unattended-upgr killed, no swap."""
 
     sorted_column_number = None
     """
