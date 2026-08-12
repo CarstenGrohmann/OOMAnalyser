@@ -6194,10 +6194,13 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             for title, value in ram_title_attr
             if value in self.oom_result.details
         ]
+        if not chart_elements:
+            return
         svg = SVGChart()
         svg_ram = svg.generate_chart("RAM Summary", *chart_elements)
         elem_svg_ram = document.getElementById("svg_ram")
         elem_svg_ram.appendChild(svg_ram)
+        show_elements_by_selector(".js-system-ram-active--show")
 
     def _cgroup_swap_is_unlimited(self, limit_kb: int) -> bool:
         """Return True if no cgroup swap limit is configured."""

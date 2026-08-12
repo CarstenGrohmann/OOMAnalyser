@@ -203,6 +203,15 @@ class BaseInBrowserTests(BaseTests):
     """List of text patterns that must not be found in the result table"""
     check_explanation_section: Dict[str, str] = {}
     """Dictionary with category and text pattern to check the summary/explanation section"""
+
+    check_svg_example: str = ""
+    """OOM example text for SVG chart test. Empty string skips the test."""
+    check_svg_ram_visible: bool = True
+    """Expected visibility of the RAM SVG after analysis."""
+    check_svg_swap_id: str = "svg_system_swap"
+    """ID of the second SVG element to check."""
+    check_svg_swap_visible: bool = True
+    """Expected visibility of the second SVG after analysis."""
     # --- End: generic result check configuration ---
 
     def _check_initial_validation(self) -> None:
@@ -537,6 +546,21 @@ class BaseInBrowserTests(BaseTests):
 
         self.clear_notification_box()
         self.click_analyse_button()
+
+    def test_025_svg_charts(self) -> None:
+        """Test SVG chart visibility after OOM analysis."""
+        if not self.check_svg_example:
+            return
+        self.analyse_oom(self.check_svg_example)
+        self.assert_on_warn_error()
+        ram_elem = self.driver.find_element(By.ID, "svg_ram")
+        assert (
+            ram_elem.is_displayed() == self.check_svg_ram_visible
+        ), f"RAM diagram: got {ram_elem.is_displayed()}, expected {self.check_svg_ram_visible}"
+        swap_elem = self.driver.find_element(By.ID, self.check_svg_swap_id)
+        assert (
+            swap_elem.is_displayed() == self.check_svg_swap_visible
+        ), f"Swap diagram (id: {self.check_svg_swap_id}): got {swap_elem.is_displayed()}, expected {self.check_svg_swap_visible}"
 
     def check_swap_inactive(self) -> None:
         explanation = self.driver.find_element(By.ID, "explanation")
@@ -1564,6 +1588,10 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         "Use physical memory": "69 % (11513452 kBytes out of 16461600 kBytes) physical memory",
         "Use swap space": "99 % (25066284 kBytes out of 25165820 kBytes) system swap space",
     }
+    check_svg_example = OOMAnalyser.OOMDisplay.example_archlinux_6_1_1
+    check_svg_ram_visible = True
+    check_svg_swap_id = "svg_system_swap"
+    check_svg_swap_visible = True
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing ArchLinux 6.1.1 example"""
@@ -1642,6 +1670,11 @@ class TestBrowserRhel7(BaseInBrowserTests):
         "Use physical memory": "94 % (31705788 kBytes out of 33519336 kBytes) physical memory",
         "Use swap space": "99 % (8343236 kBytes out of 8388604 kBytes) system swap space",
     }
+
+    check_svg_example = OOMAnalyser.OOMDisplay.example_rhel7
+    check_svg_ram_visible = True
+    check_svg_swap_id = "svg_system_swap"
+    check_svg_swap_visible = True
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing RHEL7 example"""
@@ -1814,6 +1847,11 @@ class TestBrowserUbuntu2110(BaseInBrowserTests):
         "Use physical memory": "9 % (209520 kBytes out of 2096632 kBytes) physical memory",
     }
 
+    check_svg_example = OOMAnalyser.OOMDisplay.example_ubuntu2110
+    check_svg_ram_visible = True
+    check_svg_swap_id = "svg_system_swap"
+    check_svg_swap_visible = False
+
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analysing Ubuntu 21.10 example"""
         self._test_insert_and_analyse("Ubuntu_2110")
@@ -1848,6 +1886,11 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
         "Terminated process": 'The process "php-fpm" (PID 3902942) has been terminated.',
         "Resident memory": "It uses 12781340 kBytes of the resident memory.",
     }
+
+    check_svg_example = OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom
+    check_svg_ram_visible = False
+    check_svg_swap_id = "svg_cgroup_v2_swap"
+    check_svg_swap_visible = False
 
     def test_020_insert_and_analyse_example(self) -> None:
         """Test loading and analyzing Proxmox cgroup OOM example"""
