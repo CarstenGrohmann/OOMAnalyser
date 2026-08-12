@@ -1444,6 +1444,65 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
                 f"Expected exact match: '{expected_name}', but found extracted: '{actual_name}'"
             )
 
+    @pytest.mark.parametrize(
+        "platform,limit_kb,expected",
+        [
+            pytest.param(
+                "x86 64-bit",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64,
+                True,
+                id="64bit-at-threshold",
+            ),
+            pytest.param(
+                "x86 64-bit",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64 + 1,
+                True,
+                id="64bit-above-threshold",
+            ),
+            pytest.param(
+                "x86 64-bit",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64 - 1,
+                False,
+                id="64bit-below-threshold",
+            ),
+            pytest.param(
+                "x86 32-bit",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_32,
+                True,
+                id="32bit-at-threshold",
+            ),
+            pytest.param(
+                "x86 32-bit",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_32 - 1,
+                False,
+                id="32bit-below-threshold",
+            ),
+            pytest.param(
+                "unknown",
+                OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64,
+                True,
+                id="unknown-platform-uses-64bit-threshold",
+            ),
+            pytest.param(
+                "x86 64-bit",
+                -4,
+                True,
+                id="js-truncated-page-counter-max",
+            ),
+        ],
+    )
+    def test_160_cgroup_swap_is_unlimited(
+        self, platform: str, limit_kb: int, expected: bool
+    ) -> None:
+        """Test cgroup swap unlimited detection for 32-bit and 64-bit platforms"""
+        display = OOMAnalyser.OOMDisplay()
+        display.oom_result = OOMAnalyser.OOMResult()
+        display.oom_result.details["platform"] = platform
+        result = display._cgroup_swap_is_unlimited(limit_kb)
+        assert (
+            result == expected
+        ), f"got {result}, expected {expected} for platform={platform!r}, limit_kb={limit_kb}"
+
 
 @pytest.mark.browser
 class TestBroswerArchLinux(BaseInBrowserTests):
@@ -1862,3 +1921,49 @@ class TestBrowserProxmoxCgroupOom(BaseInBrowserTests):
             ("Swap Free", "SVG label missing"),
         ]:
             assert text in svg_content, f'{error_msg}: "{text}"'
+
+    def test_050_cgroup_v1_swap_unlimited(self) -> None:
+        """Test that unlimited cgroup v1 swap shows the unlimited message"""
+        unlimited_kb = OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64
+        example = OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom
+        example = example.replace(
+            "swap: usage 0kB, limit 0kB, failcnt 0",
+            f"memory+swap: usage 0kB, limit {unlimited_kb}kB, failcnt 0",
+        )
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        unlimited_elem = self.driver.find_element(
+            By.CSS_SELECTOR, ".js-cgroup-swap-unlimited--show"
+        )
+        assert (
+            unlimited_elem.is_displayed()
+        ), "Unlimited swap message not shown for cgroup v1 with unlimited swap"
+
+        svg_elem = self.driver.find_element(By.ID, "svg_cgroup_v1_swap")
+        assert (
+            not svg_elem.is_displayed()
+        ), "Cgroup v1 swap SVG should be hidden when swap is unlimited"
+
+    def test_060_cgroup_v2_swap_unlimited(self) -> None:
+        """Test that unlimited cgroup v2 swap shows the unlimited message"""
+        unlimited_kb = OOMAnalyser.OOMDisplay.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64
+        example = OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom
+        example = example.replace(
+            "swap: usage 0kB, limit 0kB",
+            f"swap: usage 0kB, limit {unlimited_kb}kB",
+        )
+        self.analyse_oom(example)
+        self.assert_on_warn_error()
+
+        unlimited_elem = self.driver.find_element(
+            By.CSS_SELECTOR, ".js-cgroup-swap-unlimited--show"
+        )
+        assert (
+            unlimited_elem.is_displayed()
+        ), "Unlimited swap message not shown for cgroup v2 with unlimited swap"
+
+        svg_elem = self.driver.find_element(By.ID, "svg_cgroup_v2_swap")
+        assert (
+            not svg_elem.is_displayed()
+        ), "Cgroup v2 swap SVG should be hidden when swap is unlimited"

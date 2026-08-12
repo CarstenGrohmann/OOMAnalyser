@@ -5687,8 +5687,21 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     """
     """SVG graphics with one black triangle DOWN for sorting"""
 
-    SWAP_ENABLED_AND_UNLIMITED = -1
-    """Swap space is enabled and unlimited"""
+    CGROUP_SWAP_LIMIT_UNLIMITED_KB_64 = 9007199254740988
+    """
+    PAGE_COUNTER_MAX in kB on 64-bit systems: (LONG_MAX / PAGE_SIZE) * 4.
+    Swap limits at or above this value mean no limit is configured.
+
+    @see: include/linux/page_counter.h
+    """
+
+    CGROUP_SWAP_LIMIT_UNLIMITED_KB_32 = 8589934588
+    """
+    PAGE_COUNTER_MAX in kB on 32-bit systems: LONG_MAX * 4.
+    Swap limits at or above this value mean no limit is configured.
+
+    @see: include/linux/page_counter.h
+    """
 
     def __init__(self):
         self.oom = None
@@ -6186,6 +6199,19 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         elem_svg_ram = document.getElementById("svg_ram")
         elem_svg_ram.appendChild(svg_ram)
 
+    def _cgroup_swap_is_unlimited(self, limit_kb: int) -> bool:
+        """Return True if no cgroup swap limit is configured."""
+        # Transcrypt int() truncates to 32-bit signed; PAGE_COUNTER_MAX becomes -4.
+        if limit_kb < 0:
+            return True
+        platform = self.oom_result.details.get("platform", "")
+        threshold = (
+            self.CGROUP_SWAP_LIMIT_UNLIMITED_KB_32
+            if "32-bit" in platform
+            else self.CGROUP_SWAP_LIMIT_UNLIMITED_KB_64
+        )
+        return limit_kb >= threshold
+
     def _show_cgroup_swap(self):
         """Show/hide cgroup swap space"""
         if self.oom_result.oom_type == OOMType.CGROUP_V1:
@@ -6201,9 +6227,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-v1-swap-active--show")
             show_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
-        elif (
+        elif self._cgroup_swap_is_unlimited(
             self.oom_result.details["cgroup_memory_swap_limit_kb"]
-            == self.SWAP_ENABLED_AND_UNLIMITED
         ):
             hide_elements_by_selector(".js-cgroup-v1-swap-active--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
@@ -6230,9 +6255,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-v2-swap-active--show")
             show_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
-        elif (
+        elif self._cgroup_swap_is_unlimited(
             self.oom_result.details["cgroup_swap_limit_kb"]
-            == self.SWAP_ENABLED_AND_UNLIMITED
         ):
             hide_elements_by_selector(".js-cgroup-v2-swap-active--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
