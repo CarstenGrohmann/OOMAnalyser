@@ -4396,13 +4396,14 @@ class OOMAnalyser:
     def _convert_pstable_values_to_integer(self):
         """Convert numeric values in the process table to integer values"""
         ps = self.oom_result.details["_pstable"]
+        converted_ps = {}
         ps_index = []
-        # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_str in ps: ..."
+        # TODO Check if transcrypt issue: pragma jsiter for the whole block "for pid_key in ps: ..."
         #      sets item in "for item in ['uid',..." to 0 instead of 'uid'
         #      jsiter is necessary to iterate over ps
-        for pid_str in ps.keys():
+        for pid_key in ps.keys():
             converted = {}
-            process = ps[pid_str]
+            process = ps[pid_key]
             for item in self.oom_result.kconfig.pstable_items:
                 if item in self.oom_result.kconfig.pstable_non_ints:
                     continue
@@ -4421,12 +4422,12 @@ class OOMAnalyser:
 
             converted["name"] = process["name"]
             converted["notes"] = process["notes"]
-            pid_int = int(pid_str)
-            del ps[pid_str]
-            ps[pid_int] = converted
+            pid_int = int(pid_key)
+            converted_ps[pid_int] = converted
             ps_index.append(pid_int)
 
         ps_index.sort(key=int)
+        self.oom_result.details["_pstable"] = converted_ps
         self.oom_result.details["_pstable_index"] = ps_index
 
     def _check_free_chunks(

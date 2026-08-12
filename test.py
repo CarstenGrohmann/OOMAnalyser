@@ -946,6 +946,31 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         assert text == expected
 
     @pytest.mark.parametrize(
+        "example",
+        [
+            pytest.param(
+                OOMAnalyser.OOMDisplay.example_archlinux_6_1_1, id="archlinux-6.1"
+            ),
+            pytest.param(
+                OOMAnalyser.OOMDisplay.example_proxmox_cgroup_oom, id="proxmox-cgroup"
+            ),
+            pytest.param(OOMAnalyser.OOMDisplay.example_rhel7, id="rhel7-3.10"),
+            pytest.param(OOMAnalyser.OOMDisplay.example_ubuntu2110, id="ubuntu-21.10"),
+        ],
+    )
+    def test_045_pstable_index_matches_pstable(self, example) -> None:
+        """Test the process table index lists each PID of the process table exactly once"""
+        oom = OOMAnalyser.OOMEntity(example)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        assert analyser.analyse(), analyser.oom_result.error_msg
+        ps_index = analyser.oom_result.details["_pstable_index"]
+        expected = sorted(analyser.oom_result.details["_pstable"].keys())
+        assert ps_index == expected, (
+            f"Process table index does not match process table: "
+            f"{len(ps_index)} index entries for {len(expected)} processes"
+        )
+
+    @pytest.mark.parametrize(
         "text,kversion",
         [
             pytest.param(
