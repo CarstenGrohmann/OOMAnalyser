@@ -1225,6 +1225,47 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
         )
 
     @pytest.mark.parametrize(
+        "example,expected_zones",
+        [
+            pytest.param(
+                OOMAnalyser.OOMDisplay.example_archlinux_6_1_1,
+                ["DMA32", "Normal"],
+                id="archlinux-6.1",
+            ),
+            pytest.param(
+                OOMAnalyser.OOMDisplay.example_rhel7,
+                ["DMA32", "Normal"],
+                id="rhel7-3.10",
+            ),
+            pytest.param(
+                OOMAnalyser.OOMDisplay.example_ubuntu2110, ["DMA32"], id="ubuntu-21.10"
+            ),
+        ],
+    )
+    def test_107_oom_without_dma_zone(self, example, expected_zones) -> None:
+        """Test analysing a kernel OOM of a system without DMA zone"""
+        without_dma = re.sub(r"^Node \d+ DMA[ :].*\n", "", example, flags=re.MULTILINE)
+        oom = OOMAnalyser.OOMEntity(without_dma)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        assert analyser.analyse(), analyser.oom_result.error_msg
+
+        result = analyser.oom_result
+        zones = sorted(result.buddyinfo.keys())
+        assert (
+            zones == expected_zones
+        ), f"Wrong zones in buddy info (got: {zones}, expect: {expected_zones})"
+        zones = sorted(result.watermarks.keys())
+        assert (
+            zones == expected_zones
+        ), f"Wrong zones in watermark information (got: {zones}, expect: {expected_zones})"
+        assert (
+            result.kconfig.MAX_ORDER == 11
+        ), f"Wrong MAX_ORDER (got: {result.kconfig.MAX_ORDER}, expect: 11)"
+        assert not result.details[
+            "_page_size_guessed"
+        ], "Page size guessed instead of extracted from buddy info"
+
+    @pytest.mark.parametrize(
         "zone,order,node,expected_result",
         [
             pytest.param("DMA", 0, 0, True, id="DMA-order0-node0"),

@@ -736,8 +736,10 @@ class BaseKernelConfig:
     REC_CGROUP_V1 = re.compile(r"^memory\+swap: usage", re.MULTILINE)
     """RE to match if the cgroup is a v1 cgroup"""
 
-    REC_PAGE_SIZE = re.compile(r"Node 0 DMA: \d+\*(?P<page_size>\d+)kB", re.MULTILINE)
-    """RE to extract the page size from buddyinfo DMA zone"""
+    REC_PAGE_SIZE = re.compile(
+        r"Node \d+ (?:DMA|DMA32|Normal): \d+\*(?P<page_size>\d+)kB", re.MULTILINE
+    )
+    """RE to extract the page size from the first buddyinfo zone"""
 
     REC_PROCESS_LINE = re.compile(
         r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+(?P<rss_pages>\d+)\s+"
@@ -4201,7 +4203,7 @@ class OOMAnalyser:
             self._extract_watermarks()
 
     def _extract_page_size(self):
-        """Extract page size from buddyinfo DMZ zone"""
+        """Extract page size from the first buddyinfo zone"""
         match = self.oom_result.kconfig.REC_PAGE_SIZE.search(self.oom_entity.text)
         if match:
             self.oom_result.details["page_size_kb"] = int(match.group("page_size"))
@@ -4240,6 +4242,7 @@ class OOMAnalyser:
         """
         self.oom_result.buddyinfo = {}
         buddy_info = self.oom_result.buddyinfo
+        max_order = 0
         self.oom_entity.find_pattern(self.oom_result.kconfig.REC_FREE_MEMORY_CHUNKS)
 
         self.oom_entity.goto_previous_line()
@@ -4276,15 +4279,11 @@ class OOMAnalyser:
                     node
                 ]
 
-        # MAX_ORDER is actually the maximum order plus one. For example,
-        # a value of 11 means that the largest free memory block is 2^10 pages.
-        # __pragma__ ('jsiter')
-        max_order = 0
-        for o in self.oom_result.buddyinfo["DMA"]:
-            # JS: integer is sometimes a string :-/
-            if (isinstance(o, str) and o.isdigit()) or isinstance(o, int):
-                max_order += 1
-        # __pragma__ ('nojsiter')
+            # MAX_ORDER is actually the maximum order plus one. For example,
+            # a value of 11 means that the largest free memory block is 2^10 pages.
+            if order + 1 > max_order:
+                max_order = order + 1
+
         self.oom_result.kconfig.MAX_ORDER = max_order
 
     def _extract_watermarks(self):
