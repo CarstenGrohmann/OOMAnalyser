@@ -758,20 +758,6 @@ class BaseKernelConfig:
     Source: mm/page_alloc.c:__show_free_areas()
     """
 
-    watermark_start = "Node 0 DMA free:"
-    """
-    Pattern to find the start of the memory watermark information
-
-    @type: str
-     """
-
-    zoneinfo_start = "Node 0 DMA: "
-    """
-    Pattern to find the start of the memory chunk information (buddyinfo)
-
-    @type: str
-    """
-
     ZONE_TYPES = ["DMA", "DMA32", "Normal", "HighMem", "Movable"]
     """
     List of memory zones
@@ -3754,6 +3740,21 @@ class OOMEntity:
                 return True
         return False
 
+    def find_pattern(self, rec) -> bool:
+        """
+        Search the first line matching the pattern and set the position to that line.
+        Otherwise, the position pointer won't be changed.
+
+        @param rec: Compiled RE to find
+
+        @return: True if a matching line has been found.
+        """
+        for pos in range(len(self.lines)):
+            if rec.match(self.lines[pos]):
+                self.current_line = pos
+                return True
+        return False
+
     def __iter__(self):
         return self
 
@@ -4239,7 +4240,7 @@ class OOMAnalyser:
         """
         self.oom_result.buddyinfo = {}
         buddy_info = self.oom_result.buddyinfo
-        self.oom_entity.find_text(self.oom_result.kconfig.zoneinfo_start)
+        self.oom_entity.find_pattern(self.oom_result.kconfig.REC_FREE_MEMORY_CHUNKS)
 
         self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
@@ -4296,7 +4297,7 @@ class OOMAnalyser:
         """
         self.oom_result.watermarks = {}
         watermark_info = self.oom_result.watermarks
-        self.oom_entity.find_text(self.oom_result.kconfig.watermark_start)
+        self.oom_entity.find_pattern(self.oom_result.kconfig.REC_WATERMARK)
 
         node = None
         zone = None
