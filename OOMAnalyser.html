@@ -692,10 +692,12 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
             <p>
                 The system has <span class="system_total_ram_kb"></span> physical memory and
                 <span class="system_swap_total_kb"></span> system swap space. That's <span class="system_total_ramswap_kb"></span>
-                total. <span class="system_total_used_percent"></span>
+                total.
+                <span class="js-text--default-hide js-text--display-none js-system-ram-usage--show"><span class="system_total_used_percent"></span>
                 (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
-                physical memory and <span class="system_swap_used_percent"></span>
-                (<span class="system_swap_used_kb"></span> out of <span class="system_swap_total_kb"></span>) system swap space are in use.
+                physical memory is in use.</span>
+                <span class="system_swap_used_percent"></span>
+                (<span class="system_swap_used_kb"></span> out of <span class="system_swap_total_kb"></span>) system swap space is in use.
             </p>
         </div>
 
@@ -732,9 +734,9 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
         <div class="js-text--default-hide js-text--display-none js-system-swap-inactive--show">
             <p>
                 The system has <span class="system_total_ram_kb"></span> physical memory and no system swap space.
-                <span class="system_total_used_percent"></span>
+                <span class="js-text--default-hide js-text--display-none js-system-ram-usage--show"><span class="system_total_used_percent"></span>
                 (<span class="system_total_ram_used_kb"></span> out of <span class="system_total_ram_kb"></span>)
-                physical memory is in use.
+                physical memory is in use.</span>
             </p>
         </div>
         <div class="js-text--default-hide js-text--display-none js-oom-kernel-automatic--show">

@@ -4216,7 +4216,9 @@ class OOMAnalyser:
     def _extract_pstable(self):
         """Extract process table"""
         self.oom_result.details["_pstable"] = {}
-        self.oom_entity.find_text(self.oom_result.kconfig.pstable_start)
+        if not self.oom_entity.find_text(self.oom_result.kconfig.pstable_start):
+            warning("Process table not found - not printed if vm.oom_dump_tasks is 0")
+            return
         for line in self.oom_entity:
             if not line.startswith("["):
                 break
@@ -4242,8 +4244,12 @@ class OOMAnalyser:
         """
         self.oom_result.buddyinfo = {}
         buddy_info = self.oom_result.buddyinfo
+        if not self.oom_entity.find_pattern(
+            self.oom_result.kconfig.REC_FREE_MEMORY_CHUNKS
+        ):
+            debug("Missing buddyinfo - skip extraction")
+            return
         max_order = 0
-        self.oom_entity.find_pattern(self.oom_result.kconfig.REC_FREE_MEMORY_CHUNKS)
 
         self.oom_entity.goto_previous_line()
         for line in self.oom_entity:
@@ -4296,7 +4302,9 @@ class OOMAnalyser:
         """
         self.oom_result.watermarks = {}
         watermark_info = self.oom_result.watermarks
-        self.oom_entity.find_pattern(self.oom_result.kconfig.REC_WATERMARK)
+        if not self.oom_entity.find_pattern(self.oom_result.kconfig.REC_WATERMARK):
+            warning("No line matches the watermark pattern - skip extraction")
+            return
 
         node = None
         zone = None
@@ -4471,9 +4479,13 @@ class OOMAnalyser:
         node = self.oom_result.details["trigger_proc_numa_node"]
         if zone not in self.oom_result.buddyinfo:
             return
-        self.oom_result.mem_fragmented = not self._check_free_chunks(
+        free_chunks = self._check_free_chunks(
             self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER, zone, node
         )
+        # keep mem_fragmented unset to distinguish "not fragmented" from "unknown"
+        if free_chunks is None:
+            return
+        self.oom_result.mem_fragmented = not free_chunks
         self.oom_result.details[
             "kconfig.PAGE_ALLOC_COSTLY_ORDER"
         ] = self.oom_result.kconfig.PAGE_ALLOC_COSTLY_ORDER
@@ -6331,6 +6343,11 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # Show "OOM Score" only if it's available
         if "killed_proc_score" in self.oom_result.details:
             show_elements_by_selector(".js-killed-proc-score--show")
+
+        # Physical memory usage is summed up from the process table.
+        # JS: an empty dict is truthy, therefore compare the length.
+        if len(self.oom_result.details["_pstable"]) > 0:
+            show_elements_by_selector(".js-system-ram-usage--show")
 
     def sort_pstable(self, column_number):
         """

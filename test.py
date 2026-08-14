@@ -67,7 +67,7 @@ class BaseTests:
     text_cgroup_swap_activated = "Swap space is enabled for this cgroup."
     text_cgroup_swap_deactivated = "Swap space usage is disabled for this cgroup."
     text_kernel_swap_space_not_in_use = "physical memory and no system swap space"
-    text_kernel_swap_space_are_in_use = "system swap space are in use"
+    text_kernel_swap_space_is_in_use = "system swap space is in use"
     test_kernel_swap_no_space = "System swap space disabled."
     test_kernel_swap_swap_total = "Swap Total"
 
@@ -569,15 +569,15 @@ class BaseInBrowserTests(BaseTests):
             self.text_kernel_swap_space_not_in_use in continuous_text
         ), f'Missing statement "{self.text_kernel_swap_space_not_in_use}"'
         assert (
-            self.text_kernel_swap_space_are_in_use not in continuous_text
-        ), f'Unexpected statement "{self.text_kernel_swap_space_are_in_use}"'
+            self.text_kernel_swap_space_is_in_use not in continuous_text
+        ), f'Unexpected statement "{self.text_kernel_swap_space_is_in_use}"'
 
     def check_swap_active(self) -> None:
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
         assert (
-            self.text_kernel_swap_space_are_in_use in continuous_text
-        ), f'Missing statement "{self.text_kernel_swap_space_are_in_use}"'
+            self.text_kernel_swap_space_is_in_use in continuous_text
+        ), f'Missing statement "{self.text_kernel_swap_space_is_in_use}"'
 
     def _test_prefix_removal(
         self, example: str, prefix: str, handle_meminfo_special: bool = False
@@ -687,6 +687,30 @@ Killed process 6576 (java) total-vm:33914892kB, anon-rss:20629004kB, file-rss:0k
             self.get_first_error_msg()
             == "ERROR: Failed to extract kernel version from OOM text"
         )
+        self.click_reset_button()
+
+    def test_036_missing_process_table(self) -> None:
+        """Test OOM text without process table - omitted if vm.oom_dump_tasks is 0"""
+        example = re.sub(
+            r"^\[\s*(?:pid|\d+)\s*\].*\n",
+            "",
+            OOMAnalyser.OOMDisplay.example_rhel7,
+            flags=re.MULTILINE,
+        )
+        self.analyse_oom(example)
+
+        notify_box = self.driver.find_element(By.ID, "notify_box")
+        warning = notify_box.find_element(By.CLASS_NAME, "js-notify_box__msg--warning")
+        assert (
+            "Process table not found" in warning.text
+        ), f'Missing warning about the process table: "{warning.text}"'
+
+        for element in self.driver.find_elements(
+            By.CLASS_NAME, "js-system-ram-usage--show"
+        ):
+            assert (
+                not element.is_displayed()
+            ), "Physical memory usage should be hidden without a process table"
         self.click_reset_button()
 
     def test_090_scroll_to_top(self) -> None:
@@ -1359,6 +1383,25 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             not mem_fragmented
         ), f'Memory of Node {node}, Zone "{zone}" is not fragmented, but reported as fragmented'
 
+    def test_125_fragmentation_without_watermarks(self) -> None:
+        """Test memory fragmentation stays unknown without watermark information"""
+        without_watermarks = re.sub(
+            r"^(?:Node \d+ (?:DMA|DMA32|Normal) free:|lowmem_reserve\[\]:).*\n",
+            "",
+            OOMAnalyser.OOMDisplay.example_rhel7,
+            flags=re.MULTILINE,
+        )
+        oom = OOMAnalyser.OOMEntity(without_watermarks)
+        analyser = OOMAnalyser.OOMAnalyser(oom)
+        assert analyser.analyse(), analyser.oom_result.error_msg
+
+        result = analyser.oom_result
+        assert result.buddyinfo, "Missing buddy info"
+        assert not result.watermarks, "Watermark information should be empty"
+        assert (
+            result.mem_fragmented is None
+        ), f"Memory fragmentation should be unknown (got: {result.mem_fragmented})"
+
     def test_130_page_size(self) -> None:
         """Test determination of the page size"""
         oom = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
@@ -1635,7 +1678,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
-        BaseTests.text_kernel_swap_space_are_in_use,
+        BaseTests.text_kernel_swap_space_is_in_use,
     ]
     check_explanation_unexpected_statements = [
         BaseTests.text_alloc_failed_no_free_chunks,
@@ -1717,7 +1760,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
         BaseTests.text_alloc_failed_below_low_watermark,
         BaseTests.text_mem_not_heavily_fragmented,
         BaseTests.text_oom_triggered_automatically,
-        BaseTests.text_kernel_swap_space_are_in_use,
+        BaseTests.text_kernel_swap_space_is_in_use,
         BaseTests.text_with_an_oom_score_of,
     ]
     check_explanation_unexpected_statements = [
