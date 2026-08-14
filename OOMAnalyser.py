@@ -6214,6 +6214,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         elem_svg_ram = document.getElementById("svg_ram")
         elem_svg_ram.appendChild(svg_ram)
         show_elements_by_selector(".js-system-ram-active--show")
+        show_elements_by_selector(".js-graphs-kernel--show")
 
     def _cgroup_swap_is_unlimited(self, limit_kb: int) -> bool:
         """Return True if no cgroup swap limit is configured."""
@@ -6262,6 +6263,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v1_swap")
             elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
             show_elements_by_selector(".js-cgroup-v1-swap-active--show")
+            show_elements_by_selector(".js-graphs-cgroup--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
 
@@ -6290,6 +6292,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v2_swap")
             elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
             show_elements_by_selector(".js-cgroup-v2-swap-active--show")
+            show_elements_by_selector(".js-graphs-cgroup--show")
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             hide_elements_by_selector(".js-cgroup-swap-unlimited--show")
 
@@ -6307,6 +6310,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             elem_svg_system_swap = document.getElementById("svg_system_swap")
             elem_svg_system_swap.appendChild(svg_system_swap)
             show_elements_by_selector(".js-system-swap-active--show")
+            show_elements_by_selector(".js-graphs-kernel--show")
             hide_elements_by_selector(".js-system-swap-inactive--show")
         else:
             show_elements_by_selector(".js-system-swap-inactive--show")

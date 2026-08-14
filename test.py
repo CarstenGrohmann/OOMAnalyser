@@ -562,6 +562,13 @@ class BaseInBrowserTests(BaseTests):
             swap_elem.is_displayed() == self.check_svg_swap_visible
         ), f"Swap diagram (id: {self.check_svg_swap_id}): got {swap_elem.is_displayed()}, expected {self.check_svg_swap_visible}"
 
+        expected = self.check_svg_ram_visible or self.check_svg_swap_visible
+        headings = self.driver.find_elements(By.XPATH, '//th[text()="Graphs"]')
+        shown = [heading for heading in headings if heading.is_displayed()]
+        assert (
+            bool(shown) == expected
+        ), f'Heading "Graphs" visible: got {bool(shown)}, expected {expected}'
+
     def check_swap_inactive(self) -> None:
         explanation = self.driver.find_element(By.ID, "explanation")
         continuous_text = self.to_continuous_text(explanation.text)
