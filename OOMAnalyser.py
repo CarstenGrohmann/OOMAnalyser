@@ -5716,6 +5716,14 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     @see: include/linux/page_counter.h
     """
 
+    NON_BREAKING_SPACE = "\u00a0"
+    """
+    Keep a value and its unit on one line.
+
+    Used instead of the HTML entity &nbsp; because item values are written
+    into text nodes, which do not resolve entities.
+    """
+
     def __init__(self):
         self.oom = None
         self.set_html_defaults()
@@ -5775,28 +5783,19 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         """Return formatted numeric item value"""
         content = self.oom_result.details.get(item, "")
         assert isinstance(content, int)
-        formatted = ""
         if item.endswith("_pages"):
-            if content == 1:
-                formatted = "{}&nbsp;page".format(content)
-            else:
-                formatted = "{}&nbsp;pages".format(content)
+            unit = "page" if content == 1 else "pages"
         elif item.endswith("_bytes"):
-            if content == 1:
-                formatted = "{}&nbsp;Byte".format(content)
-            else:
-                formatted = "{}&nbsp;Bytes".format(content)
+            unit = "Byte" if content == 1 else "Bytes"
         elif item.endswith("_kb"):
-            if content == 1:
-                formatted = "{}&nbsp;kByte".format(content)
-            else:
-                formatted = "{}&nbsp;kBytes".format(content)
+            unit = "kByte" if content == 1 else "kBytes"
         elif item.endswith("_percent"):
-            formatted = "{}&nbsp;%".format(content)
+            unit = "%"
         else:
             internal_error('Unknown item "{}" in _prepare_numeric_value()'.format(item))
+            return ""
 
-        return formatted
+        return "{}{}{}".format(content, self.NON_BREAKING_SPACE, unit)
 
     @staticmethod
     def _size_to_human_readable(value: int) -> str:
@@ -5837,7 +5836,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
                     row_in_result_table.classList.add("js-text--display-none")
                     continue
 
-            element.innerHTML = content
+            element.textContent = "{}".format(content)
             if row_in_result_table:
                 row_in_result_table.classList.remove("js-text--display-none")
             if is_numeric:
@@ -5898,6 +5897,27 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
 
         toc_content.innerHTML = new_toc
 
+    def _create_pstable_row(self, pid: int) -> Node:
+        """Return a table row with all details of the given process"""
+        process = self.oom_result.details["_pstable"][pid]
+        row = document.createElement("tr")
+        if pid == self.oom_result.details["trigger_proc_pid"]:
+            row.classList.add("js-pstable__triggerproc--bgcolor")
+        elif pid == self.oom_result.details["killed_proc_pid"]:
+            row.classList.add("js-pstable__killedproc--bgcolor")
+
+        for column_name in self.oom_result.kconfig.pstable_items:
+            cell = document.createElement("td")
+            # The PID is the key of the process table and not part of the process itself
+            if column_name == "pid":
+                value = pid
+            else:
+                value = process[column_name]
+            cell.textContent = "{}".format(value)
+            row.appendChild(cell)
+
+        return row
+
     def _show_process_table(self):
         """
         Create and show the process table with additional information
@@ -5927,42 +5947,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             element.classList.add(klass)
 
         # create new table
-        new_table = ""
         table_content = document.getElementById("pstable_content")
+        table_content.innerHTML = ""
         for pid in self.oom_result.details["_pstable_index"]:
-            if pid == self.oom_result.details["trigger_proc_pid"]:
-                css_class = 'class="js-pstable__triggerproc--bgcolor"'
-            elif pid == self.oom_result.details["killed_proc_pid"]:
-                css_class = 'class="js-pstable__killedproc--bgcolor"'
-            else:
-                css_class = ""
-            process = self.oom_result.details["_pstable"][pid]
-            fmt_list = [
-                process[i]
-                for i in self.oom_result.kconfig.pstable_items
-                if not i == "pid"
-            ]
-            fmt_list.insert(0, css_class)
-            fmt_list.insert(1, pid)
-            line = """
-            <tr {}>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-                <td>{}</td>
-            </tr>
-            """.format(
-                *fmt_list
-            )
-            new_table += line
-
-        table_content.innerHTML = new_table
+            table_content.appendChild(self._create_pstable_row(pid))
 
     def pstable_set_sort_triangle(self):
         """Set the sorting symbols for all columns in the process table"""
