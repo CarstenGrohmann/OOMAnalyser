@@ -5732,7 +5732,9 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         element = document.getElementById("version")
         element.textContent = "v{}".format(VERSION)
 
-    def _add_tooltip_size(self, element: Node, item: str, size_in_bytes: int):
+    def _add_tooltip_size(
+        self, element: Node, item: str, size_in_bytes: Optional[int]
+    ) -> None:
         """Add tooltip with human-readable size"""
         if (
             size_in_bytes is not None
@@ -5751,9 +5753,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         # An else-branch with removal of the tooltip is not necessary, because
         # they are already removed by during the initialization in set_html_defaults().
 
-    def _calc_size_in_bytes(self, item: str) -> Optional[int]:
+    def _calc_size_in_bytes(self, item: str, content: int) -> Optional[int]:
         """Return item size in bytes"""
-        content = self.oom_result.details.get(item, "")
         assert isinstance(content, int)
         size = None
         if item.endswith("_pages"):
@@ -5767,11 +5768,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             size = None
         return size
 
-    def _is_numeric_item(self, item) -> bool:
+    def _is_numeric_item(self, item: str, content: Any) -> bool:
         """
         Check if the item is numeric, it's an integer, and it ends with _bytes, _kb, _pages, or _percent.
         """
-        content = self.oom_result.details.get(item, "")
         return (
             item.endswith("_bytes")
             or item.endswith("_kb")
@@ -5779,9 +5779,8 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             or item.endswith("_percent")
         ) and isinstance(content, int)
 
-    def _prepare_numeric_value(self, item: str) -> str:
+    def _prepare_numeric_value(self, item: str, content: int) -> str:
         """Return formatted numeric item value"""
-        content = self.oom_result.details.get(item, "")
         assert isinstance(content, int)
         if item.endswith("_pages"):
             unit = "page" if content == 1 else "pages"
@@ -5813,7 +5812,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         else:
             return "{:.1f} {}".format(size, units[unit_index])
 
-    def _set_item(self, item):
+    def _set_item(self, item: str) -> None:
         """
         Insert the item content into all HTML elements whose class matches the item name.
         """
@@ -5822,10 +5821,10 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         size_in_bytes = None
         if isinstance(content, str):
             content = content.strip()
-        is_numeric = self._is_numeric_item(item)
+        is_numeric = self._is_numeric_item(item, content)
         if is_numeric:
-            content = self._prepare_numeric_value(item)
-            size_in_bytes = self._calc_size_in_bytes(item)
+            size_in_bytes = self._calc_size_in_bytes(item, content)
+            content = self._prepare_numeric_value(item, content)
 
         for element in elements:
             row_in_result_table = element.closest("#result_table tr")
