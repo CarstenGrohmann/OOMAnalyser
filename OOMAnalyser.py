@@ -14,6 +14,12 @@ DEBUG = False
 VERSION = "0.9.0 (devel)"
 """Version number e.g. "0.6.0" or "0.6.0 (devel)" """
 
+NOT_FOUND = "<not found>"
+"""Marker for details that the OOM text does not contain"""
+
+NOT_AVAILABLE = "unknown"
+"""Shown for a missing item that has no result table row to hide"""
+
 # __pragma__ ('skip')
 from typing import List, Optional, Tuple, Any, Callable
 
@@ -4381,7 +4387,7 @@ class OOMAnalyser:
         # __pragma__ ('jsiter')
         for item in self.oom_result.details:
             if self.oom_result.details[item] is None:
-                self.oom_result.details[item] = "<not found>"
+                self.oom_result.details[item] = NOT_FOUND
                 continue
             if (
                 item.endswith("_bytes")
@@ -5829,11 +5835,16 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         for element in elements:
             row_in_result_table = element.closest("#result_table tr")
 
-            # Hide table rows if the element has no content
-            if isinstance(content, str) and content == "<not found>":
+            if content == NOT_FOUND:
+                # Only a table row can be hidden, a sentence has to stay readable
                 if row_in_result_table:
                     row_in_result_table.classList.add("js-text--display-none")
-                    continue
+                else:
+                    internal_error(
+                        'Item "{}" is missing and has no result table row'.format(item)
+                    )
+                    element.textContent = NOT_AVAILABLE
+                continue
 
             element.textContent = "{}".format(content)
             if row_in_result_table:
