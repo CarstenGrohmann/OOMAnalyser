@@ -426,7 +426,7 @@ class BaseKernelConfig:
             OOMPatternMatchRule.ALL_OPTIONAL,
         ),
         "Page cache": (
-            r"^(?P<pagecache_total_pages>\d+) total pagecache pages.*$",
+            r"^(?P<pagecache_total_pages>\d+) total pagecache pages",
             OOMPatternMatchRule.KERNEL_MANDATORY,
         ),
         # Source:mm/swap_state.c:show_swap_cache_info()
@@ -730,7 +730,7 @@ class BaseKernelConfig:
     )
     """RE to extract free memory chunks of a memory zone"""
 
-    REC_OOM_BEGIN = re.compile(r"invoked oom-killer:", re.MULTILINE)
+    REC_OOM_BEGIN = re.compile(r"invoked oom-killer:")
     """RE to match the first line of an OOM block"""
 
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
@@ -743,7 +743,7 @@ class BaseKernelConfig:
     """RE to match if the cgroup is a v1 cgroup"""
 
     REC_PAGE_SIZE = re.compile(
-        r"Node \d+ (?:DMA|DMA32|Normal): \d+\*(?P<page_size>\d+)kB", re.MULTILINE
+        r"Node \d+ (?:DMA|DMA32|Normal): \d+\*(?P<page_size>\d+)kB"
     )
     """RE to extract the page size from the first buddyinfo zone"""
 
