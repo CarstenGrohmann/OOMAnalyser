@@ -636,6 +636,9 @@ class BaseInBrowserTests(BaseTests):
 class TestInBrowser(BaseInBrowserTests):
     """Test OOM web page in a browser"""
 
+    TRANSPARENT = "rgba(0, 0, 0, 0)"
+    """Computed value of a fully transparent colour"""
+
     def test_010_load_page(self) -> None:
         """Test if the page is loading"""
         assert "OOMAnalyser" in self.driver.title
@@ -644,6 +647,31 @@ class TestInBrowser(BaseInBrowserTests):
         """Test if JS is loaded"""
         elem = self.driver.find_element(By.ID, "version")
         assert elem.text is not None, "Version statement not set - JS not loaded"
+
+    def test_030_tooltip_colours_resolve(self) -> None:
+        """Test that the tooltip and its arrow are painted
+
+        An unresolvable var() invalidates the whole declaration. The arrow
+        then falls back to currentColor and disappears on the tooltip, the
+        tooltip itself falls back to a transparent background.
+        """
+        background, arrow, text = self.driver.execute_script(
+            """
+            const tooltip = document.createElement("span");
+            tooltip.className = "js-human-readable-sizes__tooltip";
+            document.body.appendChild(tooltip);
+            const colours = [
+                window.getComputedStyle(tooltip).backgroundColor,
+                window.getComputedStyle(tooltip, "::after").borderTopColor,
+                window.getComputedStyle(tooltip).color,
+            ];
+            tooltip.remove();
+            return colours;
+            """
+        )
+        assert background != self.TRANSPARENT, "Tooltip background is transparent"
+        assert arrow != self.TRANSPARENT, "Tooltip arrow is transparent"
+        assert arrow != text, "Tooltip arrow uses the text colour and is invisible"
 
     def test_033_empty_textarea(self) -> None:
         """Test "Analyse OOM block" with an empty textarea"""

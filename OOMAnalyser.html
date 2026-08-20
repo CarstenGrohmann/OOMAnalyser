@@ -19,6 +19,20 @@ THIS PROGRAM COMES WITH NO WARRANTY
     <style>
         /* Use BEM (Block__Element--Modifier) naming convention */
 
+        :root {
+            --tooltip-bg: #555555;
+            --tooltip-arrow-bg: #555555;
+            --tooltip-text: #FFFFFF;
+            --notify-debug-bg: #e8ffb3;
+            --notify-debug-text: #000000;
+            --notify-error-bg: #FFD2D2;
+            --notify-error-text: #D8000C;
+            --notify-warning-bg: #FEEFB3;
+            --notify-warning-text: #9F6000;
+            --table-border: black;
+            --toc-bg: #eee;
+        }
+
         body {
             margin: 0 auto;
             font-family: "Helvetica", "Arial", sans-serif;  /* use a sans-serif font to improve page look */
@@ -140,8 +154,8 @@ THIS PROGRAM COMES WITH NO WARRANTY
         .js-human-readable-sizes__tooltip {
             visibility: hidden;
             opacity: 0;
-            background-color: #555555;
-            color: #FFFFFF;
+            background-color: var(--tooltip-bg);
+            color: var(--tooltip-text);
             text-align: center;
             border-radius: 4px;
             padding: 5px 10px;
@@ -163,7 +177,7 @@ THIS PROGRAM COMES WITH NO WARRANTY
             margin-left: -5px;
             border-width: 5px;
             border-style: solid;
-            border-color: #555555 transparent transparent transparent;
+            border-color: var(--tooltip-arrow-bg) transparent transparent transparent;
         }
 
         .js-kernel-upgrade64--show {
@@ -316,11 +330,12 @@ THIS PROGRAM COMES WITH NO WARRANTY
             text-align: left;
         }
 
+        /* Highlight the killed process like an error and the trigger process like a warning */
         .js-pstable__killedproc--bgcolor {
-            background-color: #FFD2D2;
+            background-color: var(--notify-error-bg);
         }
         .js-pstable__triggerproc--bgcolor {
-            background-color: #FEEFB3;
+            background-color: var(--notify-warning-bg);
         }
 
         .pstable__row-numeric--width {
@@ -349,24 +364,24 @@ THIS PROGRAM COMES WITH NO WARRANTY
         }
 
         th, td {
-            border: 1px solid black;
+            border: 1px solid var(--table-border);
             padding: 5px;
             word-wrap: break-word;
         }
 
         .js-notify_box__msg--debug {
-            color: #000000;
-            background-color: #e8ffb3;
+            color: var(--notify-debug-text);
+            background-color: var(--notify-debug-bg);
         }
 
         .js-notify_box__msg--error {
-            color: #D8000C;
-            background-color: #FFD2D2;
+            color: var(--notify-error-text);
+            background-color: var(--notify-error-bg);
         }
 
         .js-notify_box__msg--warning {
-            color: #9F6000;
-            background-color: #FEEFB3;
+            color: var(--notify-warning-text);
+            background-color: var(--notify-warning-bg);
         }
 
         .license__text {
@@ -385,7 +400,7 @@ THIS PROGRAM COMES WITH NO WARRANTY
         .table-of-contents {
             float: right;
             width: 40%;
-            background: #eee;
+            background: var(--toc-bg);
             font-size: 0.8em;
             padding: 1em 2em;
             margin: 0 0 0.5em 0.5em;
