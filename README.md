@@ -70,6 +70,17 @@ or
 # make build
 ```
 
+### Build OOMAnalyser using Docker
+You can build OOMAnalyser inside a Docker container and avoid the need for installing a transcrypt compatible Python version:
+
+* Compile OOMAnalyser and extract the resulting HTML/JS files into `out/`
+
+        # make docker-build
+
+
+ Use sudo if it is required in your environment for docker.
+
+
 ### Usage
 
 * Change into the source directory and start your own small web server.
