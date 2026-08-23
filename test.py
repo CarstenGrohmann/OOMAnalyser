@@ -1464,7 +1464,7 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
     )
     def test_014_size_to_human_readable(self, value, expected) -> None:
         """Test convertion of size in bytes to a human-readable value"""
-        formatted = OOMAnalyser.OOMDisplay._size_to_human_readable(value)
+        formatted = OOMAnalyser.size_to_human_readable(value)
         assert (
             formatted == expected
         ), f"Unexpected human readable output of size {value} (got {formatted}, expect: {expected})"

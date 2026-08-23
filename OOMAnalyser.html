@@ -31,6 +31,20 @@ THIS PROGRAM COMES WITH NO WARRANTY
             --notify-warning-text: #9F6000;
             --table-border: black;
             --toc-bg: #eee;
+
+            /* Donut chart, one muted color per memory type */
+            --chart-anon: #4C72B0;
+            --chart-bounce: #937860;
+            --chart-cached: #DD8452;
+            --chart-free: #D6D6D6;
+            --chart-other: #8C8C8C;
+            --chart-pagecache: #DD8452;
+            --chart-pagetables: #8172B3;
+            --chart-slab: #55A868;
+            --chart-sub-entry-text: #555555;
+            --chart-swatch-border: #B0B0B0;
+            --chart-unevictable: #C44E52;
+            --chart-used: #4C72B0;
         }
 
         body {
@@ -116,6 +130,38 @@ THIS PROGRAM COMES WITH NO WARRANTY
         .js-mem-usage__svg {
             display: block;
         }
+
+        .chart__swatch {
+            /* keep pale swatches distinguishable from the white background */
+            stroke: var(--chart-swatch-border);
+            stroke-width: 1;
+        }
+
+        .chart__sub-entry {
+            /* subordinate the counters listed below a collecting segment */
+            fill: var(--chart-sub-entry-text);
+        }
+
+        .chart__segment--anon { stroke: var(--chart-anon); }
+        .chart__swatch--anon { fill: var(--chart-anon); }
+        .chart__segment--bounce { stroke: var(--chart-bounce); }
+        .chart__swatch--bounce { fill: var(--chart-bounce); }
+        .chart__segment--cached { stroke: var(--chart-cached); }
+        .chart__swatch--cached { fill: var(--chart-cached); }
+        .chart__segment--free { stroke: var(--chart-free); }
+        .chart__swatch--free { fill: var(--chart-free); }
+        .chart__segment--other { stroke: var(--chart-other); }
+        .chart__swatch--other { fill: var(--chart-other); }
+        .chart__segment--pagecache { stroke: var(--chart-pagecache); }
+        .chart__swatch--pagecache { fill: var(--chart-pagecache); }
+        .chart__segment--pagetables { stroke: var(--chart-pagetables); }
+        .chart__swatch--pagetables { fill: var(--chart-pagetables); }
+        .chart__segment--slab { stroke: var(--chart-slab); }
+        .chart__swatch--slab { fill: var(--chart-slab); }
+        .chart__segment--unevictable { stroke: var(--chart-unevictable); }
+        .chart__swatch--unevictable { fill: var(--chart-unevictable); }
+        .chart__segment--used { stroke: var(--chart-used); }
+        .chart__swatch--used { fill: var(--chart-used); }
 
         .js-alloc-failure--show {
             /* empty - used to hide/show detailed allocation failure analysis */
@@ -1862,6 +1908,7 @@ window.onerror = function (msg, url, lineNo, columnNo, errorObj) {
     <h4>General</h4>
     <ol>
         <li>Fix process name column in the process table (by @OoYo0uto)</li>
+        <li>Show memory usage as donut charts with grouped RAM categories</li>
         <li>...</li>
     </ol>
 

@@ -291,6 +291,22 @@ def escape_html(unsafe: str) -> str:
     )
 
 
+def size_to_human_readable(value: int) -> str:
+    """Convert a size in bytes to a human-readable format (e.g., kB or GB)."""
+    units = ["Bytes", "kB", "MB", "GB", "TB", "PB"]
+    size = float(value)
+    unit_index = 0
+
+    while size >= 1024 and unit_index < len(units) - 1:
+        size /= 1024
+        unit_index += 1
+
+    if unit_index == 0:
+        return "{} {}".format(int(size), units[unit_index])
+    else:
+        return "{:.1f} {}".format(size, units[unit_index])
+
+
 def debug(msg: str) -> None:
     """Add a debug message to the notification box"""
     add_to_notifybox("DEBUG", msg)
@@ -4806,90 +4822,96 @@ class OOMAnalyser:
         return True
 
 
+class ChartSegment:
+    """
+    Index constants for a donut chart segment
+
+    A segment is a tuple of name, size in bytes, CSS modifier and sub-entries.
+    The CSS modifier selects the color through the classes
+    chart__segment--<modifier> and chart__swatch--<modifier>. The sub-entries
+    are the counters a collecting segment such as "Other" stands for, each a
+    tuple of name and size in bytes. Segments collecting nothing carry an empty
+    list.
+    """
+
+    NAME = 0
+    SIZE = 1
+    CSS_MODIFIER = 2
+    SUB_ENTRIES = 3
+
+
 class SVGChart:
     """
-    Creates a horizontal stacked bar chart with a legend underneath.
+    Creates a donut chart with a legend on the right-hand side.
 
-    The entries of the legend are arranged from left to right and from top to bottom.
+    The legend lists one entry per segment with its size and its share of the
+    total, followed by one indented row per sub-entry. The rows repeat what the
+    segment tooltips show, which browsers drop when printing.
     """
 
-    cfg = {
-        "chart_height": 150,
-        "chart_width": 600,
-        "label_height": 80,
-        "legend_entry_width": 160,
-        "legend_margin": 7,
-        "title_height": 20,
-        "title_margin": 10,
-        "css_class": "js-mem-usage__svg",  # CSS class for SVG diagram
-    }
-    """Basic chart configuration"""
+    # Lengths are SVG coordinates. The viewBox matches width and height of the
+    # diagram, so one length is one CSS pixel as long as nothing scales it.
+    CHART_HEIGHT = 170
+    CHART_WIDTH = 490
+    DIAGRAM_CSS_CLASS = "js-mem-usage__svg"
+    DONUT_CENTER_X = 100
+    DONUT_RADIUS = 62
+    DONUT_THICKNESS = 34
+    LEGEND_ENTRY_HEIGHT = 24
+    LEGEND_FONT_SIZE = 13
+    LEGEND_LEFT_X = 200
+    LEGEND_SWATCH_SIZE = 14
+    LEGEND_SUB_ENTRY_BASELINE_Y = 11
+    LEGEND_SUB_ENTRY_FONT_SIZE = 11
+    LEGEND_SUB_ENTRY_HEIGHT = 18
+    LEGEND_SUB_ENTRY_INDENT = 12
+    SEGMENT_GAP = 2
+    SEGMENT_MIN_LENGTH = 2
+    TITLE_HEIGHT = 20
+    TITLE_MARGIN = 16
+    TOTAL_FONT_SIZE = 17
+    TOTAL_LABEL_FONT_SIZE = 11
+    TOTAL_LABEL_OFFSET_Y = 14
+    TOTAL_VALUE_OFFSET_Y = -2
 
-    # generated with Colorgorical http://vrl.cs.brown.edu/color
-    colors = [
-        "#aee39a",
-        "#344b46",
-        "#1ceaf9",
-        "#5d99aa",
-        "#32e195",
-        "#b02949",
-        "#deae9e",
-        "#805257",
-        "#add51f",
-        "#544793",
-        "#a794d3",
-        "#e057e1",
-        "#769b5a",
-        "#76f014",
-        "#621da6",
-        "#ffce54",
-        "#d64405",
-        "#bb8801",
-        "#096013",
-        "#ff0087",
-    ]
-    """20 different colors for memory usage diagrams"""
+    # Column positions relative to LEGEND_LEFT_X, both numbers are right-aligned
+    LEGEND_NAME_X = 24
+    LEGEND_VALUE_RIGHT_X = 200
+    LEGEND_PERCENT_RIGHT_X = 265
 
-    max_entries_per_row = 3
-    """Maximum chart legend entries per row"""
+    MIN_PERCENT = 1
+    """Smallest share shown as a number, everything below is shown as "<1 %" """
 
     namespace = "http://www.w3.org/2000/svg"
 
     def __init__(self):
         super().__init__()
-        self.cfg["bar_topleft_x"] = 0
-        self.cfg["bar_topleft_y"] = self.cfg["title_height"] + self.cfg["title_margin"]
-        self.cfg["bar_bottomleft_x"] = self.cfg["bar_topleft_x"]
-        self.cfg["bar_bottomleft_y"] = (
-            self.cfg["bar_topleft_y"] + self.cfg["chart_height"]
-        )
+        self.center_y = 0
+        self.diagram_height = 0
+        self.legend_top_y = 0
 
-        self.cfg["bar_bottomright_x"] = (
-            self.cfg["bar_topleft_x"] + self.cfg["chart_width"]
-        )
-        self.cfg["bar_bottomright_y"] = (
-            self.cfg["bar_topleft_y"] + self.cfg["chart_height"]
-        )
+    def calc_legend_height(self, elements: List[tuple]) -> int:
+        """Return the height of the legend including the rows of all sub-entries"""
+        height = 0
+        for element in elements:
+            height += self.LEGEND_ENTRY_HEIGHT
+            height += (
+                len(element[ChartSegment.SUB_ENTRIES]) * self.LEGEND_SUB_ENTRY_HEIGHT
+            )
+        return height
 
-        self.cfg["legend_topleft_x"] = self.cfg["bar_topleft_x"]
-        self.cfg["legend_topleft_y"] = (
-            self.cfg["bar_topleft_y"] + self.cfg["legend_margin"]
-        )
-        self.cfg["legend_width"] = (
-            self.cfg["legend_entry_width"]
-            + self.cfg["legend_margin"]
-            + self.cfg["legend_entry_width"]
-        )
+    def calc_vertical_layout(self, legend_height: int) -> None:
+        """
+        Set the vertical geometry
 
-        self.cfg["diagram_height"] = (
-            self.cfg["chart_height"]
-            + self.cfg["title_margin"]
-            + self.cfg["title_height"]
-        )
-        self.cfg["diagram_width"] = self.cfg["chart_width"]
-
-        self.cfg["title_bottommiddle_y"] = self.cfg["title_height"]
-        self.cfg["title_bottommiddle_x"] = self.cfg["diagram_width"] // 2
+        Donut and legend are centered against each other, the taller one
+        determines the diagram height.
+        """
+        title_block_height = self.TITLE_HEIGHT + self.TITLE_MARGIN
+        content_height = max(self.CHART_HEIGHT, legend_height)
+        self.center_y = title_block_height + content_height // 2
+        self.legend_top_y = self.center_y - legend_height // 2
+        self.diagram_height = title_block_height + content_height
 
     # __pragma__ ('kwargs')
     def create_element(self, tag: str, **kwargs) -> Element:
@@ -4934,172 +4956,248 @@ class SVGChart:
             svg.setAttribute("class", css_class)
         return svg
 
-    def create_rectangle(self, x, y, width, height, color=None, title=None):
+    def wrap_with_title(self, element: Element, title: str) -> Element:
         """
-        Return a rect-element in a group container
+        Return the element in a group container carrying a title element
 
-        If a title is given, the container also contains a <title> element.
+        Browsers show the content of an SVG title element as tooltip while the
+        pointer rests on the surrounding group.
         """
-        g = self.create_element("g")
-        rect = self.create_element("rect", x=x, y=y, width=width, height=height)
-        if color:
-            rect.setAttribute("fill", color)
-        if title:
-            t = self.create_element("title")
-            t.textContent = title
-            g.appendChild(t)
-        g.appendChild(rect)
-        return g
+        group = self.create_element("g")
+        title_element = self.create_element("title")
+        title_element.textContent = title
+        group.appendChild(title_element)
+        group.appendChild(element)
+        return group
 
-    def create_legend_entry(self, color: str, desc: str, pos: int) -> Element:
+    def format_percent(self, value: int, total: int) -> str:
+        """Return the share of value in total as rounded percentage"""
+        percent = 100 * value / total
+        if percent < self.MIN_PERCENT:
+            return "<1 %"
+        return "{} %".format(int(percent + 0.5))
+
+    def format_tooltip(self, element: tuple, total: int) -> str:
         """
-        Create a legend entry for the given position. Both elements of the entry are grouped within a g-element.
+        Return the tooltip text of a segment
 
-        @param color: Colour of the entry
-        @param desc: Description
-        @param pos: Continuous position
+        @see: ChartSegment for the layout of a segment
         """
-        label_group = self.create_element("g", id=desc)
-        color_rect = self.create_rectangle(0, 0, 20, 20, color)
-        label_group.appendChild(color_rect)
+        name, value, unused_css_modifier, sub_entries = element
+        text = "{}: {} ({})".format(
+            name, size_to_human_readable(value), self.format_percent(value, total)
+        )
+        if sub_entries:
+            names = [sub_name for sub_name, unused_size in sub_entries]
+            text = "{} - {}".format(text, ", ".join(names))
+        return text
 
-        desc_element = self.create_element_text(desc, x="30", y="18")
-        desc_element.textContent = desc
-        label_group.appendChild(desc_element)
+    def calc_segment_arcs(
+        self,
+        elements: List[tuple],
+        total: int,
+        circumference: float,
+        gap: int,
+    ) -> List[float]:
+        """
+        Return the arc length of every segment
 
-        # move the group to right position
-        x, y = self.legend_calc_xy(pos)
-        label_group.setAttribute("transform", "translate({}, {})".format(x, y))
+        Shares too small to be seen get a minimum arc. The arcs then add up to
+        more than the circumference, so every arc is scaled down to close the
+        ring at 12 o'clock.
+        """
+        min_arc = self.SEGMENT_MIN_LENGTH + gap
+        arcs = [
+            max(circumference * element[ChartSegment.SIZE] / total, min_arc)
+            for element in elements
+        ]
+        scale = circumference / sum(arcs)
+        return [arc * scale for arc in arcs]
 
+    def generate_donut(self, elements: List[tuple], total: int) -> Element:
+        """
+        Return the donut ring, all segments are grouped within a g-element
+
+        Every segment is a full circle whose stroke is reduced to the arc of
+        the segment by stroke-dasharray and moved into place by
+        stroke-dashoffset.
+        """
+        circumference = 2 * math.pi * self.DONUT_RADIUS
+        # a single segment forms a closed ring, a gap would look like a defect
+        gap = 0 if len(elements) == 1 else self.SEGMENT_GAP
+        arcs = self.calc_segment_arcs(elements, total, circumference, gap)
+        donut_group = self.create_element(
+            "g",
+            fill="none",
+            stroke_width=self.DONUT_THICKNESS,
+            # let the first segment start at 12 o'clock instead of 3 o'clock
+            transform="rotate(-90 {} {})".format(self.DONUT_CENTER_X, self.center_y),
+        )
+        offset = 0
+        for i, element in enumerate(elements):
+            arc = arcs[i]
+            dash = arc - gap
+            segment = self.create_element(
+                "circle",
+                cx=self.DONUT_CENTER_X,
+                cy=self.center_y,
+                r=self.DONUT_RADIUS,
+                stroke_dasharray="{:.2f} {:.2f}".format(dash, circumference - dash),
+                stroke_dashoffset="{:.2f}".format(-offset),
+            )
+            segment.setAttribute(
+                "class",
+                "chart__segment--{}".format(element[ChartSegment.CSS_MODIFIER]),
+            )
+            offset += arc
+            donut_group.appendChild(
+                self.wrap_with_title(segment, self.format_tooltip(element, total))
+            )
+
+        return donut_group
+
+    def generate_total_label(self, total: int) -> Element:
+        """Return the total size placed in the hole of the donut"""
+        label_group = self.create_element("g", text_anchor="middle")
+        label_group.appendChild(
+            self.create_element_text(
+                size_to_human_readable(total),
+                font_size=self.TOTAL_FONT_SIZE,
+                font_weight="bold",
+                x=self.DONUT_CENTER_X,
+                y=self.center_y + self.TOTAL_VALUE_OFFSET_Y,
+            )
+        )
+        label_group.appendChild(
+            self.create_element_text(
+                "total",
+                font_size=self.TOTAL_LABEL_FONT_SIZE,
+                x=self.DONUT_CENTER_X,
+                y=self.center_y + self.TOTAL_LABEL_OFFSET_Y,
+            )
+        )
         return label_group
 
-    def legend_max_row(self, pos: int) -> int:
+    def create_legend_entry(self, element: tuple, total: int, y: int) -> Element:
         """
-        Returns the maximum number of rows in the legend
+        Create a legend entry with color swatch, name, size and share.
 
-        @param pos: Continuous position
-        """
-        max_row = math.ceil(pos / self.max_entries_per_row)
-        return max_row
+        All elements of the entry are grouped within a g-element.
 
-    def legend_max_col(self, pos: int) -> int:
+        @see: ChartSegment for the layout of a segment
         """
-        Returns the maximum number of columns in the legend
-
-        @param pos: Continuous position
-        """
-        if pos < self.max_entries_per_row:
-            return pos
-        return self.max_entries_per_row
-
-    def legend_calc_x(self, column: int) -> int:
-        """
-        Calculate the X-axis using the given column
-        """
-        x = self.cfg["bar_bottomleft_x"] + self.cfg["legend_margin"]
-        x += column * (self.cfg["legend_margin"] + self.cfg["legend_entry_width"])
-        return x
-
-    def legend_calc_y(self, row: int) -> int:
-        """
-        Calculate the Y-axis using the given row
-        """
-        y = self.cfg["bar_bottomleft_y"] + self.cfg["legend_margin"]
-        y += row * 40
-        return y
-
-    def legend_calc_xy(self, pos: int) -> Tuple[int, int]:
-        """
-        Calculate the X-axis and Y-axis
-
-        @param pos: Continuous position
-        """
-        if not pos:
-            col = 0
-            row = 0
-        else:
-            col = pos % self.max_entries_per_row
-            row = math.floor(pos / self.max_entries_per_row)
-
-        x = self.cfg["bar_bottomleft_x"] + self.cfg["legend_margin"]
-        y = self.cfg["bar_bottomleft_y"] + self.cfg["legend_margin"]
-        x += col * (self.cfg["legend_margin"] + self.cfg["legend_entry_width"])
-        y += row * 40
-
-        return x, y
-
-    def generate_bar_area(self, elements: List[Tuple[str, Any]]) -> Element:
-        """
-        Generate colord stacked bars. All entries are group within a g-element.
-        """
-        bar_group = self.create_element(
-            "g", id="bar_group", stroke="black", stroke_width=2
+        name, value, css_modifier, unused_sub_entries = element
+        swatch_size = self.LEGEND_SWATCH_SIZE
+        # align the text with the x-height of the swatch
+        text_baseline_y = swatch_size - 2
+        entry_group = self.create_element(
+            "g",
+            font_size=self.LEGEND_FONT_SIZE,
+            transform="translate({}, {})".format(self.LEGEND_LEFT_X, y),
         )
-        current_x = 0
-        total_length = sum([length for unused, length in elements])
+        swatch = self.create_element(
+            "rect", x=0, y=0, width=swatch_size, height=swatch_size, rx=2
+        )
+        swatch.setAttribute(
+            "class", "chart__swatch chart__swatch--{}".format(css_modifier)
+        )
+        entry_group.appendChild(swatch)
 
-        for i, two in enumerate(elements):
-            name, length = two
-            color = self.colors[i % len(self.colors)]
-            rect_len = int(length / total_length * self.cfg["chart_width"])
-            if rect_len == 0:
-                rect_len = 1
-            rect = self.create_rectangle(
-                current_x,
-                self.cfg["bar_topleft_y"],
-                rect_len,
-                self.cfg["chart_height"],
-                color,
-                name,
+        columns = (
+            (name, self.LEGEND_NAME_X, "start"),
+            (size_to_human_readable(value), self.LEGEND_VALUE_RIGHT_X, "end"),
+            (self.format_percent(value, total), self.LEGEND_PERCENT_RIGHT_X, "end"),
+        )
+        for column in columns:
+            text, column_x, anchor = column
+            entry_group.appendChild(
+                self.create_element_text(
+                    text, text_anchor=anchor, x=column_x, y=text_baseline_y
+                )
             )
-            current_x += rect_len
-            bar_group.appendChild(rect)
 
-        return bar_group
+        return entry_group
 
-    def generate_legend(self, elements: List[Tuple[str, Any]]) -> Element:
+    def create_legend_sub_entry(self, sub_entry: Tuple[str, int], y: int) -> Element:
+        """
+        Create an indented legend row for a counter merged into a segment.
+
+        The row has no color swatch, it belongs to the segment listed above it.
+        """
+        name, value = sub_entry
+        entry_group = self.create_element(
+            "g",
+            font_size=self.LEGEND_SUB_ENTRY_FONT_SIZE,
+            transform="translate({}, {})".format(self.LEGEND_LEFT_X, y),
+        )
+        entry_group.setAttribute("class", "chart__sub-entry")
+        columns = (
+            (name, self.LEGEND_NAME_X + self.LEGEND_SUB_ENTRY_INDENT, "start"),
+            (size_to_human_readable(value), self.LEGEND_VALUE_RIGHT_X, "end"),
+        )
+        for column in columns:
+            text, column_x, anchor = column
+            entry_group.appendChild(
+                self.create_element_text(
+                    text,
+                    text_anchor=anchor,
+                    x=column_x,
+                    y=self.LEGEND_SUB_ENTRY_BASELINE_Y,
+                )
+            )
+
+        return entry_group
+
+    def generate_legend(self, elements: List[tuple], total: int) -> Element:
         """
         Generate a legend for all elements. All entries are grouped within a g-element.
+
+        A segment with sub-entries is followed by one indented row per sub-entry.
         """
-        legend_group = self.create_element("g", id="legend_group")
-        for i, two in enumerate(elements):
-            element_name = two[0]
-            color = self.colors[i % len(self.colors)]
-            label_group = self.create_legend_entry(color, element_name, i)
-            legend_group.appendChild(label_group)
-
-        # re-calculate chart height after all legend entries added
-        self.cfg["diagram_height"] = self.legend_calc_y(
-            self.legend_max_row(len(elements))
-        )
-
+        legend_group = self.create_element("g")
+        y = self.legend_top_y
+        for element in elements:
+            legend_group.appendChild(self.create_legend_entry(element, total, y))
+            y += self.LEGEND_ENTRY_HEIGHT
+            for sub_entry in element[ChartSegment.SUB_ENTRIES]:
+                legend_group.appendChild(self.create_legend_sub_entry(sub_entry, y))
+                y += self.LEGEND_SUB_ENTRY_HEIGHT
         return legend_group
 
-    def generate_chart(self, title: str, *elements: Tuple[str, Any]) -> Element:
+    def create_chart_title(self, title: str) -> Element:
+        """Return the chart title centered above the diagram"""
+        return self.create_element_text(
+            title,
+            font_size=self.TITLE_HEIGHT,
+            font_weight="bold",
+            text_anchor="middle",
+            x=self.CHART_WIDTH // 2,
+            y=self.TITLE_HEIGHT,
+        )
+
+    def generate_chart(self, title: str, *elements: tuple) -> Element:
         """
-        Return an SVG bar chart for all elements
+        Return an SVG donut chart for all elements
 
         @param title: Chart title
-        @param elements: List of tuple with name and length of the entry (not normalized)
+        @param elements: Segments of the chart, empty ones are dropped
+        @see: ChartSegment for the layout of a segment
         """
-        filtered_elements = [(name, length) for name, length in elements if length > 0]
-        bar_group = self.generate_bar_area(filtered_elements)
-        legend_group = self.generate_legend(filtered_elements)
+        filtered_elements = []
+        total = 0
+        for element in elements:
+            size = element[ChartSegment.SIZE]
+            if size > 0:
+                filtered_elements.append(element)
+                total += size
+        self.calc_vertical_layout(self.calc_legend_height(filtered_elements))
         svg = self.create_element_svg(
-            self.cfg["diagram_height"], self.cfg["diagram_width"], self.cfg["css_class"]
+            self.diagram_height, self.CHART_WIDTH, self.DIAGRAM_CSS_CLASS
         )
-        chart_title = self.create_element_text(
-            title,
-            font_size=self.cfg["title_height"],
-            font_weight="bold",
-            stroke_width="0",
-            text_anchor="middle",
-            x=self.cfg["title_bottommiddle_x"],
-            y=self.cfg["title_bottommiddle_y"],
-        )
-        svg.appendChild(chart_title)
-        svg.appendChild(bar_group)
-        svg.appendChild(legend_group)
+        svg.appendChild(self.create_chart_title(title))
+        svg.appendChild(self.generate_donut(filtered_elements, total))
+        svg.appendChild(self.generate_total_label(total))
+        svg.appendChild(self.generate_legend(filtered_elements, total))
         return svg
 
 
@@ -5730,6 +5828,59 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
     into text nodes, which do not resolve entities.
     """
 
+    RAM_CHART_GROUPS = (
+        (
+            "Anonymous",
+            "anon",
+            ("active_anon_pages", "inactive_anon_pages", "isolated_anon_pages"),
+        ),
+        (
+            "Page cache",
+            "pagecache",
+            ("active_file_pages", "inactive_file_pages", "isolated_file_pages"),
+        ),
+        ("Slab", "slab", ("slab_reclaimable_pages", "slab_unreclaimable_pages")),
+        ("Unevictable", "unevictable", ("unevictable_pages",)),
+        ("Page tables", "pagetables", ("pagetables_pages",)),
+        ("Bounce", "bounce", ("bounce_pages",)),
+        ("Free", "free", ("free_pages", "free_pcp_pages", "free_cma_pages")),
+    )
+    """
+    Donut segments of the RAM chart
+
+    Each entry holds the segment name, the CSS modifier selecting its color
+    and the kernel counters summed up into the segment.
+    """
+
+    RAM_CHART_DOUBLE_COUNTED = (
+        ("Mapped", "mapped_pages"),
+        ("Shared", "shmem_pages"),
+        ("Dirty", "dirty_pages"),
+        ("Writeback", "writeback_pages"),
+        ("Unstable", "unstable_pages"),
+    )
+    """
+    Counters the kernel reports in addition to the LRU lists they belong to.
+
+    Each entry holds the display name and the kernel counter. Adding them as
+    own segments would inflate the total, therefore they end up in "Other".
+    """
+
+    RAM_CHART_MIN_PERCENT = 2
+    """
+    Smallest share that gets an own donut segment.
+
+    A smaller segment covers only a few pixels of the ring and cannot be
+    distinguished from its neighbours.
+    """
+
+    RAM_CHART_ALWAYS_SHOWN = ("free",)
+    """
+    CSS modifiers of segments kept out of "Other" regardless of their size.
+
+    How little memory was left is the central number of an OOM report.
+    """
+
     def __init__(self):
         self.oom = None
         self.set_html_defaults()
@@ -5754,7 +5905,7 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             element.classList.add("js-human-readable-sizes")
             tooltip = document.createElement("span")
             tooltip.className = "js-human-readable-sizes__tooltip"
-            tooltip.textContent = self._size_to_human_readable(size_in_bytes)
+            tooltip.textContent = size_to_human_readable(size_in_bytes)
             element.appendChild(tooltip)
         # An else-branch with removal of the tooltip is not necessary, because
         # they are already removed by during the initialization in set_html_defaults().
@@ -5801,22 +5952,6 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             return ""
 
         return "{}{}{}".format(content, self.NON_BREAKING_SPACE, unit)
-
-    @staticmethod
-    def _size_to_human_readable(value: int) -> str:
-        """Convert a size in bytes to a human-readable format (e.g., kB or GB)."""
-        units = ["Bytes", "kB", "MB", "GB", "TB", "PB"]
-        size = float(value)
-        unit_index = 0
-
-        while size >= 1024 and unit_index < len(units) - 1:
-            size /= 1024
-            unit_index += 1
-
-        if unit_index == 0:
-            return "{} {}".format(int(size), units[unit_index])
-        else:
-            return "{:.1f} {}".format(size, units[unit_index])
 
     def _set_item(self, item: str) -> None:
         """
@@ -6177,34 +6312,71 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
         else:
             show_elements_by_selector(".js-pagesize-determined--show")
 
+    def _detail_in_bytes(self, item: str) -> int:
+        """
+        Return the value of a details item converted to bytes
+
+        @note: Only for items with a size unit.
+        """
+        return self._calc_size_in_bytes(item, self.oom_result.details[item])
+
+    def _build_ram_chart_segments(self) -> List[tuple]:
+        """
+        Return the donut segments of the RAM chart sorted by descending size
+
+        Double counted and tiny counters are merged into a trailing "Other"
+        segment that keeps them as sub-entries.
+
+        @see: ChartSegment for the layout of a segment
+        """
+        details = self.oom_result.details
+        segments = []
+        for group in self.RAM_CHART_GROUPS:
+            name, css_modifier, items = group
+            size = sum(
+                [self._detail_in_bytes(item) for item in items if item in details]
+            )
+            if size:
+                segments.append((name, size, css_modifier, []))
+
+        other_size = 0
+        other_entries = []
+        for counter in self.RAM_CHART_DOUBLE_COUNTED:
+            name, item = counter
+            if item in details and details[item]:
+                size = self._detail_in_bytes(item)
+                other_size += size
+                other_entries.append((name, size))
+
+        total = other_size
+        for segment in segments:
+            total += segment[ChartSegment.SIZE]
+
+        visible_segments = []
+        for segment in segments:
+            name, size, css_modifier, unused_sub_entries = segment
+            is_tiny = 100 * size / total < self.RAM_CHART_MIN_PERCENT
+            if is_tiny and css_modifier not in self.RAM_CHART_ALWAYS_SHOWN:
+                other_size += size
+                other_entries.append((name, size))
+            else:
+                visible_segments.append(segment)
+
+        visible_segments = sorted(
+            visible_segments,
+            key=lambda segment: segment[ChartSegment.SIZE],
+            reverse=True,
+        )
+        if other_size:
+            other_entries = sorted(
+                other_entries, key=lambda entry: entry[1], reverse=True
+            )
+            visible_segments.append(("Other", other_size, "other", other_entries))
+        return visible_segments
+
     def _show_system_ram_usage(self):
         """Generate system RAM usage diagram"""
-        ram_title_attr = (
-            ("Active mem", "active_anon_pages"),
-            ("Inactive mem", "inactive_anon_pages"),
-            ("Isolated mem", "isolated_anon_pages"),
-            ("Active PC", "active_file_pages"),
-            ("Inactive PC", "inactive_file_pages"),
-            ("Isolated PC", "isolated_file_pages"),
-            ("Unevictable", "unevictable_pages"),
-            ("Dirty", "dirty_pages"),
-            ("Writeback", "writeback_pages"),
-            ("Unstable", "unstable_pages"),
-            ("Slab reclaimable", "slab_reclaimable_pages"),
-            ("Slab unreclaimable", "slab_unreclaimable_pages"),
-            ("Mapped", "mapped_pages"),
-            ("Shared", "shmem_pages"),
-            ("Pagetable", "pagetables_pages"),
-            ("Bounce", "bounce_pages"),
-            ("Free", "free_pages"),
-            ("Free PCP", "free_pcp_pages"),
-            ("Free CMA", "free_cma_pages"),
-        )
-        chart_elements: List[Tuple[str, int]] = [
-            (title, self.oom_result.details[value])
-            for title, value in ram_title_attr
-            if value in self.oom_result.details
-        ]
+        chart_elements = self._build_ram_chart_segments()
         if not chart_elements:
             return
         svg = SVGChart()
@@ -6249,14 +6421,14 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             show_elements_by_selector(".js-cgroup-swap-unlimited--show")
         else:
-            usage = self.oom_result.details["cgroup_memory_swap_usage_kb"]
-            limit = self.oom_result.details["cgroup_memory_swap_limit_kb"]
+            usage = self._detail_in_bytes("cgroup_memory_swap_usage_kb")
+            limit = self._detail_in_bytes("cgroup_memory_swap_limit_kb")
             free = limit - usage
             svg = SVGChart()
             svg_cgroup_swap = svg.generate_chart(
                 "Cgroup Memory+Swap Summary",
-                ("Mem+Swap Used", usage),
-                ("Mem+Swap Free", free),
+                ("Mem+Swap Used", usage, "used", []),
+                ("Mem+Swap Free", free, "free", []),
             )
             elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v1_swap")
             elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
@@ -6278,14 +6450,14 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             hide_elements_by_selector(".js-cgroup-swap-inactive--show")
             show_elements_by_selector(".js-cgroup-swap-unlimited--show")
         else:
-            usage = self.oom_result.details["cgroup_swap_usage_kb"]
-            limit = self.oom_result.details["cgroup_swap_limit_kb"]
+            usage = self._detail_in_bytes("cgroup_swap_usage_kb")
+            limit = self._detail_in_bytes("cgroup_swap_limit_kb")
             free = limit - usage
             svg = SVGChart()
             svg_cgroup_swap = svg.generate_chart(
                 "Cgroup Swap Summary",
-                ("Swap Used", usage),
-                ("Swap Free", free),
+                ("Swap Used", usage, "used", []),
+                ("Swap Free", free, "free", []),
             )
             elem_svg_cgroup_swap = document.getElementById("svg_cgroup_v2_swap")
             elem_svg_cgroup_swap.appendChild(svg_cgroup_swap)
@@ -6301,9 +6473,14 @@ Out of memory: Killed process 651 (unattended-upgr) total-vm:108020kB, anon-rss:
             svg = SVGChart()
             svg_system_swap = svg.generate_chart(
                 "System Swap Summary",
-                ("Swap Used", self.oom_result.details["system_swap_used_kb"]),
-                ("Swap Free", self.oom_result.details["system_swap_free_kb"]),
-                ("Swap Cached", self.oom_result.details["system_swap_cache_kb"]),
+                ("Swap Used", self._detail_in_bytes("system_swap_used_kb"), "used", []),
+                ("Swap Free", self._detail_in_bytes("system_swap_free_kb"), "free", []),
+                (
+                    "Swap Cached",
+                    self._detail_in_bytes("system_swap_cache_kb"),
+                    "cached",
+                    [],
+                ),
             )
             elem_svg_system_swap = document.getElementById("svg_system_swap")
             elem_svg_system_swap.appendChild(svg_system_swap)
