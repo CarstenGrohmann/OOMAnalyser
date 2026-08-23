@@ -5,7 +5,7 @@
 # Extract GFP flags (get free pages) from the kernel include files
 # include/linux/gfp.h or gfp_types.h for use in OOMAnalyser.py
 #
-# Copyright (c) 2022-2025 Carsten Grohmann
+# Copyright (c) 2022-2026 Carsten Grohmann
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 
@@ -419,7 +419,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--version",
         action="version",
-        version="extract_kernel_details.py version 0.2 - Copyright (c) 2022-2025 Carsten Grohmann",
+        version="extract_kernel_details.py version 0.2 - Copyright (c) 2022-2026 Carsten Grohmann",
     )
     parser.parse_args(namespace=cfg)
 

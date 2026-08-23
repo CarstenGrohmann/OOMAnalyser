@@ -1,6 +1,6 @@
 // Rollup.js configuration for OOMAnalyser
 //
-// Copyright (c) 2021-2025 Carsten Grohmann
+// Copyright (c) 2021-2026 Carsten Grohmann
 // License: MIT (see LICENSE.txt)
 // THIS PROGRAM COMES WITH NO WARRANTY
 
@@ -11,7 +11,7 @@ export default {
         name: 'OOMAnalyser',
         banner: '// JavaScript for OOMAnalyser\n' +
             '//\n' +
-            '// Copyright (c) 2017-2025 Carsten Grohmann\n' +
+            '// Copyright (c) 2017-2026 Carsten Grohmann\n' +
             '// License: MIT (see LICENSE.txt)\n' +
             '// THIS PROGRAM COMES WITH NO WARRANTY',
         format: 'umd'
