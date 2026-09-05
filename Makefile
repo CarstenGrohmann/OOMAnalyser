@@ -39,8 +39,8 @@ ROLLUP_OPTS       = --config rollup.config.mjs
 TRANSCRYPT_BIN    = transcrypt
 TRANSCRYPT_OPTS   = --build --map --nomin --sform --esv 6
 
-DOCKER_BIN              = docker
-DOCKER_BUILD_OUT_DIR    = $(BASE_DIR)/out
+DOCKER_BIN        = docker
+DOCKER_OUT_DIR    = $(BASE_DIR)/out
 
 export VIRTUAL_ENV := $(abspath ${VIRTUAL_ENV_DIR})
 export PATH := ${VIRTUAL_ENV_DIR}/bin:${PATH}
@@ -73,7 +73,7 @@ clean:
 	@find $(BASE_DIR) -depth -type f -name "*.orig" -exec rm -f {} \;
 	@find $(BASE_DIR) -depth -type f -name "*~" -exec rm -f {} \;
 	@$(RM) --force --recursive .wdm
-	@$(RM) --force --recursive ${RELEASE_DIR} ${TARGET_DIR} ${RELEASE_TARGZ} ${RELEASE_ZIP} $(DOCKER_BUILD_OUT_DIR)
+	@$(RM) --force --recursive ${RELEASE_DIR} ${TARGET_DIR} ${RELEASE_TARGZ} ${RELEASE_ZIP} $(DOCKER_OUT_DIR)
 
 #+ Remove all automatically generated and Git repository data
 distclean: clean venv-clean
@@ -144,4 +144,4 @@ release: ${JS_OUT_FILE} ${RELEASE_TARGZ} ${RELEASE_ZIP}
 
 #+ Build OOMAnalyser using Docker into out/
 docker-build:
-	$(DOCKER_BIN) buildx build -f builder.Dockerfile --output type=local,dest=$(DOCKER_BUILD_OUT_DIR) --target export .
+	$(DOCKER_BIN) buildx build -f builder.Dockerfile --output type=local,dest=$(DOCKER_OUT_DIR) --target export .

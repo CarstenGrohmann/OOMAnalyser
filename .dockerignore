@@ -1,6 +1,8 @@
-# Copyright (c) 2022-2026 Carsten Grohmann
+# Files to be excluded from the Docker build context
+#
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
+
 .git/
 
 # Byte-compiled / optimized / DLL files
