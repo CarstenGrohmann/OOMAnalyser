@@ -62,13 +62,24 @@ Both can be stored locally to use OOMAnalyser without an Internet connection.
 
 ```
 # . env/bin/activate
-# transcrypt --build --map --nomin -e 6 OOMAnalyser.py
+# transcrypt --build --map --nomin --sform --esv 6 OOMAnalyser.py
 # rollup --config rollup.config.mjs
 
 or
 
 # make build
 ```
+
+### Build OOMAnalyser using Docker
+You can build OOMAnalyser inside a Docker container and avoid the need for installing a transcrypt compatible Python version. Please note that the Docker buildx extension is required for this.
+
+* Compile OOMAnalyser and extract the resulting HTML/JS files into `out/`
+
+        # make docker-build
+
+
+ Use sudo if it is required in your environment for docker.
+
 
 ### Usage
 
