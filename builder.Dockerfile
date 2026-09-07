@@ -1,5 +1,6 @@
 # Docker build environment for OOMAnalyser
 #
+# Copyright (c) 2026 Carsten Grohmann and contributors
 # License: MIT (see LICENSE.txt)
 # THIS PROGRAM COMES WITH NO WARRANTY
 

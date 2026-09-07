@@ -1,3 +1,9 @@
+# Python project configuration for OOMAnalyser
+#
+# Copyright (c) 2022-2026 Carsten Grohmann and contributors
+# License: MIT (see LICENSE.txt)
+# THIS PROGRAM COMES WITH NO WARRANTY
+
 [tool.black]
 line-length = 88
 target-version = ['py37']

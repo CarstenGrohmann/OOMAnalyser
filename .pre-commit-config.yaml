@@ -1,3 +1,9 @@
+# Pre-commit hook configuration for OOMAnalyser
+#
+# Copyright (c) 2022-2026 Carsten Grohmann and contributors
+# License: MIT (see LICENSE.txt)
+# THIS PROGRAM COMES WITH NO WARRANTY
+
 repos:
   - repo: https://github.com/psf/black
     rev: 23.3.0
