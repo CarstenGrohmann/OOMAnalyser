@@ -3195,9 +3195,17 @@ class KernelConfig_6_4(KernelConfig_6_3):
 class KernelConfig_6_8(KernelConfig_6_4):
     # Supported changes:
     #  * update GFP flags
+    #  * mm, oom:dump_tasks add rss detailed information printing (2787319)
 
     name = "Configuration for Linux kernel 6.8 or later"
     release = (6, 8, "")
+
+    REC_PROCESS_LINE = re.compile(
+        r"^\[\s*(?P<pid>\d+)\]\s+(?P<uid>\d+)\s+(?P<tgid>\d+)\s+(?P<total_vm_pages>\d+)\s+"
+        r"(?P<rss_pages>\d+)\s+(?P<rss_anon_pages>\d+)\s+(?P<rss_file_pages>\d+)\s+"
+        r"(?P<rss_shmem_pages>\d+)\s+(?P<pgtables_bytes>\d+)\s+(?P<swapents_pages>\d+)\s+"
+        r"(?P<oom_score_adj>-?\d+)\s+(?P<name>.+?)\s*$"
+    )
 
     # NOTE: These flags are automatically extracted from the gfp_types.h file.
     #       Please do not change them manually!

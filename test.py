@@ -1613,6 +1613,58 @@ Hardware name: HP ProLiant DL385 G7, BIOS A18 12/08/2012
             )
 
     @pytest.mark.parametrize(
+        "kconfig,sample_header,sample_line,expected_fields",
+        [
+            pytest.param(
+                OOMAnalyser.KernelConfig_6_8(),
+                "[  pid  ]   uid  tgid total_vm      rss rss_anon rss_file rss_shmem pgtables_bytes swapents oom_score_adj name",
+                "[    455]     0   455    34283      794      128      666         0   155648      160          -250 systemd-journal",
+                {
+                    "pid": "455",
+                    "uid": "0",
+                    "tgid": "455",
+                    "total_vm_pages": "34283",
+                    "rss_pages": "794",
+                    "rss_anon_pages": "128",
+                    "rss_file_pages": "666",
+                    "rss_shmem_pages": "0",
+                    "pgtables_bytes": "155648",
+                    "swapents_pages": "160",
+                    "oom_score_adj": "-250",
+                    "name": "systemd-journal",
+                },
+                id="kernel-6.8",
+            ),
+        ],
+    )
+    def test_155_pstable_parsing(
+        self,
+        kconfig: OOMAnalyser.BaseKernelConfig,
+        sample_header: str,
+        sample_line: str,
+        expected_fields: Dict[str, str],
+    ) -> None:
+        """Test process table header and entry regex parsing across kernel releases."""
+        assert sample_header.startswith(
+            kconfig.pstable_start
+        ), f"Header does not start with pstable_start for {kconfig.name}"
+
+        match = kconfig.REC_PROCESS_LINE.match(sample_line)
+        assert (
+            match is not None
+        ), f"Failed to match process line regex for {kconfig.name}"
+
+        parsed = match.groupdict()
+        for key, expected_value in expected_fields.items():
+            assert (
+                key in parsed
+            ), f"Missing key '{key}' in parsed output for {kconfig.name}"
+            assert parsed[key] == expected_value, (
+                f"Field '{key}' mismatch for {kconfig.name}: "
+                f"got '{parsed[key]}', expected '{expected_value}'"
+            )
+
+    @pytest.mark.parametrize(
         "platform,limit_kb,expected",
         [
             pytest.param(
