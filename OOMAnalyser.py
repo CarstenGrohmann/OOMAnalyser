@@ -746,6 +746,22 @@ class BaseKernelConfig:
     )
     """RE to extract free memory chunks of a memory zone"""
 
+    REC_MEMINFO_BLOCK_SECOND_PART = re.compile(
+        r"^\s*( (?:active_file|unevictable|slab_reclaimable|mapped|free):.+)$"
+    )
+    """RE to match the second part of the "Mem-Info:" block
+
+    The second part of the "Mem-Info:" block as starting with the third line
+    has not a prefix like the lines before and after it. It is indented only
+    by a single space.
+
+    This RE is designed to match these lines and to extract the line with a
+    single leading space. The alternatives list the first field of every line
+    of that part, so kernels adding a line have to extend it.
+
+    @see: OOMEntity._strip_needless_columns()
+    """
+
     REC_OOM_BEGIN = re.compile(r"invoked oom-killer:")
     """RE to match the first line of an OOM block"""
 
@@ -3009,6 +3025,12 @@ class KernelConfig_6_1(KernelConfig_6_0):
         ),
     }
 
+    # "sec_pagetables" and "kernel_misc_reclaimable" start a line of their own
+    REC_MEMINFO_BLOCK_SECOND_PART = re.compile(
+        r"^\s*( (?:active_file|unevictable|slab_reclaimable|mapped|sec_pagetables"
+        r"|kernel_misc_reclaimable|free):.+)$"
+    )
+
     def __init__(self):
         super().__init__()
         self.EXTRACT_PATTERN.update(self.EXTRACT_PATTERN_OVERLAY_61)
@@ -3541,19 +3563,6 @@ class OOMEntity:
     lines: List[str] = []
     """OOM text as list of lines"""
 
-    REC_MEMINFO_BLOCK_SECOND_PART: re.Pattern = re.compile(
-        r"^\s*( (?:active_file|unevictable|slab_reclaimable|mapped|sec_pagetables|kernel_misc_reclaimable|free):.+)$"
-    )
-    """RE to match the second part of the "Mem-Info:" block
-
-    The second part of the "Mem-Info:" block as starting with the third line
-    has not a prefix like the lines before and after it. It is indented only
-    by a single space.
-
-    This RE is designed to match these lines and to extract the line with a
-    single leading space.
-    """
-
     state: str = OOMBlockStatus.UNKNOWN
     """State of the OOM after initial parsing"""
 
@@ -3576,8 +3585,6 @@ class OOMEntity:
             self.state = OOMBlockStatus.INVALID
             return
 
-        self._format_oom_lines()
-
         if "Killed process" in self.text:
             self.state = OOMBlockStatus.COMPLETED
         else:
@@ -3590,13 +3597,22 @@ class OOMEntity:
         self.text = text
         self.lines = text.split("\n")
 
-    def _format_oom_lines(self):
+    def format_oom_lines(self, kconfig):
+        """
+        Strip everything from the OOM block that is not kernel output
+
+        The kernel configuration is needed to recognise the "Mem-Info:" block,
+        whose layout depends on the kernel version. Therefore, this runs after
+        OOMAnalyser._choose_kernel_config() and not in the constructor.
+
+        @see: OOMAnalyser.analyse()
+        """
         oom_lines = self._remove_non_oom_lines(self.lines)
         oom_lines = self._remove_kernel_colon(oom_lines)
         cols_to_strip = self._number_of_columns_to_strip(
             oom_lines[self._get_CPU_index(oom_lines)]
         )
-        oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip)
+        oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip, kconfig)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
         self.lines = oom_lines
         self.text = "\n".join(self.lines)
@@ -3703,7 +3719,7 @@ class OOMEntity:
         return oom_lines
 
     def _strip_needless_columns(
-        self, oom_lines: List[str], cols_to_strip: int = 0
+        self, oom_lines: List[str], cols_to_strip: int, kconfig
     ) -> List[str]:
         """
         Remove needless columns at the start of every line.
@@ -3722,7 +3738,7 @@ class OOMEntity:
             # see: self._rsyslog_unescape_lf()
 
             # remove all leading whitespaces from "Mem-Info:" lines but keep the exact 1 space
-            match = self.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
+            match = kconfig.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
             if match:
                 line = match.group(1)
 
@@ -3939,6 +3955,9 @@ class OOMAnalyser:
     def _identify_kernel_version(self) -> bool:
         """
         Identify the used kernel version
+
+        This runs before OOMEntity.format_oom_lines(), so REC_KERNEL_VERSION has
+        to match a line that still carries its syslog or journalctl prefix.
         """
         match = self.REC_KERNEL_VERSION.search(self.oom_entity.text)
         if not match:
@@ -4818,6 +4837,7 @@ class OOMAnalyser:
             return False
 
         self._choose_kernel_config()
+        self.oom_entity.format_oom_lines(self.oom_result.kconfig)
 
         if not self._check_for_complete_oom():
             error(self.oom_result.error_msg)

@@ -586,15 +586,14 @@ class BaseInBrowserTests(BaseTests):
             self.text_kernel_swap_space_is_in_use in continuous_text
         ), f'Missing statement "{self.text_kernel_swap_space_is_in_use}"'
 
-    def _test_prefix_removal(
-        self, example: str, prefix: str, handle_meminfo_special: bool = False
-    ) -> None:
+    def _test_prefix_removal(self, example: str, prefix: str, kconfig=None) -> None:
         """
         Generic test for removal of leading but useless columns.
 
         @param example: OOM example text
         @param prefix: Prefix to add to each line
-        @param handle_meminfo_special: If True, handle Mem-Info block specially
+        @param kconfig: Kernel configuration matching the example. If set, the
+                        "Mem-Info:" block is indented instead of prefixed.
         """
         # First pass: original example
         self.analyse_oom(example)
@@ -606,10 +605,7 @@ class BaseInBrowserTests(BaseTests):
         new_lines = []
 
         for line in lines:
-            if (
-                handle_meminfo_special
-                and OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line)
-            ):
+            if kconfig and kconfig.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
                 new_line = f'{" " * len(prefix)}{line}'
             else:
                 new_line = f"{prefix}{line}"
@@ -1808,7 +1804,7 @@ class TestBroswerArchLinux(BaseInBrowserTests):
         self._test_prefix_removal(
             OOMAnalyser.OOMDisplay.example_archlinux_6_1_1,
             prefix,
-            handle_meminfo_special=True,
+            OOMAnalyser.KernelConfig_6_1(),
         )
 
 
@@ -1888,9 +1884,7 @@ class TestBrowserRhel7(BaseInBrowserTests):
 
         @see: TestArchLinux.test_030_removal_of_leading_but_useless_columns()
         """
-        self._test_prefix_removal(
-            OOMAnalyser.OOMDisplay.example_rhel7, prefix, handle_meminfo_special=False
-        )
+        self._test_prefix_removal(OOMAnalyser.OOMDisplay.example_rhel7, prefix)
 
     @pytest.mark.parametrize(
         "prefix",
@@ -1922,8 +1916,9 @@ class TestBrowserRhel7(BaseInBrowserTests):
         res = []
 
         # add date/time prefix except for "Mem-Info:" block
+        kconfig = OOMAnalyser.KernelConfig_3_10()
         for line in example_lines:
-            if not OOMAnalyser.OOMEntity.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
+            if not kconfig.REC_MEMINFO_BLOCK_SECOND_PART.search(line):
                 line = f"{prefix} {line}"
             res.append(line)
         example = "\n".join(res)
@@ -1932,8 +1927,10 @@ class TestBrowserRhel7(BaseInBrowserTests):
             f'Unprocessed example with prefix "{prefix}"', example
         )
         oom = OOMAnalyser.OOMEntity(example)
+        oom.format_oom_lines(kconfig)
         self.check_meminfo_format_rhel7(
-            f'Processed example after OOMEntity() with prefix "{prefix}"', oom.text
+            f'Processed example after format_oom_lines() with prefix "{prefix}"',
+            oom.text,
         )
 
         self.analyse_oom(example)
