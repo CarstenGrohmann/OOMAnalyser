@@ -2186,7 +2186,7 @@ class KernelConfig_4_14(KernelConfig_4_13):
 
 class KernelConfig_4_15(KernelConfig_4_14):
     # Supported changes:
-    #  * mm: consolidate page table accounting (af5b0f6)
+    #  * "mm: consolidate page table accounting" (af5b0f6)
     #  * update GFP flags
 
     name = "Configuration for Linux kernel 4.15 or later"
@@ -2385,7 +2385,7 @@ class KernelConfig_4_18(KernelConfig_4_15):
 
 class KernelConfig_4_19(KernelConfig_4_18):
     # Supported changes:
-    #  * mm, oom: describe task memory unit, larger PID pad (c3b78b1)
+    #  * "mm, oom: describe task memory unit, larger PID pad" (c3b78b1)
 
     name = "Configuration for Linux kernel 4.19 or later"
     release = (4, 19, "")
@@ -2772,7 +2772,7 @@ class KernelConfig_5_14(KernelConfig_5_12):
 
 class KernelConfig_5_16(KernelConfig_5_14):
     # Supported changes:
-    #  * mm/page_alloc.c: show watermark_boost of zone in zoneinfo (a6ea8b5)
+    #  * "mm/page_alloc.c: show watermark_boost of zone in zoneinfo" (a6ea8b5)
 
     name = "Configuration for Linux kernel 5.16 or later"
     release = (5, 16, "")
@@ -3195,7 +3195,7 @@ class KernelConfig_6_4(KernelConfig_6_3):
 class KernelConfig_6_8(KernelConfig_6_4):
     # Supported changes:
     #  * update GFP flags
-    #  * mm, oom:dump_tasks add rss detailed information printing (2787319)
+    #  * "mm, oom:dump_tasks add rss detailed information printing" (2787319)
 
     name = "Configuration for Linux kernel 6.8 or later"
     release = (6, 8, "")
