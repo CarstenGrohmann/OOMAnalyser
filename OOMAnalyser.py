@@ -157,25 +157,6 @@ window = Window()
 # __pragma__ ('noskip')
 
 
-class OOMBlockStatus:
-    """Status of OOM block parsing and validation."""
-
-    UNKNOWN = "OOM_BLOCK_UNKNOWN"
-    """Initial state before parsing begins"""
-
-    EMPTY = "OOM_BLOCK_EMPTY"
-    """No OOM data found in the input"""
-
-    INVALID = "OOM_BLOCK_INVALID"
-    """OOM block found but data is malformed or incomplete"""
-
-    STARTED = "OOM_BLOCK_STARTED"
-    """Parsing began but required patterns not yet matched"""
-
-    COMPLETED = "OOM_BLOCK_COMPLETED"
-    """All required patterns matched, parsing successful"""
-
-
 class OOMType:
     """Enum for the type of the OOM"""
 
@@ -3563,32 +3544,15 @@ class OOMEntity:
     lines: List[str] = []
     """OOM text as list of lines"""
 
-    state: str = OOMBlockStatus.UNKNOWN
-    """State of the OOM after initial parsing"""
-
     text: str = ""
     """OOM as text"""
 
     def __init__(self, raw_text: str):
         self.current_line = 0
         self.lines = []
-        self.state = OOMBlockStatus.UNKNOWN
         self.text = ""
 
         self._format_oom_text(raw_text)
-
-        # don't do anything if the text is empty or does not contain the leading OOM message
-        if not self.text:
-            self.state = OOMBlockStatus.EMPTY
-            return
-        if "invoked oom-killer:" not in self.text:
-            self.state = OOMBlockStatus.INVALID
-            return
-
-        if "Killed process" in self.text:
-            self.state = OOMBlockStatus.COMPLETED
-        else:
-            self.state = OOMBlockStatus.STARTED
 
     def _format_oom_text(self, raw_text: str):
         """Convert to Unix LF only and strip leading/trailing whitespaces"""
@@ -3850,11 +3814,7 @@ class OOMResult:
     """
 
     oom_entity: Optional[OOMEntity] = None
-    """
-    State of this OOM (unknown, incomplete, ...)
-
-    @type: OOMBlockStatus
-    """
+    """The analysed OOM message block"""
 
     oom_text: str = ""
     """
@@ -3907,10 +3867,9 @@ class OOMAnalyser:
     """Analyze an OOM object and calculate additional values"""
 
     oom_entity = None
-    """
-    State of this OOM (unknown, incomplete, ...)
+    """The analysed OOM message block
 
-    @type: OOMBlockStatus
+    @type: OOMEntity
     """
 
     oom_result = OOMResult()
@@ -3943,14 +3902,10 @@ class OOMAnalyser:
      - 3.10.0-514.6.1.el7.x86_64 #1
     """
 
-    oom_block_complete = OOMBlockStatus.UNKNOWN
-    """Completeness of the OOM block"""
-
     def __init__(self, oom):
         self.oom_entity = oom
         self.oom_result = OOMResult()
         self._set_oom_result_default_details()
-        self.oom_block_complete = OOMBlockStatus.UNKNOWN
 
     def _identify_kernel_version(self) -> bool:
         """
@@ -4032,7 +3987,6 @@ class OOMAnalyser:
         Check for an empty OOM text
         """
         if not self.oom_entity.text:
-            self.oom_block_complete = OOMBlockStatus.EMPTY
             self.oom_result.error_msg = (
                 "Empty OOM text. Please insert an OOM message block."
             )
@@ -4064,22 +4018,18 @@ class OOMAnalyser:
 
     def _check_for_complete_oom(self) -> bool:
         """
-        Check if the OOM in self.oom_entity is complete and update self.oom_block_complete accordingly
+        Check if the OOM in self.oom_entity is complete
         """
-        self.oom_block_complete = OOMBlockStatus.UNKNOWN
         self.oom_result.error_msg = "Unknown OOM format"
 
         if not self.oom_result.kconfig.REC_OOM_BEGIN.search(self.oom_entity.text):
-            self.oom_block_complete = OOMBlockStatus.INVALID
             self.oom_result.error_msg = "The inserted text is not a valid OOM block! The initial pattern was not found!"
             return False
 
         if not self.oom_result.kconfig.REC_OOM_END.search(self.oom_entity.text):
-            self.oom_block_complete = OOMBlockStatus.STARTED
             self.oom_result.error_msg = "The inserted OOM is incomplete! The initial pattern was found but not the final."
             return False
 
-        self.oom_block_complete = OOMBlockStatus.COMPLETED
         self.oom_result.error_msg = ""
         return True
 
