@@ -3571,7 +3571,7 @@ class OOMEntity:
 
         @see: OOMAnalyser.analyse()
         """
-        oom_lines = self._remove_non_oom_lines(self.lines)
+        oom_lines = self._remove_non_oom_lines(self.lines, kconfig)
         oom_lines = self._remove_kernel_colon(oom_lines)
         cols_to_strip = self._number_of_columns_to_strip(
             oom_lines[self._get_CPU_index(oom_lines)]
@@ -3616,15 +3616,21 @@ class OOMEntity:
 
         return to_strip
 
-    def _remove_non_oom_lines(self, oom_lines: List[str]) -> List[str]:
-        """Remove all lines before and after the OOM message block"""
+    def _remove_non_oom_lines(self, oom_lines: List[str], kconfig) -> List[str]:
+        """
+        Remove all lines before and after the OOM message block
+
+        This matches line by line while the lines still carry their syslog
+        prefix. Therefore, it uses the unanchored patterns of the kernel
+        configuration and not the anchored REC_OOM_END.
+        """
         cleaned_lines = []
         in_oom_lines = False
         killed_process = False
 
         for line in oom_lines:
             # first line of the oom message block
-            if "invoked oom-killer:" in line:
+            if kconfig.REC_OOM_BEGIN.search(line):
                 in_oom_lines = True
 
             if in_oom_lines:
