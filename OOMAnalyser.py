@@ -749,6 +749,23 @@ class BaseKernelConfig:
     REC_OOM_END = re.compile(r"^Killed process \d+", re.MULTILINE)
     """RE to match the last line of an OOM block"""
 
+    REC_OOM_KILLED_PROCESS = re.compile(r"Killed process \d+")
+    """RE to match the line reporting the killed process
+
+    Unanchored, because it is matched against single lines that still carry
+    their syslog prefix.
+
+    @see: OOMEntity._remove_non_oom_lines(), REC_OOM_END
+    """
+
+    REC_OOM_REAPER = re.compile(r"oom_reaper:")
+    """RE to match the optional line following the killed process
+
+    Unanchored for the same reason as REC_OOM_KILLED_PROCESS.
+
+    @see: OOMEntity._remove_non_oom_lines(), REC_OOM_END
+    """
+
     REC_OOM_CGROUP = re.compile(r"^Memory cgroup stats for", re.MULTILINE)
     """RE to match if the OOM is a cgroup OOM"""
 
@@ -3639,13 +3656,13 @@ class OOMEntity:
             # OOM blocks ends with the second last only or both lines
             #   Out of memory: Killed process ...
             #   oom_reaper: reaped process ...
-            if "Killed process" in line:
+            if kconfig.REC_OOM_KILLED_PROCESS.search(line):
                 killed_process = True
                 continue
 
             # the next line after "Killed process \d+ ..."
             if killed_process:
-                if "oom_reaper" in line:
+                if kconfig.REC_OOM_REAPER.search(line):
                     break
                 # remove this line
                 del cleaned_lines[-1]
