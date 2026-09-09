@@ -3624,12 +3624,9 @@ class OOMEntity:
         # [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         # Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         # Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
-        try:
-            # strip all excl. "CPU:"
-            if "CPU:" in line:
-                to_strip = columns.index("CPU:")
-        except ValueError:
-            pass
+        # strip all excl. "CPU:"
+        if "CPU:" in columns:
+            to_strip = columns.index("CPU:")
 
         return to_strip
 
