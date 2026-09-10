@@ -895,32 +895,60 @@ class TestPython(BaseTests):
         ), f'Error: Search for process names failed for {description}: "{process_name}"'
 
     @pytest.mark.parametrize(
-        "expected_pos,line",
+        "expected_pos,lines",
         [
             pytest.param(
                 1,
-                "[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                [
+                    "[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1"
+                ],
                 id="timestamp-only",
             ),
             pytest.param(
                 5,
-                "Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                [
+                    "Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1"
+                ],
                 id="syslog-prefix",
             ),
             pytest.param(
                 6,
-                "Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1",
+                [
+                    "Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1"
+                ],
                 id="syslog-timestamp",
             ),
+            pytest.param(
+                1,
+                [
+                    "sed invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0",
+                    "[11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10 #1",
+                ],
+                id="marker-on-second-line",
+            ),
+            pytest.param(0, [], id="no-lines"),
+            pytest.param(0, ["no marker at all"], id="no-marker"),
         ],
     )
-    def test_030_OOMEntity_number_of_columns_to_strip(self, expected_pos, line) -> None:
+    def test_030_OOMEntity_number_of_columns_to_strip(
+        self, expected_pos, lines
+    ) -> None:
         """Test stripping useless / leading columns"""
         oom_entity = OOMAnalyser.OOMEntity(OOMAnalyser.OOMDisplay.example_rhel7)
-        to_strip = oom_entity._number_of_columns_to_strip(line)
+        to_strip = oom_entity._number_of_columns_to_strip(lines)
         assert (
             to_strip == expected_pos
-        ), f'Calc wrong number of columns to strip for "{line}": got: {to_strip}, expect: {expected_pos}'
+        ), f"Calc wrong number of columns to strip for {lines}: got: {to_strip}, expect: {expected_pos}"
+
+    def test_032_oom_without_begin_pattern(self) -> None:
+        """Test an OOM text with a kernel version but without the begin pattern"""
+        example = "\n".join(OOMAnalyser.OOMDisplay.example_rhel7.split("\n")[1:])
+        analyser = OOMAnalyser.OOMAnalyser(OOMAnalyser.OOMEntity(example))
+        assert not analyser.analyse()
+        assert (
+            analyser.oom_result.error_msg
+            == "The inserted text is not a valid OOM block! The initial pattern was not found!"
+        )
 
     @pytest.mark.parametrize(
         "input_lines,expected,description",

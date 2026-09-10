@@ -3555,6 +3555,14 @@ The last entry in this list is the base configuration as a fallback.
 class OOMEntity:
     """Hold the whole OOM message block and provide access"""
 
+    CPU_MARKER = "CPU:"
+    """First column of the kernel output in the "CPU: ... PID: ..." line
+
+    Everything left of it belongs to the syslog or journalctl prefix.
+
+    @see: _number_of_columns_to_strip()
+    """
+
     current_line: int = 0
     """Zero based index of the current line in self.lines"""
 
@@ -3590,45 +3598,31 @@ class OOMEntity:
         """
         oom_lines = self._remove_non_oom_lines(self.lines, kconfig)
         oom_lines = self._remove_kernel_colon(oom_lines)
-        cols_to_strip = self._number_of_columns_to_strip(
-            oom_lines[self._get_CPU_index(oom_lines)]
-        )
+        cols_to_strip = self._number_of_columns_to_strip(oom_lines)
         oom_lines = self._strip_needless_columns(oom_lines, cols_to_strip, kconfig)
         oom_lines = self._rsyslog_unescape_lf(oom_lines)
         self.lines = oom_lines
         self.text = "\n".join(self.lines)
 
-    def _get_CPU_index(self, lines: List[str]) -> int:
-        """
-        Return the index of the first line with "CPU: "
-
-        Depending on the OOM version, the "CPU: " pattern is in second or third oom line.
-        """
-        for i in range(len(lines)):
-            if "CPU: " in lines[i]:
-                return i
-
-        return 0
-
-    def _number_of_columns_to_strip(self, line: str) -> int:
+    def _number_of_columns_to_strip(self, oom_lines: List[str]) -> int:
         """
         Determinate the number of columns left to the OOM message to strip.
 
         Sometime timestamps, hostnames and or syslog tags are left to the OOM message. These columns will be count to
-        strip later.
+        strip later. The count is taken from the first line carrying CPU_MARKER,
+        which is the second or third line depending on the OOM version.
+
+        Examples:
+        [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
+        Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
+        Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
         """
-        to_strip = 0
-        columns = line.split(" ")
+        for line in oom_lines:
+            columns = line.split(" ")
+            if self.CPU_MARKER in columns:
+                return columns.index(self.CPU_MARKER)
 
-        # Examples:
-        # [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
-        # Apr 01 14:13:32 mysrv kernel: CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
-        # Apr 01 14:13:32 mysrv kernel: [11686.888109] CPU: 4 PID: 29481 Comm: sed Not tainted 3.10.0-514.6.1.el7.x86_64 #1
-        # strip all excl. "CPU:"
-        if "CPU:" in columns:
-            to_strip = columns.index("CPU:")
-
-        return to_strip
+        return 0
 
     def _remove_non_oom_lines(self, oom_lines: List[str], kconfig) -> List[str]:
         """
